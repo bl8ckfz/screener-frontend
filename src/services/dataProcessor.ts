@@ -21,8 +21,20 @@ const EXCLUDED_COINS = [
  * Maps pair suffix to its length for parsing
  */
 const CURRENCY_PAIRS: Record<string, { suffix: string; length: number }> = {
+  // 5-character pairs (check longest first)
+  FDUSD: { suffix: 'FDUSD', length: 5 },
+
+  // 4-character pairs
+  USDT: { suffix: 'USDT', length: 4 },
+  USDC: { suffix: 'USDC', length: 4 },
+  BUSD: { suffix: 'BUSD', length: 4 },
+  TUSD: { suffix: 'TUSD', length: 4 },
+  BIDR: { suffix: 'BIDR', length: 4 },
+  EURI: { suffix: 'EURI', length: 4 },
+  USDP: { suffix: 'USDP', length: 4 },
+  BKRW: { suffix: 'BKRW', length: 4 },
+
   // 3-character pairs
-  TRY: { suffix: 'TRY', length: 3 },
   USD: { suffix: 'USD', length: 3 },
   EUR: { suffix: 'EUR', length: 3 },
   GBP: { suffix: 'GBP', length: 3 },
@@ -45,19 +57,6 @@ const CURRENCY_PAIRS: Record<string, { suffix: string; length: number }> = {
   BNB: { suffix: 'BNB', length: 3 },
   PAX: { suffix: 'PAX', length: 3 },
   DAI: { suffix: 'DAI', length: 3 },
-
-  // 4-character pairs
-  USDT: { suffix: 'USDT', length: 4 },
-  USDC: { suffix: 'USDC', length: 4 },
-  BUSD: { suffix: 'BUSD', length: 4 },
-  TUSD: { suffix: 'TUSD', length: 4 },
-  BIDR: { suffix: 'BIDR', length: 4 },
-  EURI: { suffix: 'EURI', length: 4 },
-  USDP: { suffix: 'USDP', length: 4 },
-  BKRW: { suffix: 'BKRW', length: 4 },
-
-  // 5-character pairs
-  FDUSD: { suffix: 'FDUSD', length: 5 },
 }
 
 /**

@@ -2,8 +2,8 @@ import { useStore } from '@/hooks/useStore'
 import type { CurrencyPair } from '@/types/coin'
 
 const POPULAR_PAIRS: CurrencyPair[] = [
-  'TRY',
   'USDT',
+  'USDC',
   'USD',
   'BTC',
   'ETH',
@@ -12,8 +12,12 @@ const POPULAR_PAIRS: CurrencyPair[] = [
 ]
 
 const ALL_PAIRS: CurrencyPair[] = [
-  'TRY',
+  'USDT',
+  'USDC',
   'USD',
+  'BTC',
+  'ETH',
+  'BNB',
   'EUR',
   'GBP',
   'JPY',
@@ -30,11 +34,6 @@ const ALL_PAIRS: CurrencyPair[] = [
   'UAH',
   'ZAR',
   'IDR',
-  'USDT',
-  'USDC',
-  'BTC',
-  'ETH',
-  'BNB',
   'BUSD',
   'TUSD',
   'FDUSD',

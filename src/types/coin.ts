@@ -2,8 +2,12 @@
  * Currency pair types supported by the screener
  */
 export type CurrencyPair =
-  | 'TRY'
+  | 'USDT'
+  | 'USDC'
   | 'USD'
+  | 'BTC'
+  | 'ETH'
+  | 'BNB'
   | 'EUR'
   | 'GBP'
   | 'JPY'
@@ -20,11 +24,6 @@ export type CurrencyPair =
   | 'UAH'
   | 'ZAR'
   | 'IDR'
-  | 'USDT'
-  | 'USDC'
-  | 'BTC'
-  | 'ETH'
-  | 'BNB'
   | 'BUSD'
   | 'TUSD'
   | 'FDUSD'

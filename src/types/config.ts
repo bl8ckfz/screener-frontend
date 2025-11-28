@@ -120,7 +120,7 @@ export const DEFAULT_CONFIG: AppConfig = {
     fontSize: 10,
   },
   data: {
-    currentPair: (import.meta.env.VITE_DEFAULT_PAIR as CurrencyPair) || 'TRY',
+    currentPair: (import.meta.env.VITE_DEFAULT_PAIR as CurrencyPair) || 'USDT',
     currentList: Number(import.meta.env.VITE_DEFAULT_LIST) || 134,
     currentPage: 1,
     itemsPerPage: 20,
