@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { useMarketData } from '@/hooks/useMarketData'
 import { useStore } from '@/hooks/useStore'
+import { useKeyboardShortcuts } from '@/hooks'
 import { Layout } from '@/components/layout'
 import { CoinTable, CoinModal } from '@/components/coin'
 import { MarketSummary } from '@/components/market'
@@ -11,7 +12,7 @@ import {
   TimeframeSelector,
   ListSelector,
 } from '@/components/controls'
-import { ErrorStates, EmptyStates } from '@/components/ui'
+import { ErrorStates, EmptyStates, ShortcutHelp } from '@/components/ui'
 import { sortCoinsByList } from '@/utils'
 import { getListById } from '@/types'
 import type { Coin, Timeframe } from '@/types/coin'
@@ -27,6 +28,11 @@ function App() {
   const [selectedTimeframe, setSelectedTimeframe] =
     useState<Timeframe>('5s')
   const [selectedCoin, setSelectedCoin] = useState<Coin | null>(null)
+  const [showShortcutHelp, setShowShortcutHelp] = useState(false)
+  const [selectedRowIndex, setSelectedRowIndex] = useState(0)
+  
+  // Ref for search input
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   // Filter and sort coins based on search query and selected list
   const filteredCoins = useMemo(() => {
@@ -52,6 +58,69 @@ function App() {
     return filtered
   }, [coins, searchQuery, currentList])
 
+  // Keyboard shortcuts
+  useKeyboardShortcuts([
+    {
+      key: 'Escape',
+      description: 'Close modal or clear search',
+      callback: () => {
+        if (selectedCoin) {
+          setSelectedCoin(null)
+        } else if (searchQuery) {
+          setSearchQuery('')
+        }
+      },
+    },
+    {
+      key: 'k',
+      ctrl: true,
+      description: 'Focus search bar',
+      callback: () => {
+        searchInputRef.current?.focus()
+      },
+    },
+    {
+      key: '?',
+      description: 'Show keyboard shortcuts',
+      callback: () => {
+        setShowShortcutHelp(true)
+      },
+      preventDefault: true,
+    },
+    {
+      key: 'ArrowDown',
+      description: 'Navigate to next coin',
+      callback: () => {
+        if (!selectedCoin && filteredCoins.length > 0) {
+          const nextIndex = (selectedRowIndex + 1) % filteredCoins.length
+          setSelectedRowIndex(nextIndex)
+        }
+      },
+      enabled: !selectedCoin,
+    },
+    {
+      key: 'ArrowUp',
+      description: 'Navigate to previous coin',
+      callback: () => {
+        if (!selectedCoin && filteredCoins.length > 0) {
+          const prevIndex = selectedRowIndex === 0 ? filteredCoins.length - 1 : selectedRowIndex - 1
+          setSelectedRowIndex(prevIndex)
+        }
+      },
+      enabled: !selectedCoin,
+    },
+    {
+      key: 'Enter',
+      description: 'Open selected coin details',
+      callback: () => {
+        if (!selectedCoin && filteredCoins[selectedRowIndex]) {
+          setSelectedCoin(filteredCoins[selectedRowIndex])
+        }
+      },
+      enabled: !selectedCoin && filteredCoins.length > 0,
+    },
+  ])
+
   return (
     <Layout
       title="Crypto Screener"
@@ -76,7 +145,7 @@ function App() {
         {/* Main Content - Coin Table */}
         <div className="lg:col-span-3 space-y-4">
           {/* Search Bar */}
-          <SearchBar onSearch={setSearchQuery} />
+          <SearchBar ref={searchInputRef} onSearch={setSearchQuery} />
 
           {/* Coin Table */}
           <div className="bg-gray-900 rounded-lg overflow-hidden">
@@ -133,6 +202,20 @@ function App() {
         coin={selectedCoin}
         isOpen={!!selectedCoin}
         onClose={() => setSelectedCoin(null)}
+      />
+
+      {/* Keyboard Shortcuts Help */}
+      <ShortcutHelp
+        isOpen={showShortcutHelp}
+        onClose={() => setShowShortcutHelp(false)}
+        shortcuts={[
+          { key: 'Escape', description: 'Close modal or clear search', callback: () => {} },
+          { key: 'k', ctrl: true, description: 'Focus search bar', callback: () => {} },
+          { key: '?', description: 'Show keyboard shortcuts', callback: () => {} },
+          { key: 'ArrowDown', description: 'Navigate to next coin', callback: () => {} },
+          { key: 'ArrowUp', description: 'Navigate to previous coin', callback: () => {} },
+          { key: 'Enter', description: 'Open selected coin details', callback: () => {} },
+        ]}
       />
     </Layout>
   )

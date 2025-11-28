@@ -11,3 +11,4 @@ export {
 } from './Skeleton'
 export { ErrorState, ErrorStates } from './ErrorState'
 export { EmptyState, EmptyStates } from './EmptyState'
+export { ShortcutHelp } from './ShortcutHelp'

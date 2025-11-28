@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, forwardRef } from 'react'
 
 export interface SearchBarProps {
   onSearch: (query: string) => void
@@ -9,36 +9,34 @@ export interface SearchBarProps {
 /**
  * SearchBar component for filtering coins by symbol or name
  */
-export function SearchBar({
-  onSearch,
-  placeholder = 'Search coins...',
-  className = '',
-}: SearchBarProps) {
-  const [query, setQuery] = useState('')
+export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
+  ({ onSearch, placeholder = 'Search coins...', className = '' }, ref) => {
+    const [query, setQuery] = useState('')
 
-  // Debounce search to avoid too many updates
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onSearch(query)
-    }, 300)
+    // Debounce search to avoid too many updates
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        onSearch(query)
+      }, 300)
 
-    return () => clearTimeout(timer)
-  }, [query, onSearch])
+      return () => clearTimeout(timer)
+    }, [query, onSearch])
 
-  const handleClear = () => {
-    setQuery('')
-  }
+    const handleClear = () => {
+      setQuery('')
+    }
 
-  return (
-    <div className={`relative ${className}`}>
-      <div className="relative">
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={placeholder}
-          className="w-full px-4 py-2 pl-10 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        />
+    return (
+      <div className={`relative ${className}`}>
+        <div className="relative">
+          <input
+            ref={ref}
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={placeholder}
+            className="w-full px-4 py-2 pl-10 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
         {/* Search icon */}
         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
           <svg
@@ -86,4 +84,6 @@ export function SearchBar({
       )}
     </div>
   )
-}
+})
+
+SearchBar.displayName = 'SearchBar'
