@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { TradingChart, type ChartType } from './TradingChart'
 import { fetchKlines, type KlineInterval, COMMON_INTERVALS, INTERVAL_LABELS } from '@/services/chartData'
 import type { Coin } from '@/types/coin'
-import { Button, ChartSkeleton } from '@/components/ui'
+import { ChartSkeleton, ErrorState } from '@/components/ui'
 
 export interface ChartContainerProps {
   coin: Coin
@@ -113,20 +113,15 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
         {isLoading ? (
           <ChartSkeleton height={400} />
         ) : error ? (
-          <div className="flex items-center justify-center h-96 text-center">
-            <div>
-              <div className="text-4xl mb-2">⚠️</div>
-              <div className="text-sm text-danger">{error}</div>
-              <Button
-                onClick={() => setInterval(interval)}
-                variant="secondary"
-                size="sm"
-                className="mt-4"
-              >
-                Retry
-              </Button>
-            </div>
-          </div>
+          <ErrorState
+            icon="📉"
+            message="Chart Data Error"
+            description={error}
+            onRetry={() => {
+              setError(null)
+              setInterval(interval)
+            }}
+          />
         ) : (
           <TradingChart
             data={chartData}

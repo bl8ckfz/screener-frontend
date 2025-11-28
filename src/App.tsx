@@ -11,6 +11,7 @@ import {
   TimeframeSelector,
   ListSelector,
 } from '@/components/controls'
+import { ErrorStates, EmptyStates } from '@/components/ui'
 import { sortCoinsByList } from '@/utils'
 import { getListById } from '@/types'
 import type { Coin, Timeframe } from '@/types/coin'
@@ -97,19 +98,9 @@ function App() {
 
             {/* Content */}
             <div className="min-h-[600px]">
-              {error && (
-                <div className="flex items-center justify-center h-96">
-                  <div className="text-center text-bearish">
-                    <div className="text-4xl mb-2">⚠</div>
-                    <div className="font-semibold mb-2">Error loading data</div>
-                    <div className="text-sm text-gray-400">
-                      {error.message || 'Failed to fetch market data'}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {!error && (
+              {error ? (
+                ErrorStates.API()
+              ) : (
                 <>
                   <CoinTable
                     coins={filteredCoins}
@@ -120,17 +111,16 @@ function App() {
                   {!isLoading &&
                     filteredCoins &&
                     filteredCoins.length === 0 &&
-                    searchQuery && (
-                      <div className="flex items-center justify-center h-96">
-                        <div className="text-center text-gray-400">
-                          <div className="text-4xl mb-2">🔍</div>
-                          <div className="font-semibold mb-2">No results found</div>
-                          <div className="text-sm">
-                            No coins match "{searchQuery}"
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    searchQuery &&
+                    EmptyStates.NoSearchResults(searchQuery, () => setSearchQuery(''))}
+
+                  {!isLoading &&
+                    filteredCoins &&
+                    filteredCoins.length === 0 &&
+                    !searchQuery &&
+                    coins &&
+                    coins.length === 0 &&
+                    EmptyStates.NoCoins(currentPair)}
                 </>
               )}
             </div>
