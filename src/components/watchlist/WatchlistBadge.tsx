@@ -66,9 +66,9 @@ export function WatchlistBadge({ symbol }: WatchlistBadgeProps) {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute top-full right-0 mt-1 w-56 bg-card-bg border border-border rounded-lg shadow-lg z-[110] max-h-64 overflow-y-auto">
-          <div className="px-3 py-2 border-b border-border">
-            <div className="text-xs font-medium text-muted-foreground">
+        <div className="absolute top-full right-0 mt-1 w-56 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-[110] max-h-64 overflow-y-auto">
+          <div className="px-3 py-2 border-b border-gray-700">
+            <div className="text-xs font-medium text-gray-400">
               Add {symbol} to watchlist
             </div>
           </div>
@@ -84,7 +84,7 @@ export function WatchlistBadge({ symbol }: WatchlistBadgeProps) {
                     e.stopPropagation()
                     handleToggle(watchlist.id, isInWatchlist)
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-primary-bg transition-colors"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-800 transition-colors"
                 >
                   {/* Checkbox */}
                   <div
@@ -120,12 +120,12 @@ export function WatchlistBadge({ symbol }: WatchlistBadgeProps) {
                   </div>
 
                   {/* Name */}
-                  <span className="text-sm text-primary-foreground flex-1 truncate">
+                  <span className="text-sm text-white flex-1 truncate">
                     {watchlist.name}
                   </span>
 
                   {/* Count */}
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-gray-400">
                     {watchlist.symbols.length}
                   </span>
                 </button>
@@ -134,7 +134,7 @@ export function WatchlistBadge({ symbol }: WatchlistBadgeProps) {
           </div>
 
           {watchlists.length === 0 && (
-            <div className="px-3 py-4 text-center text-xs text-muted-foreground">
+            <div className="px-3 py-4 text-center text-xs text-gray-400">
               No watchlists available
             </div>
           )}
