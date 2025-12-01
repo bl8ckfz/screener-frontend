@@ -6,3 +6,4 @@ node_modules
 .env.production.local
 dist
 .git
+# Force rebuild Mon Dec  1 04:02:53 PM CET 2025
