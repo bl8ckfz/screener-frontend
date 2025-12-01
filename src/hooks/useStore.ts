@@ -83,8 +83,8 @@ interface AppState {
   updateWatchlist: (watchlistId: string, updates: Partial<Omit<Watchlist, 'id' | 'createdAt'>>) => void
   deleteWatchlist: (watchlistId: string) => void
   setCurrentWatchlist: (watchlistId: string | null) => void
-  addToWatchlist: (watchlistId: string, symbol: string) => void
-  removeFromWatchlist: (watchlistId: string, symbol: string) => void
+  addToWatchlist: (watchlistId: string, symbol: string) => Promise<void>
+  removeFromWatchlist: (watchlistId: string, symbol: string) => Promise<void>
   setWatchlists: (watchlists: Watchlist[]) => void
   setAlertRules: (rules: AlertRule[]) => void
   
@@ -279,23 +279,49 @@ export const useStore = create<AppState>()(
       setCurrentWatchlist: (watchlistId) =>
         set({ currentWatchlistId: watchlistId }),
 
-      addToWatchlist: (watchlistId, symbol) =>
-        set((state) => ({
-          watchlists: state.watchlists.map((wl) =>
+      addToWatchlist: async (watchlistId, symbol) => {
+        let updatedWatchlist: Watchlist | undefined
+        let userId: string | undefined
+
+        set((state) => {
+          userId = state.user?.id
+          const updatedWatchlists = state.watchlists.map((wl: Watchlist) =>
             wl.id === watchlistId && !wl.symbols.includes(symbol)
               ? { ...wl, symbols: [...wl.symbols, symbol], updatedAt: Date.now() }
               : wl
-          ),
-        })),
+          )
+          updatedWatchlist = updatedWatchlists.find((wl: Watchlist) => wl.id === watchlistId)
+          return { watchlists: updatedWatchlists }
+        })
 
-      removeFromWatchlist: (watchlistId, symbol) =>
-        set((state) => ({
-          watchlists: state.watchlists.map((wl) =>
+        // Sync to cloud if authenticated
+        if (userId && updatedWatchlist) {
+          const { syncSingleWatchlistToCloud } = await import('@/services/syncService')
+          await syncSingleWatchlistToCloud(userId, updatedWatchlist).catch(console.error)
+        }
+      },
+
+      removeFromWatchlist: async (watchlistId, symbol) => {
+        let updatedWatchlist: Watchlist | undefined
+        let userId: string | undefined
+
+        set((state) => {
+          userId = state.user?.id
+          const updatedWatchlists = state.watchlists.map((wl: Watchlist) =>
             wl.id === watchlistId
-              ? { ...wl, symbols: wl.symbols.filter((s) => s !== symbol), updatedAt: Date.now() }
+              ? { ...wl, symbols: wl.symbols.filter((s: string) => s !== symbol), updatedAt: Date.now() }
               : wl
-          ),
-        })),
+          )
+          updatedWatchlist = updatedWatchlists.find((wl: Watchlist) => wl.id === watchlistId)
+          return { watchlists: updatedWatchlists }
+        })
+
+        // Sync to cloud if authenticated
+        if (userId && updatedWatchlist) {
+          const { syncSingleWatchlistToCloud } = await import('@/services/syncService')
+          await syncSingleWatchlistToCloud(userId, updatedWatchlist).catch(console.error)
+        }
+      },
 
       setWatchlists: (watchlists) =>
         set({ watchlists }),
