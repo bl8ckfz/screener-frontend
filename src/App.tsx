@@ -12,18 +12,17 @@ import {
   PairSelector,
   RefreshControl,
   SearchBar,
-  TimeframeSelector,
   ListSelector,
   ExportButton,
   ViewToggle,
 } from '@/components/controls'
-import { WatchlistSelector } from '@/components/watchlist'
+// Watchlists removed from UI per new plan
 import { ErrorStates, EmptyStates, ShortcutHelp } from '@/components/ui'
 import { StorageMigration } from '@/components/StorageMigration'
 import { AlertNotificationContainer, AlertConfig, AlertHistory, AlertHistoryTable } from '@/components/alerts'
 import { sortCoinsByList } from '@/utils'
 import { getListById } from '@/types'
-import type { Coin, Timeframe } from '@/types/coin'
+import type { Coin } from '@/types/coin'
 
 // Lazy load heavy components
 const CoinModal = lazy(() => import('@/components/coin/CoinModal').then(m => ({ default: m.CoinModal })))
@@ -141,8 +140,7 @@ function App() {
 
   // Local state for UI interactions
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedTimeframe, setSelectedTimeframe] =
-    useState<Timeframe>('5s')
+  // Timeframe selection removed per new plan
   const [selectedCoin, setSelectedCoin] = useState<Coin | null>(null)
   const [showShortcutHelp, setShowShortcutHelp] = useState(false)
   const [selectedRowIndex, setSelectedRowIndex] = useState(0)
@@ -256,17 +254,13 @@ function App() {
             isCollapsed={leftSidebarCollapsed}
             onToggle={() => setLeftSidebarCollapsed(!leftSidebarCollapsed)}
           >
-            <WatchlistSelector />
             <ListSelector 
               selectedListId={currentList} 
               onSelectList={setCurrentList} 
             />
             <PairSelector />
             <RefreshControl />
-            <TimeframeSelector
-              selectedTimeframe={selectedTimeframe}
-              onSelect={setSelectedTimeframe}
-            />
+            {/* TimeframeSelector removed per new plan */}
           </Sidebar>
         </div>
 

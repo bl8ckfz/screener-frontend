@@ -1,7 +1,6 @@
 export { PairSelector } from './PairSelector'
 export { RefreshControl } from './RefreshControl'
 export { SearchBar } from './SearchBar'
-export { TimeframeSelector } from './TimeframeSelector'
 export { ListSelector } from './ListSelector'
 export { ThemeToggle } from './ThemeToggle'
 export { ExportButton } from './ExportButton'
