@@ -3,8 +3,17 @@ import type {
   ProcessedTicker,
   ApiError,
   ApiRequestOptions,
+  BinanceExchangeInfo,
+  BinanceSymbol,
 } from '@/types/api'
 import { API_CONFIG } from '@/config/api'
+
+/**
+ * Cache for USDT trading pairs (avoid repeated API calls)
+ */
+let cachedUSDTPairs: string[] | null = null
+let cacheTimestamp: number = 0
+const CACHE_DURATION = 3600000 // 1 hour in milliseconds
 
 /**
  * Binance API client for fetching 24hr ticker data
@@ -25,10 +34,63 @@ export class BinanceApiClient {
   }
 
   /**
-   * Fetch 24hr ticker data for all symbols
+   * Fetch USDT trading pairs from exchange info
+   * Returns cached result if available and fresh
+   */
+  async fetchUSDTPairs(): Promise<string[]> {
+    const now = Date.now()
+    
+    // Return cached pairs if still valid
+    if (cachedUSDTPairs && now - cacheTimestamp < CACHE_DURATION) {
+      console.log(`Using cached USDT pairs (${cachedUSDTPairs.length} symbols)`)
+      return cachedUSDTPairs
+    }
+
+    try {
+      const endpoint = '/exchangeInfo'
+      const url = API_CONFIG.corsProxy
+        ? `${API_CONFIG.corsProxy}${encodeURIComponent('https://api.binance.com/api/v3' + endpoint)}`
+        : `${this.baseUrl}${endpoint}`
+
+      console.log('Fetching USDT pairs from exchange info...')
+      const data = await this.fetchWithRetry<BinanceExchangeInfo>(url)
+
+      // Filter to USDT trading pairs with TRADING status
+      const usdtPairs = data.symbols
+        .filter((symbol: BinanceSymbol) => 
+          symbol.quoteAsset === 'USDT' && 
+          symbol.status === 'TRADING'
+        )
+        .map((symbol: BinanceSymbol) => symbol.symbol)
+
+      console.log(`✅ Loaded ${usdtPairs.length} USDT trading pairs`)
+      
+      // Update cache
+      cachedUSDTPairs = usdtPairs
+      cacheTimestamp = now
+
+      return usdtPairs
+    } catch (error) {
+      console.error('Failed to fetch USDT pairs from exchange info:', error)
+      
+      // If we have old cached data, use it as fallback
+      if (cachedUSDTPairs) {
+        console.warn('Using stale cached USDT pairs as fallback')
+        return cachedUSDTPairs
+      }
+      
+      throw error
+    }
+  }
+
+  /**
+   * Fetch 24hr ticker data for all symbols (filtered to USDT pairs only)
    */
   async fetch24hrTickers(): Promise<BinanceTicker24hr[]> {
-    // If using proxy, construct URL properly
+    // Get valid USDT pairs first
+    const usdtPairs = await this.fetchUSDTPairs()
+
+    // Fetch all tickers
     const endpoint = '/ticker/24hr'
     const url = API_CONFIG.corsProxy 
       ? `${API_CONFIG.corsProxy}${encodeURIComponent('https://api.binance.com/api/v3' + endpoint)}`
@@ -41,7 +103,11 @@ export class BinanceApiClient {
       throw new Error('Invalid response format: expected array')
     }
 
-    return data
+    // Filter to only USDT pairs
+    const filtered = data.filter(ticker => usdtPairs.includes(ticker.symbol))
+    console.log(`Filtered ${data.length} tickers to ${filtered.length} USDT pairs`)
+
+    return filtered
   }
 
   /**

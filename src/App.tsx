@@ -27,7 +27,6 @@ const CoinModal = lazy(() => import('@/components/coin/CoinModal').then(m => ({ 
 
 function App() {
   const { data: coins, isLoading, error } = useMarketData()
-  const currentPair = useStore((state) => state.currentPair)
   const currentList = useStore((state) => state.currentList)
   const setCurrentList = useStore((state) => state.setCurrentList)
   const leftSidebarCollapsed = useStore((state) => state.leftSidebarCollapsed)
@@ -220,7 +219,7 @@ function App() {
       
       <Layout
         title="Crypto Screener"
-        subtitle={`Real-time ${currentPair} market analysis`}
+        subtitle="Real-time USDT market analysis"
       >
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Left Sidebar - Filters & Controls */}
@@ -262,7 +261,7 @@ function App() {
                 <div>
                   <h2 className="text-xl font-semibold">
                     Market Data{' '}
-                    <span className="text-accent">{currentPair}</span>
+                    <span className="text-accent">USDT</span>
                   </h2>
                   {coins && (
                     <span className="text-sm text-gray-400">
@@ -301,7 +300,7 @@ function App() {
                     !searchQuery &&
                     coins &&
                     coins.length === 0 &&
-                    EmptyStates.NoCoins(currentPair)}
+                    EmptyStates.NoCoins('USDT')}
                 </>
               )}
             </div>

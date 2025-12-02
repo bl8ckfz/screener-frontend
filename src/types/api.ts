@@ -69,3 +69,23 @@ export interface ApiRequestOptions {
   retries?: number
   retryDelay?: number
 }
+
+/**
+ * Binance Exchange Info Symbol
+ * https://api.binance.com/api/v3/exchangeInfo
+ */
+export interface BinanceSymbol {
+  symbol: string
+  status: string
+  baseAsset: string
+  quoteAsset: string
+  [key: string]: any // Other fields we don't need
+}
+
+/**
+ * Binance Exchange Info Response
+ */
+export interface BinanceExchangeInfo {
+  symbols: BinanceSymbol[]
+  [key: string]: any // Other fields we don't need
+}

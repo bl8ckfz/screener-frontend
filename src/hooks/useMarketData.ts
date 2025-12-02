@@ -18,7 +18,6 @@ import type { Alert } from '@/types/alert'
  * Fetch and process market data for current currency pair with smart polling
  */
 export function useMarketData() {
-  const currentPair = useStore((state) => state.currentPair)
   const refreshInterval = useStore((state) => state.refreshInterval)
   const autoRefresh = useStore((state) => state.autoRefresh)
   
@@ -53,7 +52,7 @@ export function useMarketData() {
 
   // Query for market data
   const query = useQuery({
-    queryKey: ['marketData', currentPair, currentWatchlistId],
+    queryKey: ['marketData', 'USDT', currentWatchlistId],
     queryFn: async (): Promise<Coin[]> => {
       // Use mock data if enabled, otherwise fetch from Binance API
       let tickers
@@ -75,8 +74,8 @@ export function useMarketData() {
       // Parse to numeric values
       const processedTickers = BinanceApiClient.parseTickerBatch(tickers)
 
-      // Filter by currency pair and convert to Coin objects
-      let coins = processTickersForPair(processedTickers, currentPair)
+      // Convert to Coin objects (all are USDT pairs now)
+      let coins = processTickersForPair(processedTickers)
 
       // Apply technical indicators (VCP, Fibonacci, etc.)
       coins = applyTechnicalIndicators(coins)

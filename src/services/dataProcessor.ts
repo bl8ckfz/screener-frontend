@@ -1,105 +1,37 @@
 import type { ProcessedTicker } from '@/types/api'
-import type { Coin, CurrencyPair } from '@/types/coin'
+import type { Coin } from '@/types/coin'
 
 /**
- * List of known problematic/delisted coins to filter out
- * (from fast.html bozuklar array)
- */
-const EXCLUDED_COINS = [
-  'BCHABC',
-  'BCHSV',
-  'USDS',
-  'USDSB',
-  'BKRW',
-  'LUNA',
-  'LUNC',
-  'USTC',
-]
-
-/**
- * Currency pair configurations
- * Maps pair suffix to its length for parsing
- */
-const CURRENCY_PAIRS: Record<string, { suffix: string; length: number }> = {
-  // 5-character pairs (check longest first)
-  FDUSD: { suffix: 'FDUSD', length: 5 },
-
-  // 4-character pairs
-  USDT: { suffix: 'USDT', length: 4 },
-  USDC: { suffix: 'USDC', length: 4 },
-  BUSD: { suffix: 'BUSD', length: 4 },
-  TUSD: { suffix: 'TUSD', length: 4 },
-  BIDR: { suffix: 'BIDR', length: 4 },
-  EURI: { suffix: 'EURI', length: 4 },
-  USDP: { suffix: 'USDP', length: 4 },
-  BKRW: { suffix: 'BKRW', length: 4 },
-
-  // 3-character pairs
-  USD: { suffix: 'USD', length: 3 },
-  EUR: { suffix: 'EUR', length: 3 },
-  GBP: { suffix: 'GBP', length: 3 },
-  JPY: { suffix: 'JPY', length: 3 },
-  AUD: { suffix: 'AUD', length: 3 },
-  BRL: { suffix: 'BRL', length: 3 },
-  RUB: { suffix: 'RUB', length: 3 },
-  NGN: { suffix: 'NGN', length: 3 },
-  ARS: { suffix: 'ARS', length: 3 },
-  COP: { suffix: 'COP', length: 3 },
-  CZK: { suffix: 'CZK', length: 3 },
-  MXN: { suffix: 'MXN', length: 3 },
-  PLN: { suffix: 'PLN', length: 3 },
-  RON: { suffix: 'RON', length: 3 },
-  UAH: { suffix: 'UAH', length: 3 },
-  ZAR: { suffix: 'ZAR', length: 3 },
-  IDR: { suffix: 'IDR', length: 3 },
-  BTC: { suffix: 'BTC', length: 3 },
-  ETH: { suffix: 'ETH', length: 3 },
-  BNB: { suffix: 'BNB', length: 3 },
-  PAX: { suffix: 'PAX', length: 3 },
-  DAI: { suffix: 'DAI', length: 3 },
-}
-
-/**
- * Parse symbol to extract coin name and currency pair
+ * Parse USDT symbol to extract coin name
+ * All symbols are expected to end with "USDT"
  */
 export function parseSymbol(symbol: string): {
   coin: string
-  pair: CurrencyPair
+  pair: 'USDT'
 } | null {
-  // Check each currency pair from longest to shortest
-  const pairEntries = Object.entries(CURRENCY_PAIRS).sort(
-    (a, b) => b[1].length - a[1].length
-  )
-
-  for (const [pairName, config] of pairEntries) {
-    if (symbol.endsWith(config.suffix)) {
-      const coin = symbol.slice(0, -config.length)
-
-      // Filter out excluded coins
-      if (EXCLUDED_COINS.includes(coin)) {
-        return null
-      }
-
-      return {
-        coin,
-        pair: pairName as CurrencyPair,
-      }
-    }
+  // All symbols should end with USDT (validated by exchange info filter)
+  if (!symbol.endsWith('USDT')) {
+    return null
   }
 
-  return null
+  const coin = symbol.slice(0, -4) // Remove "USDT" suffix
+
+  return {
+    coin,
+    pair: 'USDT',
+  }
 }
 
 /**
- * Filter tickers by currency pair
+ * Filter tickers to only valid USDT pairs
+ * Note: API already filters to USDT, but this ensures data integrity
  */
 export function filterTickersByPair(
-  tickers: ProcessedTicker[],
-  pair: CurrencyPair
+  tickers: ProcessedTicker[]
 ): ProcessedTicker[] {
   return tickers.filter((ticker) => {
     const parsed = parseSymbol(ticker.symbol)
-    return parsed && parsed.pair === pair
+    return parsed !== null
   })
 }
 
@@ -182,13 +114,12 @@ export function tickerToCoin(
 }
 
 /**
- * Process batch of tickers into coins for a specific pair
+ * Process batch of tickers into coins (USDT pairs only)
  */
 export function processTickersForPair(
-  tickers: ProcessedTicker[],
-  pair: CurrencyPair
+  tickers: ProcessedTicker[]
 ): Coin[] {
-  const filteredTickers = filterTickersByPair(tickers, pair)
+  const filteredTickers = filterTickersByPair(tickers)
 
   const coins: Coin[] = []
   let index = 0
