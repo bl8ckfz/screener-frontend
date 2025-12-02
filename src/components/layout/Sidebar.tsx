@@ -32,7 +32,7 @@ export function Sidebar({
       <button
         onClick={onToggle}
         className={`
-          absolute top-4 ${isLeft ? 'right-2' : 'left-2'} z-10
+          absolute top-4 ${isLeft ? 'right-2' : 'left-2'} z-30
           p-2 bg-gray-800 hover:bg-gray-700 rounded-lg
           transition-colors duration-200
           ${isCollapsed ? 'rotate-180' : ''}
@@ -50,7 +50,7 @@ export function Sidebar({
         `}
       >
         {/* Header */}
-        <div className={`p-4 border-b border-gray-800 ${isLeft ? 'pr-10' : 'pl-10'} relative z-20`}>
+        <div className={`p-4 border-b border-gray-800 ${isLeft ? 'pr-10' : 'pl-10'} relative z-10`}>
           <h2 className="text-lg font-semibold text-gray-100">{title}</h2>
         </div>
 
