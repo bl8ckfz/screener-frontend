@@ -55,25 +55,25 @@ export function CoinTable({ coins, onCoinClick, isLoading = false }: CoinTablePr
               Change %{getSortIndicator('priceChangePercent')}
             </th>
             <th
-              className="px-2 py-2 text-right cursor-pointer hover:bg-gray-800 whitespace-nowrap"
+              className="px-1.5 py-1.5 text-right cursor-pointer hover:bg-gray-800 whitespace-nowrap"
               onClick={() => handleSort('volume')}
             >
               Volume{getSortIndicator('volume')}
             </th>
             <th
-              className="px-2 py-2 text-right cursor-pointer hover:bg-gray-800 whitespace-nowrap"
+              className="px-1.5 py-1.5 text-right cursor-pointer hover:bg-gray-800 whitespace-nowrap"
               onClick={() => handleSort('quoteVolume')}
             >
               Quote Vol{getSortIndicator('quoteVolume')}
             </th>
             <th
-              className="px-2 py-2 text-right cursor-pointer hover:bg-gray-800 whitespace-nowrap"
+              className="px-1.5 py-1.5 text-right cursor-pointer hover:bg-gray-800 whitespace-nowrap"
               onClick={() => handleSort('vcp')}
             >
               VCP{getSortIndicator('vcp')}
             </th>
             <th
-              className="px-2 py-2 text-right cursor-pointer hover:bg-gray-800 whitespace-nowrap min-w-[80px]"
+              className="px-1.5 py-1.5 text-right cursor-pointer hover:bg-gray-800 whitespace-nowrap min-w-[72px]"
               onClick={() => handleSort('priceToWeightedAvg')}
             >
               P/WA{getSortIndicator('priceToWeightedAvg')}

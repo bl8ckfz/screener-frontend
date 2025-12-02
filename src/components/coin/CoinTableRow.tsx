@@ -38,18 +38,18 @@ function CoinTableRowComponent({ coin, index, onClick }: CoinTableRowProps) {
       >
         {formatPercent(coin.priceChangePercent)}
       </td>
-      <td className="px-2 py-2 text-right mono-number text-gray-400 whitespace-nowrap">
+      <td className="px-1.5 py-1.5 text-right mono-number text-gray-400 whitespace-nowrap">
         {formatVolume(coin.volume)}
       </td>
-      <td className="px-2 py-2 text-right mono-number text-gray-400 whitespace-nowrap">
+      <td className="px-1.5 py-1.5 text-right mono-number text-gray-400 whitespace-nowrap">
         {formatVolume(coin.quoteVolume)}
       </td>
       <td
-        className={`px-2 py-2 text-right mono-number whitespace-nowrap ${getChangeColor(coin.indicators.vcp)}`}
+        className={`px-1.5 py-1.5 text-right mono-number whitespace-nowrap ${getChangeColor(coin.indicators.vcp)}`}
       >
         {coin.indicators.vcp.toFixed(3)}
       </td>
-      <td className="px-2 py-2 text-right mono-number whitespace-nowrap min-w-[80px]">
+      <td className="px-1.5 py-1.5 text-right mono-number whitespace-nowrap min-w-[72px]">
         {coin.indicators.priceToWeightedAvg.toFixed(3)}
       </td>
       {/* Watchlist badge column removed */}
