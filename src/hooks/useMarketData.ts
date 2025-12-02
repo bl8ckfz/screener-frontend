@@ -124,10 +124,20 @@ export function useMarketData() {
 
     // Check if we have sufficient historical data for alerts
     const sampleCoin = coins[0]
-    const hasMinimumHistory = sampleCoin?.history?.['1m'] && sampleCoin?.history?.['5m'] && sampleCoin?.history?.['15m']
+    const has1m = !!sampleCoin?.history?.['1m']
+    const has5m = !!sampleCoin?.history?.['5m']
+    const has15m = !!sampleCoin?.history?.['15m']
+    const hasMinimumHistory = has1m && has5m && has15m
     
     if (!hasMinimumHistory) {
-      console.log('⏳ Alert evaluation waiting for historical data (need 1m, 5m, 15m snapshots)...')
+      console.log('⏳ Alert evaluation waiting for historical data:', {
+        has1m,
+        has5m,
+        has15m,
+        '1m_age': sampleCoin?.history?.['1m']?.timestamp ? `${Math.floor((now - sampleCoin.history['1m'].timestamp) / 1000)}s ago` : 'none',
+        '5m_age': sampleCoin?.history?.['5m']?.timestamp ? `${Math.floor((now - sampleCoin.history['5m'].timestamp) / 1000)}s ago` : 'none',
+        '15m_age': sampleCoin?.history?.['15m']?.timestamp ? `${Math.floor((now - sampleCoin.history['15m'].timestamp) / 1000)}s ago` : 'none',
+      })
       return
     }
 
