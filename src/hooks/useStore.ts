@@ -280,8 +280,13 @@ export const useStore = create<AppState>()(
           activeAlerts: state.activeAlerts.filter((alert) => alert.id !== alertId),
         })),
 
-      clearAlerts: () =>
-        set({ activeAlerts: [] }),
+      clearAlerts: () => {
+        set({ activeAlerts: [] })
+        // Also clear historical snapshot data
+        if ((window as any).__clearMarketHistory) {
+          (window as any).__clearMarketHistory()
+        }
+      },
 
       // Watchlist actions
       addWatchlist: (watchlist) => {

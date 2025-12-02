@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useStore } from './useStore'
 import { binanceApi, BinanceApiClient } from '@/services/binanceApi'
@@ -52,6 +52,22 @@ export function useMarketData() {
 
   // Store previous coins data outside query for history preservation
   const previousCoinsRef = useRef<Coin[]>([])
+
+  // Function to clear historical snapshot data
+  const clearHistoricalData = useCallback(() => {
+    console.log('🗑️ Clearing historical snapshot data')
+    previousCoinsRef.current = []
+    timeframeService.reset()
+  }, [])
+
+  // Expose clear function to store actions
+  useEffect(() => {
+    // Add clear function to window for store to access
+    ;(window as any).__clearMarketHistory = clearHistoricalData
+    return () => {
+      delete (window as any).__clearMarketHistory
+    }
+  }, [clearHistoricalData])
 
   // Query for market data
   const query = useQuery({

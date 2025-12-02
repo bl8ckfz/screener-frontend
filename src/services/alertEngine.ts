@@ -177,7 +177,8 @@ function evaluatePioneerBull(coin: Coin): boolean {
     const volumeRatio = (2 * coin.quoteVolume) / volume5m > coin.quoteVolume / volume15m
     
     // Ensure historical prices are actually different (not stale snapshots)
-    const hasValidHistory = price5m !== price15m || price5m !== coin.lastPrice
+    // Require 5m and 15m to be different from each other
+    const hasValidHistory = price5m !== price15m
     
     const result = hasValidHistory && (
       priceRatio5m > 1.01 &&                    // price/5m > 1.01
@@ -238,7 +239,8 @@ function evaluatePioneerBear(coin: Coin): boolean {
     const volumeRatio = (2 * coin.quoteVolume) / volume5m > coin.quoteVolume / volume15m
     
     // Ensure historical prices are actually different (not stale snapshots)
-    const hasValidHistory = price5m !== price15m || price5m !== coin.lastPrice
+    // Require 5m and 15m to be different from each other
+    const hasValidHistory = price5m !== price15m
     
     return hasValidHistory && (
       priceRatio5m < 0.99 &&                    // price/5m < 0.99 (2-1.01 from fast.html)
@@ -279,7 +281,7 @@ function evaluate5mBigBull(coin: Coin): boolean {
       volume5m < coin.quoteVolume
     
     // Ensure historical prices are actually different
-    const hasValidHistory = price1m !== price3m || price3m !== coin.lastPrice
+    const hasValidHistory = price1m !== price3m
     
     return hasValidHistory && (
       priceRatio3m > 1.006 &&
@@ -323,7 +325,7 @@ function evaluate5mBigBear(coin: Coin): boolean {
       volume5m < coin.quoteVolume
     
     // Ensure historical prices are actually different
-    const hasValidHistory = price1m !== price3m || price3m !== coin.lastPrice
+    const hasValidHistory = price1m !== price3m
     
     return hasValidHistory && (
       priceRatio3m < 0.994 && // < 2-1.006
@@ -373,7 +375,7 @@ function evaluate15mBigBull(coin: Coin): boolean {
     volume1m > volume3m
   
   // Ensure historical prices are actually different
-  const hasValidHistory = price3m !== price15m || price15m !== coin.lastPrice
+  const hasValidHistory = price3m !== price15m
   
   return hasValidHistory && (
     priceRatio15m > 1.01 &&
@@ -418,7 +420,7 @@ function evaluate15mBigBear(coin: Coin): boolean {
     volume1m > volume3m
   
   // Ensure historical prices are actually different
-  const hasValidHistory = price3m !== price15m || price15m !== coin.lastPrice
+  const hasValidHistory = price3m !== price15m
   
   return hasValidHistory && (
     priceRatio15m < 0.99 &&
@@ -459,7 +461,7 @@ function evaluateBottomHunter(coin: Coin): boolean {
     2 * volume3m > volume15m
   
   // Ensure historical prices are actually different
-  const hasValidHistory = price1m !== price3m || price3m !== price15m || price15m !== coin.lastPrice
+  const hasValidHistory = price1m !== price3m && price3m !== price15m
   
   return hasValidHistory && (
     priceRatio15m < 0.994 && // Declining from 15m
@@ -499,7 +501,7 @@ function evaluateTopHunter(coin: Coin): boolean {
     2 * volume3m > volume15m
   
   // Ensure historical prices are actually different
-  const hasValidHistory = price1m !== price3m || price3m !== price15m || price15m !== coin.lastPrice
+  const hasValidHistory = price1m !== price3m && price3m !== price15m
   
   return hasValidHistory && (
     priceRatio15m > 1.006 && // Rising from 15m
