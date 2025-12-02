@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, memo } from 'react'
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
 import { supabase } from '@/config'
@@ -9,6 +9,62 @@ interface AuthModalProps {
   onClose: () => void
 }
 
+// Memoize appearance config to prevent re-creating on every render
+const authAppearance = {
+  theme: ThemeSupa,
+  variables: {
+    default: {
+      colors: {
+        brand: '#3b82f6',
+        brandAccent: '#2563eb',
+        brandButtonText: 'white',
+        defaultButtonBackground: '#1f2937',
+        defaultButtonBackgroundHover: '#374151',
+        defaultButtonBorder: '#4b5563',
+        defaultButtonText: 'white',
+        dividerBackground: '#4b5563',
+        inputBackground: '#1f2937',
+        inputBorder: '#4b5563',
+        inputBorderHover: '#6b7280',
+        inputBorderFocus: '#3b82f6',
+        inputText: 'white',
+        inputLabelText: '#d1d5db',
+        inputPlaceholder: '#9ca3af',
+        messageText: '#d1d5db',
+        messageTextDanger: '#ef4444',
+        anchorTextColor: '#3b82f6',
+        anchorTextHoverColor: '#2563eb',
+      },
+      space: {
+        spaceSmall: '4px',
+        spaceMedium: '8px',
+        spaceLarge: '16px',
+      },
+      fontSizes: {
+        baseBodySize: '14px',
+        baseInputSize: '14px',
+        baseLabelSize: '14px',
+        baseButtonSize: '14px',
+      },
+      borderWidths: {
+        buttonBorderWidth: '1px',
+        inputBorderWidth: '1px',
+      },
+      radii: {
+        borderRadiusButton: '6px',
+        buttonBorderRadius: '6px',
+        inputBorderRadius: '6px',
+      },
+    },
+  },
+  className: {
+    container: 'auth-container',
+    button: 'auth-button',
+    input: 'auth-input',
+    label: 'auth-label',
+  },
+} as const
+
 /**
  * AuthModal - Authentication UI component
  * 
@@ -17,8 +73,9 @@ interface AuthModalProps {
  * - Magic link authentication
  * - Password reset
  * - Uses Supabase Auth UI for consistent experience
+ * - Memoized to prevent form input loss during parent re-renders
  */
-export function AuthModal({ isOpen, onClose }: AuthModalProps) {
+function AuthModalComponent({ isOpen, onClose }: AuthModalProps) {
   const [view, setView] = useState<'sign_in' | 'sign_up'>('sign_in')
 
   useEffect(() => {
@@ -68,60 +125,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         <Auth
           supabaseClient={supabase}
           view={view}
-          appearance={{
-            theme: ThemeSupa,
-            variables: {
-              default: {
-                colors: {
-                  brand: '#3b82f6',
-                  brandAccent: '#2563eb',
-                  brandButtonText: 'white',
-                  defaultButtonBackground: '#1f2937',
-                  defaultButtonBackgroundHover: '#374151',
-                  defaultButtonBorder: '#4b5563',
-                  defaultButtonText: 'white',
-                  dividerBackground: '#4b5563',
-                  inputBackground: '#1f2937',
-                  inputBorder: '#4b5563',
-                  inputBorderHover: '#6b7280',
-                  inputBorderFocus: '#3b82f6',
-                  inputText: 'white',
-                  inputLabelText: '#d1d5db',
-                  inputPlaceholder: '#9ca3af',
-                  messageText: '#d1d5db',
-                  messageTextDanger: '#ef4444',
-                  anchorTextColor: '#3b82f6',
-                  anchorTextHoverColor: '#2563eb',
-                },
-                space: {
-                  spaceSmall: '4px',
-                  spaceMedium: '8px',
-                  spaceLarge: '16px',
-                },
-                fontSizes: {
-                  baseBodySize: '14px',
-                  baseInputSize: '14px',
-                  baseLabelSize: '14px',
-                  baseButtonSize: '14px',
-                },
-                borderWidths: {
-                  buttonBorderWidth: '1px',
-                  inputBorderWidth: '1px',
-                },
-                radii: {
-                  borderRadiusButton: '6px',
-                  buttonBorderRadius: '6px',
-                  inputBorderRadius: '6px',
-                },
-              },
-            },
-            className: {
-              container: 'auth-container',
-              button: 'auth-button',
-              input: 'auth-input',
-              label: 'auth-label',
-            },
-          }}
+          appearance={authAppearance}
           providers={[]}
           redirectTo={window.location.origin}
         />
@@ -158,3 +162,6 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     </div>
   )
 }
+
+// Export memoized version to prevent unnecessary re-renders
+export const AuthModal = memo(AuthModalComponent)
