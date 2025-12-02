@@ -232,19 +232,20 @@ function evaluatePioneerBear(coin: Coin): boolean {
   const previousClose = coin.prevClosePrice                // FAST_DIZI[t][10]
   
   // If we have history, use EXACT original logic
+  // NOTE: For Bear, ratios are INVERTED vs Bull (5m/current instead of current/5m)
   if (price5m && price15m && volume5m && volume15m && previousClose) {
-    const priceRatio5m = coin.lastPrice / price5m           // [6]/[102]
-    const priceRatio15m = coin.lastPrice / price15m         // [6]/[107]
-    const priceRatioPrev = coin.lastPrice / previousClose   // [6]/[10]
+    const priceRatio5m = price5m / coin.lastPrice           // [102]/[6] - INVERTED for bear
+    const priceRatio15m = price15m / coin.lastPrice         // [107]/[6] - INVERTED for bear
+    const priceRatioPrev = previousClose / coin.lastPrice   // [10]/[6] - INVERTED for bear
     const volumeRatio = (2 * coin.quoteVolume) / volume5m > coin.quoteVolume / volume15m
     
     // Ensure historical prices are actually different (not stale snapshots)
     // Require 5m and 15m to be different from each other
     const hasValidHistory = price5m !== price15m
     
-    const check5m = priceRatio5m < 0.99
-    const check15m = priceRatio15m < 0.99
-    const check3x = 3 * priceRatio5m < priceRatioPrev
+    const check5m = priceRatio5m > 1.01       // 5m/current > 1.01 (price fell from 5m ago)
+    const check15m = priceRatio15m > 1.01     // 15m/current > 1.01 (price fell from 15m ago)
+    const check3x = 3 * priceRatio5m > priceRatioPrev  // 3*(5m/current) > prevClose/current
     const result = hasValidHistory && check5m && check15m && check3x && volumeRatio
     
     // Debug logging for Pioneer Bear (less common, so log all near-misses)
@@ -259,9 +260,9 @@ function evaluatePioneerBear(coin: Coin): boolean {
         priceRatioPrev: priceRatioPrev.toFixed(4),
         volumeRatio,
         checks: {
-          '5m<0.99': check5m,
-          '15m<0.99': check15m,
-          '3*5m<prev': check3x,
+          '5m>1.01': check5m,
+          '15m>1.01': check15m,
+          '3*5m>prev': check3x,
           'volRatio': volumeRatio
         }
       })
