@@ -243,9 +243,9 @@ function App() {
         title="Crypto Screener"
         subtitle="Real-time USDT market analysis"
       >
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
         {/* Left Sidebar - Filters & Controls */}
-        <div className="lg:col-span-2 transition-all duration-300">
+        <div className={`lg:col-span-2 transition-all duration-300 ${leftSidebarCollapsed ? 'self-start' : ''}`}>
           <Sidebar
             position="left"
             title="Filters & Controls"
@@ -346,7 +346,7 @@ function App() {
         </div>
 
         {/* Right Sidebar - Alerts */}
-        <div className="lg:col-span-2 transition-all duration-300">
+        <div className={`lg:col-span-2 transition-all duration-300 ${rightSidebarCollapsed ? 'self-start' : ''}`}>
           <Sidebar
             position="right"
             title="Alert Configuration"

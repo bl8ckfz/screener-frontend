@@ -50,27 +50,23 @@ export function Sidebar({
         <Icon className="w-4 h-4 text-gray-400" />
       </button>
 
-      {/* Sidebar Content */}
-      <div
-        className={`
-          transition-opacity duration-300
-          ${isCollapsed ? 'opacity-0 pointer-events-none' : 'opacity-100'}
-        `}
-      >
-        {/* Header */}
-        <div className={`p-4 border-b border-gray-800 ${isLeft ? 'pr-10' : 'pl-10'} relative z-10`}>
-          <h2 className="text-lg font-semibold text-gray-100">{title}</h2>
+      {/* Sidebar Content (removed from DOM when collapsed to shrink height) */}
+      {!isCollapsed && (
+        <div className="transition-opacity duration-300 opacity-100">
+          {/* Header */}
+          <div className={`p-4 border-b border-gray-800 ${isLeft ? 'pr-10' : 'pl-10'} relative z-10`}>
+            <h2 className="text-lg font-semibold text-gray-100">{title}</h2>
+          </div>
+          {/* Content */}
+          <div className="p-4 space-y-4 max-h-[calc(100vh-12rem)] overflow-y-auto">
+            {children}
+          </div>
         </div>
-
-        {/* Content */}
-        <div className="p-4 space-y-4 max-h-[calc(100vh-12rem)] overflow-y-auto">
-          {children}
-        </div>
-      </div>
+      )}
 
       {/* Collapsed State Label */}
       {isCollapsed && (
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="flex items-center justify-center py-8">
           <span className="writing-vertical text-xs text-gray-500 uppercase tracking-wider">
             {title}
           </span>
