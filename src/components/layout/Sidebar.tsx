@@ -17,7 +17,16 @@ export function Sidebar({
   onToggle,
 }: SidebarProps) {
   const isLeft = position === 'left'
-  const Icon = isLeft ? ChevronLeft : ChevronRight
+  // Icon now represents the intended action rather than static side
+  // When expanded: show chevron pointing outward (to indicate collapse)
+  // When collapsed: show chevron pointing inward (to indicate expand)
+  const Icon = (() => {
+    if (isLeft) {
+      return isCollapsed ? ChevronRight : ChevronLeft
+    }
+    // Right sidebar: inward is ChevronLeft, outward is ChevronRight
+    return isCollapsed ? ChevronLeft : ChevronRight
+  })()
 
   return (
     <aside
@@ -35,7 +44,6 @@ export function Sidebar({
           absolute top-4 ${isLeft ? 'right-2' : 'left-2'} z-30
           p-2 bg-gray-800 hover:bg-gray-700 rounded-lg
           transition-colors duration-200
-          ${isCollapsed ? 'rotate-180' : ''}
         `}
         aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
