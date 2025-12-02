@@ -9,7 +9,6 @@ import { Layout, Sidebar } from '@/components/layout'
 import { SmartCoinTable } from '@/components/coin'
 import { MarketSummary } from '@/components/market'
 import {
-  PairSelector,
   RefreshControl,
   SearchBar,
   ExportButton,
@@ -18,7 +17,7 @@ import {
 // Watchlists removed from UI per new plan
 import { ErrorStates, EmptyStates, ShortcutHelp } from '@/components/ui'
 import { StorageMigration } from '@/components/StorageMigration'
-import { AlertNotificationContainer, AlertConfig, AlertHistory, AlertHistoryTable } from '@/components/alerts'
+import { AlertNotificationContainer, AlertConfig, AlertHistoryTable } from '@/components/alerts'
 import { sortCoinsByList } from '@/utils'
 import { getListById } from '@/types'
 import type { Coin } from '@/types/coin'
@@ -143,7 +142,7 @@ function App() {
   const [selectedCoin, setSelectedCoin] = useState<Coin | null>(null)
   const [showShortcutHelp, setShowShortcutHelp] = useState(false)
   const [selectedRowIndex, setSelectedRowIndex] = useState(0)
-  const [showAlertHistory, setShowAlertHistory] = useState(false)
+  // Alert history dropdown removed; history now shown via dedicated view
   
   // Ref for search input
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -255,7 +254,6 @@ function App() {
           >
             <MarketSummary />
             {/* ListSelector removed per new plan (dropdown under Market Summary) */}
-            <PairSelector />
             <RefreshControl />
             {/* TimeframeSelector removed per new plan */}
           </Sidebar>
@@ -365,29 +363,7 @@ function App() {
                   onRuleDelete={deleteAlertRule}
                 />
                 
-                {/* Alert History Toggle & Display */}
-                <div>
-                  <button
-                    onClick={() => setShowAlertHistory(!showAlertHistory)}
-                    className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-300 bg-gray-800/50 hover:bg-gray-700/50 rounded-md transition-colors"
-                  >
-                    <span>Alert History</span>
-                    <svg
-                      className={`w-4 h-4 transition-transform ${showAlertHistory ? 'rotate-180' : ''}`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-                  
-                  {showAlertHistory && (
-                    <div className="mt-2">
-                      <AlertHistory />
-                    </div>
-                  )}
-                </div>
+                {/* Inline alert history dropdown removed per UI cleanup */}
               </div>
             )}
           </Sidebar>

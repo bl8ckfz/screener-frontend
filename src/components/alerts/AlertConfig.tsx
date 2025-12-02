@@ -441,15 +441,7 @@ export function AlertConfig({
         )}
       </div>
 
-      {/* Help Text */}
-      <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-3 text-xs text-blue-300">
-        <p className="font-medium">💡 About Legacy Alerts</p>
-        <p className="mt-1 text-blue-400">
-          Legacy alert types (Pioneer, Big Bull/Bear, Hunters) replicate the original fast.html
-          alert logic with predefined conditions. They monitor price movements, volume spikes, and
-          trend patterns across multiple timeframes.
-        </p>
-      </div>
+      {/* Legacy alerts disclaimer removed per UI cleanup request */}
     </div>
   )
 }
