@@ -194,16 +194,12 @@ function evaluatePioneerBull(coin: Coin): boolean {
     )
   }
   
-  // Fallback for testing/mock data: Use 24h price change as proxy
-  // Pioneer Bull = strong upward momentum (>1.2% gain)
-  console.log(`🐂 ${coin.symbol} Pioneer Bull check (fallback - no history):`, {
-    priceChangePercent: coin.priceChangePercent.toFixed(2),
-    quoteVolume: coin.quoteVolume.toFixed(0),
+  // No fallback - require historical data for accurate evaluation
+  console.log(`⚠️ ${coin.symbol} Pioneer Bull skipped - insufficient history (need 5m and 15m)`, {
     hasHistory5m: !!price5m,
-    hasHistory15m: !!price15m,
-    usingFallback: true
+    hasHistory15m: !!price15m
   })
-  return coin.priceChangePercent > 1.2 && coin.quoteVolume > 1000000
+  return false
 }
 
 /**
@@ -248,15 +244,12 @@ function evaluatePioneerBear(coin: Coin): boolean {
     )
   }
   
-  // Fallback: Strong downward momentum (<-1.2% decline)
-  console.log(`🐻 ${coin.symbol} Pioneer Bear check (fallback - no history):`, {
-    priceChangePercent: coin.priceChangePercent.toFixed(2),
-    quoteVolume: coin.quoteVolume.toFixed(0),
+  // No fallback - require historical data for accurate evaluation
+  console.log(`⚠️ ${coin.symbol} Pioneer Bear skipped - insufficient history (need 5m and 15m)`, {
     hasHistory5m: !!price5m,
-    hasHistory15m: !!price15m,
-    usingFallback: true
+    hasHistory15m: !!price15m
   })
-  return coin.priceChangePercent < -1.2 && coin.quoteVolume > 1000000
+  return false
 }
 
 /**
@@ -294,8 +287,8 @@ function evaluate5mBigBull(coin: Coin): boolean {
     )
   }
   
-  // Fallback: Strong pump with very high volume (>2% gain)
-  return coin.priceChangePercent > 2.0 && coin.quoteVolume > 50000000
+  // No fallback - require historical data
+  return false
 }
 
 /**
@@ -340,14 +333,18 @@ function evaluate5mBigBear(coin: Coin): boolean {
  * Original: price/15m > 1.01 && volume delta > 400k
  */
 function evaluate15mBigBull(coin: Coin): boolean {
-  const price3m = getTimeframeData(coin, '3m')?.price || coin.lastPrice
-  // const price5m = getTimeframeData(coin, '5m')?.price || coin.lastPrice
-  const price15m = getTimeframeData(coin, '15m')?.price || coin.lastPrice
+  const price3m = getTimeframeData(coin, '3m')?.price
+  const price15m = getTimeframeData(coin, '15m')?.price
   
-  const volume1m = getTimeframeData(coin, '1m')?.volume || coin.quoteVolume
-  const volume3m = getTimeframeData(coin, '3m')?.volume || coin.quoteVolume
-  const volume5m = getTimeframeData(coin, '5m')?.volume || coin.quoteVolume
-  const volume15m = getTimeframeData(coin, '15m')?.volume || coin.quoteVolume
+  const volume1m = getTimeframeData(coin, '1m')?.volume
+  const volume3m = getTimeframeData(coin, '3m')?.volume
+  const volume5m = getTimeframeData(coin, '5m')?.volume
+  const volume15m = getTimeframeData(coin, '15m')?.volume
+  
+  // Require all historical data
+  if (!price3m || !price15m || !volume1m || !volume3m || !volume5m || !volume15m) {
+    return false
+  }
   
   const priceRatio15m = coin.lastPrice / price15m
   const volumeDelta3m = coin.quoteVolume - volume3m
@@ -378,14 +375,18 @@ function evaluate15mBigBull(coin: Coin): boolean {
  * Condition: 15-minute volume spike with price decrease
  */
 function evaluate15mBigBear(coin: Coin): boolean {
-  const price3m = getTimeframeData(coin, '3m')?.price || coin.lastPrice
-  // const price5m = getTimeframeData(coin, '5m')?.price || coin.lastPrice
-  const price15m = getTimeframeData(coin, '15m')?.price || coin.lastPrice
+  const price3m = getTimeframeData(coin, '3m')?.price
+  const price15m = getTimeframeData(coin, '15m')?.price
   
-  const volume1m = getTimeframeData(coin, '1m')?.volume || coin.quoteVolume
-  const volume3m = getTimeframeData(coin, '3m')?.price || coin.quoteVolume
-  const volume5m = getTimeframeData(coin, '5m')?.volume || coin.quoteVolume
-  const volume15m = getTimeframeData(coin, '15m')?.volume || coin.quoteVolume
+  const volume1m = getTimeframeData(coin, '1m')?.volume
+  const volume3m = getTimeframeData(coin, '3m')?.volume
+  const volume5m = getTimeframeData(coin, '5m')?.volume
+  const volume15m = getTimeframeData(coin, '15m')?.volume
+  
+  // Require all historical data
+  if (!price3m || !price15m || !volume1m || !volume3m || !volume5m || !volume15m) {
+    return false
+  }
   
   const priceRatio15m = coin.lastPrice / price15m
   const volumeDelta3m = coin.quoteVolume - volume3m
@@ -417,13 +418,18 @@ function evaluate15mBigBear(coin: Coin): boolean {
  * Original: price/15m < 0.994 && price/3m < 0.995 && price/1m > 1.004
  */
 function evaluateBottomHunter(coin: Coin): boolean {
-  const price1m = getTimeframeData(coin, '1m')?.price || coin.lastPrice
-  const price3m = getTimeframeData(coin, '3m')?.price || coin.lastPrice
-  const price15m = getTimeframeData(coin, '15m')?.price || coin.lastPrice
+  const price1m = getTimeframeData(coin, '1m')?.price
+  const price3m = getTimeframeData(coin, '3m')?.price
+  const price15m = getTimeframeData(coin, '15m')?.price
   
-  const volume3m = getTimeframeData(coin, '3m')?.volume || coin.quoteVolume
-  const volume5m = getTimeframeData(coin, '5m')?.volume || coin.quoteVolume
-  const volume15m = getTimeframeData(coin, '15m')?.volume || coin.quoteVolume
+  const volume3m = getTimeframeData(coin, '3m')?.volume
+  const volume5m = getTimeframeData(coin, '5m')?.volume
+  const volume15m = getTimeframeData(coin, '15m')?.volume
+  
+  // Require all historical data
+  if (!price1m || !price3m || !price15m || !volume3m || !volume5m || !volume15m) {
+    return false
+  }
   
   const priceRatio1m = coin.lastPrice / price1m
   const priceRatio3m = coin.lastPrice / price3m
@@ -449,13 +455,18 @@ function evaluateBottomHunter(coin: Coin): boolean {
  * Original: price/15m > 1.006 && price/3m > 1.005 && price/1m slowing
  */
 function evaluateTopHunter(coin: Coin): boolean {
-  const price1m = getTimeframeData(coin, '1m')?.price || coin.lastPrice
-  const price3m = getTimeframeData(coin, '3m')?.price || coin.lastPrice
-  const price15m = getTimeframeData(coin, '15m')?.price || coin.lastPrice
+  const price1m = getTimeframeData(coin, '1m')?.price
+  const price3m = getTimeframeData(coin, '3m')?.price
+  const price15m = getTimeframeData(coin, '15m')?.price
   
-  const volume3m = getTimeframeData(coin, '3m')?.volume || coin.quoteVolume
-  const volume5m = getTimeframeData(coin, '5m')?.volume || coin.quoteVolume
-  const volume15m = getTimeframeData(coin, '15m')?.volume || coin.quoteVolume
+  const volume3m = getTimeframeData(coin, '3m')?.volume
+  const volume5m = getTimeframeData(coin, '5m')?.volume
+  const volume15m = getTimeframeData(coin, '15m')?.volume
+  
+  // Require all historical data
+  if (!price1m || !price3m || !price15m || !volume3m || !volume5m || !volume15m) {
+    return false
+  }
   
   const priceRatio1m = coin.lastPrice / price1m
   const priceRatio3m = coin.lastPrice / price3m

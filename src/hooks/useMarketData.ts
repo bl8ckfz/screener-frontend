@@ -122,6 +122,15 @@ export function useMarketData() {
     const coins = query.data
     const now = Date.now()
 
+    // Check if we have sufficient historical data for alerts
+    const sampleCoin = coins[0]
+    const hasMinimumHistory = sampleCoin?.history?.['1m'] && sampleCoin?.history?.['5m'] && sampleCoin?.history?.['15m']
+    
+    if (!hasMinimumHistory) {
+      console.log('⏳ Alert evaluation waiting for historical data (need 1m, 5m, 15m snapshots)...')
+      return
+    }
+
     // Filter to enabled rules only
     console.log(`📊 Total alert rules: ${alertRules.length}`)
     console.log(`📋 All rules:`, alertRules.map(r => ({ id: r.id, name: r.name, enabled: r.enabled, type: r.conditions[0]?.type })))
