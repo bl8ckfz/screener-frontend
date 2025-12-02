@@ -50,7 +50,7 @@ export function Sidebar({
         `}
       >
         {/* Header */}
-        <div className="p-4 border-b border-gray-800">
+        <div className={`p-4 border-b border-gray-800 ${isLeft ? 'pr-10' : 'pl-10'} relative z-20`}>
           <h2 className="text-lg font-semibold text-gray-100">{title}</h2>
         </div>
 
