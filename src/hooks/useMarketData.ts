@@ -145,6 +145,23 @@ export function useMarketData() {
     const coins = query.data
     const now = Date.now()
 
+    // Derive market mode from aggregate momentum (simple heuristic)
+    // Average priceChangePercent across top 10 quoteVolume coins
+    try {
+      const sortedByVolume = [...coins].sort((a, b) => b.quoteVolume - a.quoteVolume)
+      const sample = sortedByVolume.slice(0, Math.min(10, sortedByVolume.length))
+      const avgMomentum = sample.reduce((sum, c) => sum + c.priceChangePercent, 0) / (sample.length || 1)
+      const mode: 'bull' | 'bear' = avgMomentum >= 0 ? 'bull' : 'bear'
+      const currentMode = useStore.getState().marketMode
+      if (currentMode !== mode) {
+        useStore.getState().setMarketMode(mode)
+        console.log(`ℹ️ Market mode updated: ${mode} (avgMomentum=${avgMomentum.toFixed(2)}%)`)
+      }
+    } catch (e) {
+      // Non-fatal
+      console.warn('Market mode derivation failed', e)
+    }
+
     // Check if we have sufficient historical data for alerts
     const sampleCoin = coins[0]
     const has1m = !!sampleCoin?.history?.['1m']
@@ -166,7 +183,7 @@ export function useMarketData() {
 
     try {
       // Evaluate all rules against current coins
-      const triggeredAlerts = evaluateAlertRules(coins, enabledRules)
+      const triggeredAlerts = evaluateAlertRules(coins, enabledRules, useStore.getState().marketMode)
       
       if (triggeredAlerts.length > 0) {
         console.log(`🔔 ${triggeredAlerts.length} alert(s) triggered`)
