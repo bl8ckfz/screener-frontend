@@ -7,6 +7,7 @@ import { DEFAULT_CONFIG, STORAGE_KEYS } from '@/types/config'
 import type { AlertRule, AlertSettings, Alert } from '@/types/alert'
 import { createIndexedDBStorage } from '@/services/storage'
 import { alertHistory } from '@/services/alertHistory'
+import { alertHistoryService } from '@/services/alertHistoryService'
 import { supabase } from '@/config'
 import type { User, Session } from '@supabase/supabase-js'
 
@@ -250,14 +251,12 @@ export const useStore = create<AppState>()(
 
       // Alert history actions
       addAlertToHistory: (alert, coin) => {
-        const { alertHistoryService } = require('@/services/alertHistoryService')
         alertHistoryService.addAlert(alert, coin)
         // Trigger refresh for useAlertStats
         set({ alertHistoryRefresh: Date.now() })
       },
 
       clearAlertHistory: () => {
-        const { alertHistoryService } = require('@/services/alertHistoryService')
         alertHistoryService.clearHistory()
         // Trigger refresh
         set({ alertHistoryRefresh: Date.now() })
