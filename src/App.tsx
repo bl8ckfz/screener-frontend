@@ -12,7 +12,6 @@ import {
   PairSelector,
   RefreshControl,
   SearchBar,
-  ListSelector,
   ExportButton,
   ViewToggle,
 } from '@/components/controls'
@@ -30,7 +29,7 @@ const CoinModal = lazy(() => import('@/components/coin/CoinModal').then(m => ({ 
 function App() {
   const { data: coins, isLoading, error } = useMarketData()
   const currentList = useStore((state) => state.currentList)
-  const setCurrentList = useStore((state) => state.setCurrentList)
+  // setCurrentList unused after removing ListSelector
   const leftSidebarCollapsed = useStore((state) => state.leftSidebarCollapsed)
   const rightSidebarCollapsed = useStore((state) => state.rightSidebarCollapsed)
   const setLeftSidebarCollapsed = useStore((state) => state.setLeftSidebarCollapsed)
@@ -254,10 +253,8 @@ function App() {
             isCollapsed={leftSidebarCollapsed}
             onToggle={() => setLeftSidebarCollapsed(!leftSidebarCollapsed)}
           >
-            <ListSelector 
-              selectedListId={currentList} 
-              onSelectList={setCurrentList} 
-            />
+            <MarketSummary />
+            {/* ListSelector removed per new plan (dropdown under Market Summary) */}
             <PairSelector />
             <RefreshControl />
             {/* TimeframeSelector removed per new plan */}
@@ -283,7 +280,7 @@ function App() {
               <SearchBar ref={searchInputRef} onSearch={setSearchQuery} />
 
               {/* Coin Table */}
-              <div className="bg-gray-900 rounded-lg overflow-hidden">
+              <div className="bg-gray-900 rounded-lg overflow-x-auto">
             {/* Header */}
             <div className="p-4 border-b border-gray-800">
               <div className="flex items-center justify-between">
@@ -354,16 +351,14 @@ function App() {
           )}
         </div>
 
-        {/* Right Sidebar - Market Summary & Alerts */}
+        {/* Right Sidebar - Alerts */}
         <div className={`${rightSidebarCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'} transition-all duration-300`}>
           <Sidebar
             position="right"
-            title="Market Overview"
+            title="Alert Configuration"
             isCollapsed={rightSidebarCollapsed}
             onToggle={() => setRightSidebarCollapsed(!rightSidebarCollapsed)}
           >
-            <MarketSummary />
-            
             {/* Alert Configuration */}
             {!rightSidebarCollapsed && (
               <div className="mt-4 space-y-4">
