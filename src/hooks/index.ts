@@ -6,3 +6,4 @@ export {
   COMMON_SHORTCUTS,
   type ShortcutConfig,
 } from './useKeyboardShortcuts'
+export { useAlertStats } from './useAlertStats'

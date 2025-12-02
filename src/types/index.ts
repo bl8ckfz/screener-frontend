@@ -63,6 +63,10 @@ export {
   getListsByCategory,
 } from './screener'
 
+// Alert History types
+export type { AlertHistoryEntry, CoinAlertStats } from './alertHistory'
+export { ALERT_HISTORY_CONFIG } from './alertHistory'
+
 // Config types
 export type {
   ViewMode,

@@ -182,8 +182,17 @@ export function useMarketData() {
           dismissed: false,
         }
 
+        // Find coin data for history
+        const coin = coins.find(c => c.symbol === symbol)
+        
         // Add to store (will trigger notification and save to history)
         addAlert(alert)
+        
+        // Save to alert history if we have coin data
+        if (coin) {
+          const addAlertToHistory = useStore.getState().addAlertToHistory
+          addAlertToHistory(alert, coin)
+        }
 
         // Map alert severity for notifications
         const notificationSeverity: 'info' | 'warning' | 'critical' = 

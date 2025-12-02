@@ -41,6 +41,15 @@ interface AppState {
   alertSettings: AlertSettings
   activeAlerts: Alert[]
 
+  // Alert history
+  alertHistoryRefresh: number // Trigger for useAlertStats to recompute
+  addAlertToHistory: (alert: Alert, coin: Coin) => void
+  clearAlertHistory: () => void
+
+  // View state
+  activeView: 'coins' | 'alerts'
+  setActiveView: (view: 'coins' | 'alerts') => void
+
   // Watchlists
   watchlists: Watchlist[]
   currentWatchlistId: string | null
@@ -136,6 +145,10 @@ const initialState = {
   } as AlertSettings,
   activeAlerts: [] as Alert[],
   
+  // Alert history defaults
+  alertHistoryRefresh: Date.now(),
+  activeView: 'coins' as const,
+  
   // Watchlist defaults
   watchlists: [] as Watchlist[],
   currentWatchlistId: null,
@@ -228,6 +241,24 @@ export const useStore = create<AppState>()(
         set((state) => ({
           alertSettings: { ...state.alertSettings, ...settings },
         })),
+
+      // Alert history actions
+      addAlertToHistory: (alert, coin) => {
+        const { alertHistoryService } = require('@/services/alertHistoryService')
+        alertHistoryService.addAlert(alert, coin)
+        // Trigger refresh for useAlertStats
+        set({ alertHistoryRefresh: Date.now() })
+      },
+
+      clearAlertHistory: () => {
+        const { alertHistoryService } = require('@/services/alertHistoryService')
+        alertHistoryService.clearHistory()
+        // Trigger refresh
+        set({ alertHistoryRefresh: Date.now() })
+      },
+
+      // View toggle
+      setActiveView: (view) => set({ activeView: view }),
 
       addAlert: (alert) => {
         // Save to history asynchronously

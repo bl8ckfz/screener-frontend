@@ -31,6 +31,7 @@ export {
   createDefaultAlertRules,
 } from './alertEngine'
 export { AlertHistoryService, alertHistory } from './alertHistory'
+export { alertHistoryService } from './alertHistoryService'
 export { audioNotificationService } from './audioNotification'
 export type { AlertSeverity } from './audioNotification'
 export { sendDiscordWebhook, testDiscordWebhook, isValidDiscordWebhookUrl } from './webhookService'

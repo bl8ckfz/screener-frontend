@@ -1,8 +1,10 @@
 import { useState, useMemo, useRef, lazy, Suspense, useEffect } from 'react'
 import { useMarketData } from '@/hooks/useMarketData'
 import { useStore } from '@/hooks/useStore'
-import { useKeyboardShortcuts } from '@/hooks'
+import { useKeyboardShortcuts, useAlertStats } from '@/hooks'
 import { supabase } from '@/config'
+import { alertHistoryService } from '@/services'
+import { ALERT_HISTORY_CONFIG } from '@/types'
 import { Layout, Sidebar } from '@/components/layout'
 import { SmartCoinTable } from '@/components/coin'
 import { MarketSummary } from '@/components/market'
@@ -13,11 +15,12 @@ import {
   TimeframeSelector,
   ListSelector,
   ExportButton,
+  ViewToggle,
 } from '@/components/controls'
 import { WatchlistSelector } from '@/components/watchlist'
 import { ErrorStates, EmptyStates, ShortcutHelp } from '@/components/ui'
 import { StorageMigration } from '@/components/StorageMigration'
-import { AlertNotificationContainer, AlertConfig, AlertHistory } from '@/components/alerts'
+import { AlertNotificationContainer, AlertConfig, AlertHistory, AlertHistoryTable } from '@/components/alerts'
 import { sortCoinsByList } from '@/utils'
 import { getListById } from '@/types'
 import type { Coin, Timeframe } from '@/types/coin'
@@ -33,6 +36,12 @@ function App() {
   const rightSidebarCollapsed = useStore((state) => state.rightSidebarCollapsed)
   const setLeftSidebarCollapsed = useStore((state) => state.setLeftSidebarCollapsed)
   const setRightSidebarCollapsed = useStore((state) => state.setRightSidebarCollapsed)
+  
+  // Alert history state
+  const activeView = useStore((state) => state.activeView)
+  const setActiveView = useStore((state) => state.setActiveView)
+  const clearAlertHistory = useStore((state) => state.clearAlertHistory)
+  const alertStats = useAlertStats(coins || [])
   
   // Auth state
   const setUser = useStore((state) => state.setUser)
@@ -106,6 +115,18 @@ function App() {
       cleanup?.()
     }
   }, [user])
+  
+  // Alert history cleanup interval
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const removedCount = alertHistoryService.cleanupOldAlerts()
+      if (removedCount > 0) {
+        console.log(`🧹 Cleaned up ${removedCount} old alerts`)
+      }
+    }, ALERT_HISTORY_CONFIG.CLEANUP_INTERVAL_MS)
+    
+    return () => clearInterval(interval)
+  }, [])
   
   // Alert system state
   const alertRules = useStore((state) => state.alertRules)
@@ -244,17 +265,26 @@ function App() {
           </Sidebar>
         </div>
 
-        {/* Main Content - Coin Table */}
+        {/* Main Content - View Toggle + Tables */}
         <div className={`${
           leftSidebarCollapsed && rightSidebarCollapsed ? 'lg:col-span-10' :
           leftSidebarCollapsed || rightSidebarCollapsed ? 'lg:col-span-8' :
           'lg:col-span-6'
         } transition-all duration-300 space-y-4`}>
-          {/* Search Bar */}
-          <SearchBar ref={searchInputRef} onSearch={setSearchQuery} />
+          {/* View Toggle */}
+          <ViewToggle
+            activeView={activeView}
+            onViewChange={setActiveView}
+            alertCount={alertStats.length}
+          />
 
-          {/* Coin Table */}
-          <div className="bg-gray-900 rounded-lg overflow-hidden">
+          {activeView === 'coins' ? (
+            <>
+              {/* Search Bar */}
+              <SearchBar ref={searchInputRef} onSearch={setSearchQuery} />
+
+              {/* Coin Table */}
+              <div className="bg-gray-900 rounded-lg overflow-hidden">
             {/* Header */}
             <div className="p-4 border-b border-gray-800">
               <div className="flex items-center justify-between">
@@ -305,6 +335,24 @@ function App() {
               )}
             </div>
           </div>
+            </>
+          ) : (
+            /* Alert History View */
+            <div className="bg-gray-900 rounded-lg overflow-hidden p-6">
+              <AlertHistoryTable
+                stats={alertStats}
+                onCoinClick={(symbol) => {
+                  const coin = coins?.find((c) => c.symbol === symbol)
+                  if (coin) setSelectedCoin(coin)
+                }}
+                onClearHistory={() => {
+                  if (confirm('Clear all alert history? This cannot be undone.')) {
+                    clearAlertHistory()
+                  }
+                }}
+              />
+            </div>
+          )}
         </div>
 
         {/* Right Sidebar - Market Summary & Alerts */}
