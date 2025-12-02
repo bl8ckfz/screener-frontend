@@ -171,6 +171,16 @@ function evaluatePioneerBull(coin: Coin): boolean {
   
   // If we have full history, use EXACT original logic
   if (price5m && price15m && volume5m && volume15m && previousClose) {
+    console.log(`🐂 ${coin.symbol} Pioneer Bull check (with history):`, {
+      currentPrice: coin.lastPrice,
+      price5m,
+      price15m,
+      volume5m,
+      volume15m,
+      previousClose,
+      priceRatio5m: (coin.lastPrice / price5m).toFixed(4),
+      priceRatio15m: (coin.lastPrice / price15m).toFixed(4)
+    })
     const priceRatio5m = coin.lastPrice / price5m           // [6]/[102]
     const priceRatio15m = coin.lastPrice / price15m         // [6]/[107]
     const priceRatioPrev = coin.lastPrice / previousClose   // [6]/[10]
@@ -186,6 +196,13 @@ function evaluatePioneerBull(coin: Coin): boolean {
   
   // Fallback for testing/mock data: Use 24h price change as proxy
   // Pioneer Bull = strong upward momentum (>1.2% gain)
+  console.log(`🐂 ${coin.symbol} Pioneer Bull check (fallback - no history):`, {
+    priceChangePercent: coin.priceChangePercent.toFixed(2),
+    quoteVolume: coin.quoteVolume.toFixed(0),
+    hasHistory5m: !!price5m,
+    hasHistory15m: !!price15m,
+    usingFallback: true
+  })
   return coin.priceChangePercent > 1.2 && coin.quoteVolume > 1000000
 }
 
@@ -208,20 +225,37 @@ function evaluatePioneerBear(coin: Coin): boolean {
   
   // If we have history, use EXACT original logic
   if (price5m && price15m && volume5m && volume15m && previousClose) {
+    console.log(`🐻 ${coin.symbol} Pioneer Bear check (with history):`, {
+      currentPrice: coin.lastPrice,
+      price5m,
+      price15m,
+      volume5m,
+      volume15m,
+      previousClose,
+      priceRatio5m: (coin.lastPrice / price5m).toFixed(4),
+      priceRatio15m: (coin.lastPrice / price15m).toFixed(4)
+    })
     const priceRatio5m = coin.lastPrice / price5m           // [6]/[102]
     const priceRatio15m = coin.lastPrice / price15m         // [6]/[107]
     const priceRatioPrev = coin.lastPrice / previousClose   // [6]/[10]
     const volumeRatio = (2 * coin.quoteVolume) / volume5m > coin.quoteVolume / volume15m
     
     return (
-      priceRatio5m < 0.99 &&                    // price/5m < 0.99 (2-1.01)
-      priceRatio15m < 0.99 &&                   // price/15m < 0.99 (2-1.01)
+      priceRatio5m < 0.99 &&                    // price/5m < 0.99 (2-1.01 from fast.html)
+      priceRatio15m < 0.99 &&                   // price/15m < 0.99 (2-1.01 from fast.html)
       3 * priceRatio5m < priceRatioPrev &&      // 3*(price/5m) < price/prevClose
       volumeRatio                                // 2*vol/vol5m > vol/vol15m
     )
   }
   
   // Fallback: Strong downward momentum (<-1.2% decline)
+  console.log(`🐻 ${coin.symbol} Pioneer Bear check (fallback - no history):`, {
+    priceChangePercent: coin.priceChangePercent.toFixed(2),
+    quoteVolume: coin.quoteVolume.toFixed(0),
+    hasHistory5m: !!price5m,
+    hasHistory15m: !!price15m,
+    usingFallback: true
+  })
   return coin.priceChangePercent < -1.2 && coin.quoteVolume > 1000000
 }
 

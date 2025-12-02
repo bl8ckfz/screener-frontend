@@ -135,17 +135,11 @@ export class TimeframeService {
       return coins // No updates needed
     }
 
+    console.log(`📸 Updating snapshots for timeframes: ${timeframesToUpdate.join(', ')}`)
+
     return coins.map((coin) => {
       const updatedHistory = { ...coin.history }
       const updatedDeltas = { ...coin.deltas }
-
-      // Handle 15m special case (from fast.html logic)
-      // When updating 5m, also cascade to 15m
-      if (timeframesToUpdate.includes('5m')) {
-        if (coin.history['5m']) {
-          updatedHistory['15m'] = { ...coin.history['5m'] }
-        }
-      }
 
       // Update snapshots for each timeframe
       timeframesToUpdate.forEach((timeframe) => {

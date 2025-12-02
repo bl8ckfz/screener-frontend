@@ -103,6 +103,13 @@ export function useMarketData() {
 
   // Evaluate alerts when data is successfully fetched
   useEffect(() => {
+    console.log('🔄 Alert evaluation effect triggered', { 
+      hasData: !!query.data, 
+      alertsEnabled: alertSettings.enabled, 
+      ruleCount: alertRules.length,
+      timestamp: new Date().toISOString()
+    })
+    
     if (!query.data || !alertSettings.enabled || alertRules.length === 0) {
       console.log('⚠️ Alert evaluation skipped:', {
         hasData: !!query.data,
@@ -116,6 +123,9 @@ export function useMarketData() {
     const now = Date.now()
 
     // Filter to enabled rules only
+    console.log(`📊 Total alert rules: ${alertRules.length}`)
+    console.log(`📋 All rules:`, alertRules.map(r => ({ id: r.id, name: r.name, enabled: r.enabled, type: r.conditions[0]?.type })))
+    
     const enabledRules = alertRules.filter((rule) => rule.enabled)
 
     if (enabledRules.length === 0) {
@@ -123,7 +133,8 @@ export function useMarketData() {
       return
     }
 
-    console.log(`🔍 Evaluating ${enabledRules.length} alert rules against ${coins.length} coins...`)
+    console.log(`🔍 Evaluating ${enabledRules.length} ENABLED alert rules against ${coins.length} coins...`)
+    console.log(`✅ Enabled rules:`, enabledRules.map(r => ({ id: r.id, name: r.name, type: r.conditions[0]?.type })))
     
     // Debug: Log first coin to see what data we have
     if (coins.length > 0) {
