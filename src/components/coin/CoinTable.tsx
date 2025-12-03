@@ -26,57 +26,87 @@ export function CoinTable({ coins, onCoinClick, isLoading = false }: CoinTablePr
     })
   }
 
-  const getSortIndicator = (field: typeof sort.field) => {
-    if (sort.field !== field) return ''
-    return sort.direction === 'desc' ? ' ↓' : ' ↑'
-  }
-
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full text-sm">
         <thead className="bg-gray-900 sticky top-0">
-          <tr>
+          <tr className="border-b border-gray-700">
             <th
-              className="px-2 py-2 text-left cursor-pointer hover:bg-gray-800 whitespace-nowrap"
+              className="px-2 py-3 text-left text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none whitespace-nowrap"
               onClick={() => handleSort('symbol')}
             >
-              Symbol{getSortIndicator('symbol')}
+              <div className="flex items-center gap-1">
+                Symbol
+                {sort.field === 'symbol' && (
+                  <span className="text-accent">{sort.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </div>
             </th>
             <th
-              className="px-2 py-2 text-right cursor-pointer hover:bg-gray-800 whitespace-nowrap"
+              className="px-2 py-3 text-right text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none whitespace-nowrap"
               onClick={() => handleSort('lastPrice')}
             >
-              Price{getSortIndicator('lastPrice')}
+              <div className="flex items-center justify-end gap-1">
+                Price
+                {sort.field === 'lastPrice' && (
+                  <span className="text-accent">{sort.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </div>
             </th>
             <th
-              className="px-2 py-2 text-right cursor-pointer hover:bg-gray-800 whitespace-nowrap"
+              className="px-2 py-3 text-right text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none whitespace-nowrap"
               onClick={() => handleSort('priceChangePercent')}
             >
-              Change %{getSortIndicator('priceChangePercent')}
+              <div className="flex items-center justify-end gap-1">
+                Change %
+                {sort.field === 'priceChangePercent' && (
+                  <span className="text-accent">{sort.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </div>
             </th>
             <th
-              className="px-1.5 py-1.5 text-right cursor-pointer hover:bg-gray-800 whitespace-nowrap"
+              className="px-1.5 py-3 text-right text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none whitespace-nowrap"
               onClick={() => handleSort('volume')}
             >
-              Volume{getSortIndicator('volume')}
+              <div className="flex items-center justify-end gap-1">
+                Volume
+                {sort.field === 'volume' && (
+                  <span className="text-accent">{sort.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </div>
             </th>
             <th
-              className="px-1.5 py-1.5 text-right cursor-pointer hover:bg-gray-800 whitespace-nowrap"
+              className="px-1.5 py-3 text-right text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none whitespace-nowrap"
               onClick={() => handleSort('quoteVolume')}
             >
-              Quote Vol{getSortIndicator('quoteVolume')}
+              <div className="flex items-center justify-end gap-1">
+                Quote Vol
+                {sort.field === 'quoteVolume' && (
+                  <span className="text-accent">{sort.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </div>
             </th>
             <th
-              className="px-1.5 py-1.5 text-right cursor-pointer hover:bg-gray-800 whitespace-nowrap"
+              className="px-1.5 py-3 text-right text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none whitespace-nowrap"
               onClick={() => handleSort('vcp')}
             >
-              VCP{getSortIndicator('vcp')}
+              <div className="flex items-center justify-end gap-1">
+                VCP
+                {sort.field === 'vcp' && (
+                  <span className="text-accent">{sort.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </div>
             </th>
             <th
-              className="px-1.5 py-1.5 text-right cursor-pointer hover:bg-gray-800 whitespace-nowrap min-w-[72px]"
+              className="px-1.5 py-3 text-right text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none whitespace-nowrap min-w-[72px]"
               onClick={() => handleSort('priceToWeightedAvg')}
             >
-              P/WA{getSortIndicator('priceToWeightedAvg')}
+              <div className="flex items-center justify-end gap-1">
+                P/WA
+                {sort.field === 'priceToWeightedAvg' && (
+                  <span className="text-accent">{sort.direction === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </div>
             </th>
             {/* Watchlist column removed per new plan */}
           </tr>
