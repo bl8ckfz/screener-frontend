@@ -21,10 +21,6 @@ export function AlertHistoryTable({ stats, onCoinClick, onClearHistory }: AlertH
   const [sortField, setSortField] = useState<SortField>('alerts')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
 
-  if (stats.length === 0) {
-    return <EmptyAlertHistory />
-  }
-
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
@@ -69,6 +65,11 @@ export function AlertHistoryTable({ stats, onCoinClick, onClearHistory }: AlertH
     if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
     if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
     return `${Math.floor(seconds / 86400)}d ago`
+  }
+
+  // Early return AFTER all hooks
+  if (stats.length === 0) {
+    return <EmptyAlertHistory />
   }
 
   return (
