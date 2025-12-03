@@ -32,6 +32,7 @@ export interface Storage {
 class IndexedDBStorage implements Storage {
   private isAvailable: boolean
   private fallbackStorage: typeof localStorage
+  private hasLoggedError: boolean = false
 
   constructor() {
     this.isAvailable = this.checkAvailability()
@@ -50,6 +51,17 @@ class IndexedDBStorage implements Storage {
   }
 
   /**
+   * Log warning only once to avoid console spam
+   */
+  private logWarningOnce(message: string, error?: unknown): void {
+    if (!this.hasLoggedError) {
+      console.warn(message, error)
+      console.warn('Falling back to localStorage for all operations')
+      this.hasLoggedError = true
+    }
+  }
+
+  /**
    * Get item from storage
    */
   async getItem(key: string): Promise<string | null> {
@@ -61,7 +73,7 @@ class IndexedDBStorage implements Storage {
       const value = await get<string>(key)
       return value ?? null
     } catch (error) {
-      console.warn('IndexedDB getItem failed, falling back to localStorage:', error)
+      this.logWarningOnce('IndexedDB getItem failed:', error)
       return this.fallbackStorage.getItem(key)
     }
   }
@@ -80,7 +92,7 @@ class IndexedDBStorage implements Storage {
       // Also set in localStorage as backup
       this.fallbackStorage.setItem(key, value)
     } catch (error) {
-      console.warn('IndexedDB setItem failed, falling back to localStorage:', error)
+      this.logWarningOnce('IndexedDB setItem failed:', error)
       this.fallbackStorage.setItem(key, value)
     }
   }
@@ -98,7 +110,7 @@ class IndexedDBStorage implements Storage {
       await del(key)
       this.fallbackStorage.removeItem(key)
     } catch (error) {
-      console.warn('IndexedDB removeItem failed, falling back to localStorage:', error)
+      this.logWarningOnce('IndexedDB removeItem failed:', error)
       this.fallbackStorage.removeItem(key)
     }
   }
@@ -116,7 +128,7 @@ class IndexedDBStorage implements Storage {
       await clear()
       this.fallbackStorage.clear()
     } catch (error) {
-      console.warn('IndexedDB clear failed, falling back to localStorage:', error)
+      this.logWarningOnce('IndexedDB clear failed:', error)
       this.fallbackStorage.clear()
     }
   }
@@ -133,7 +145,7 @@ class IndexedDBStorage implements Storage {
       const idbKeys = await keys()
       return idbKeys.map(String)
     } catch (error) {
-      console.warn('IndexedDB keys failed, falling back to localStorage:', error)
+      this.logWarningOnce('IndexedDB keys failed:', error)
       return Object.keys(this.fallbackStorage)
     }
   }
