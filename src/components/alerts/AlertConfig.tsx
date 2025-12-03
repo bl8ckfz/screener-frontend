@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { AlertRule, AlertType, LEGACY_ALERT_PRESETS } from '@/types/alert'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -11,7 +11,6 @@ import {
   getNotificationPermission,
   requestNotificationPermission,
   showTestNotification,
-  type NotificationPermissionStatus,
 } from '@/services/notification'
 import { audioNotificationService } from '@/services/audioNotification'
 
@@ -39,46 +38,27 @@ export function AlertConfig({
 }: AlertConfigProps) {
   const [isCreating, setIsCreating] = useState(false)
   const [showCustomBuilder, setShowCustomBuilder] = useState(false)
-  const [notificationPermission, setNotificationPermission] = useState<NotificationPermissionStatus>(
-    getNotificationPermission()
-  )
-  const [isRequestingPermission, setIsRequestingPermission] = useState(false)
 
   const alertSettings = useStore((state) => state.alertSettings)
   const updateAlertSettings = useStore((state) => state.updateAlertSettings)
 
-  // Update permission status on mount and when window gains focus
-  useEffect(() => {
-    const updatePermission = () => {
-      setNotificationPermission(getNotificationPermission())
-    }
-
-    window.addEventListener('focus', updatePermission)
-    return () => window.removeEventListener('focus', updatePermission)
-  }, [])
-
-  const handleRequestPermission = async () => {
-    setIsRequestingPermission(true)
-    const permission = await requestNotificationPermission()
-    setNotificationPermission(permission)
-    setIsRequestingPermission(false)
-
-    if (permission === 'granted') {
-      // Enable browser notifications in settings
-      updateAlertSettings({ browserNotificationEnabled: true })
-      // Show test notification
-      showTestNotification()
-    }
-  }
-
-  const handleToggleBrowserNotifications = () => {
-    if (notificationPermission === 'granted') {
+  const handleToggleBrowserNotifications = async () => {
+    const currentPermission = getNotificationPermission()
+    
+    // If permission not granted yet, request it
+    if (currentPermission === 'default') {
+      const permission = await requestNotificationPermission()
+      if (permission === 'granted') {
+        updateAlertSettings({ browserNotificationEnabled: true })
+        showTestNotification()
+      }
+    } else if (currentPermission === 'granted') {
+      // Toggle the setting
       updateAlertSettings({
         browserNotificationEnabled: !alertSettings.browserNotificationEnabled,
       })
-    } else if (notificationPermission === 'default') {
-      handleRequestPermission()
     }
+    // If denied, do nothing (user needs to enable in browser settings)
   }
 
   const handlePresetSelect = (presetName: string) => {
@@ -141,19 +121,6 @@ export function AlertConfig({
       top_hunter: '🎣 Top Hunter',
     }
     return labels[type] || type
-  }
-
-  const getPermissionStatusDisplay = () => {
-    switch (notificationPermission) {
-      case 'granted':
-        return { label: 'Enabled', color: 'text-green-400', icon: '✓' }
-      case 'denied':
-        return { label: 'Blocked', color: 'text-red-400', icon: '✗' }
-      case 'default':
-        return { label: 'Not Set', color: 'text-yellow-400', icon: '?' }
-      case 'unsupported':
-        return { label: 'Unsupported', color: 'text-gray-400', icon: '✗' }
-    }
   }
 
   return (
@@ -222,35 +189,15 @@ export function AlertConfig({
                 Desktop notifications even when tab is not visible
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <span className={`text-xs font-medium ${getPermissionStatusDisplay().color}`}>
-                {getPermissionStatusDisplay().icon} {getPermissionStatusDisplay().label}
-              </span>
-              {notificationPermission === 'granted' ? (
-                <label className="relative inline-flex cursor-pointer items-center">
-                  <input
-                    type="checkbox"
-                    checked={alertSettings.browserNotificationEnabled}
-                    onChange={handleToggleBrowserNotifications}
-                    className="peer sr-only"
-                  />
-                  <div className="peer h-5 w-9 rounded-full bg-gray-700 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-gray-600 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-800"></div>
-                </label>
-              ) : notificationPermission === 'default' ? (
-                <Button
-                  onClick={handleRequestPermission}
-                  variant="primary"
-                  size="sm"
-                  disabled={isRequestingPermission}
-                >
-                  {isRequestingPermission ? 'Requesting...' : 'Enable'}
-                </Button>
-              ) : notificationPermission === 'denied' ? (
-                <span className="text-xs text-gray-500">
-                  Enable in browser settings
-                </span>
-              ) : null}
-            </div>
+            <label className="relative inline-flex cursor-pointer items-center">
+              <input
+                type="checkbox"
+                checked={alertSettings.browserNotificationEnabled}
+                onChange={handleToggleBrowserNotifications}
+                className="peer sr-only"
+              />
+              <div className="peer h-5 w-9 rounded-full bg-gray-700 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-gray-600 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-800"></div>
+            </label>
           </div>
         </div>
       )}
