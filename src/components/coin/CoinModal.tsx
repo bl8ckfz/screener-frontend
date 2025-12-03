@@ -4,6 +4,7 @@ import { formatPrice, formatPercent, formatLargeNumber, formatDateTime } from '@
 import { TechnicalIndicators } from './TechnicalIndicators'
 import { ExternalLinks } from './ExternalLinks'
 import { ChartContainer } from './ChartContainer'
+import { AlertTimelineChart } from './AlertTimelineChart'
 import { Button, Badge } from '@/components/ui'
 
 export interface CoinModalProps {
@@ -105,6 +106,14 @@ export function CoinModal({ coin, isOpen, onClose }: CoinModalProps) {
           <div className="p-6 max-h-[calc(100vh-200px)] overflow-y-auto space-y-6">
             {/* Chart Section */}
             <ChartContainer coin={coin} />
+
+            {/* Alert Timeline Chart */}
+            <div className="bg-gray-800 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-gray-300 mb-4">
+                Alert Activity (24h)
+              </h3>
+              <AlertTimelineChart symbol={coin.symbol} height={200} />
+            </div>
 
             {/* Details Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
