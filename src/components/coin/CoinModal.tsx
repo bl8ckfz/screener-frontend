@@ -110,9 +110,9 @@ export function CoinModal({ coin, isOpen, onClose }: CoinModalProps) {
             {/* Alert Timeline Chart */}
             <div className="bg-gray-800 rounded-lg p-4">
               <h3 className="text-sm font-semibold text-gray-300 mb-4">
-                Alert Activity (24h)
+                Alert Timeline (24h)
               </h3>
-              <AlertTimelineChart symbol={coin.symbol} height={200} />
+              <AlertTimelineChart symbol={coin.symbol} height={300} />
             </div>
 
             {/* Details Grid */}

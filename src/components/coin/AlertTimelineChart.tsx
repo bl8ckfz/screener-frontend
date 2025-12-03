@@ -1,8 +1,6 @@
-import { useMemo, useEffect, useRef } from 'react'
-import { createChart, ColorType, IChartApi, ISeriesApi, LineData } from 'lightweight-charts'
+import { useMemo } from 'react'
 import { useStore } from '@/hooks/useStore'
 import { alertHistoryService } from '@/services/alertHistoryService'
-import type { AlertType } from '@/types/alert'
 
 interface AlertTimelineChartProps {
   symbol: string
@@ -41,11 +39,17 @@ const ALERT_TYPE_NAMES: Record<string, string> = {
   custom: 'Custom',
 }
 
-export function AlertTimelineChart({ symbol, height = 200 }: AlertTimelineChartProps) {
-  const chartContainerRef = useRef<HTMLDivElement>(null)
-  const chartRef = useRef<IChartApi | null>(null)
-  const seriesMapRef = useRef<Map<string, ISeriesApi<'Line'>>>(new Map())
+// Format timestamp to readable time
+const formatTime = (timestamp: number): string => {
+  const date = new Date(timestamp)
+  return date.toLocaleTimeString('en-US', { 
+    hour: '2-digit', 
+    minute: '2-digit',
+    hour12: false 
+  })
+}
 
+export function AlertTimelineChart({ symbol, height = 300 }: AlertTimelineChartProps) {
   // Watch for alert history changes
   const alertHistoryRefresh = useStore((state) => state.alertHistoryRefresh)
 
@@ -55,150 +59,35 @@ export function AlertTimelineChart({ symbol, height = 200 }: AlertTimelineChartP
     const allAlerts = alertHistoryService.getHistory()
     return allAlerts.filter(
       (entry) => entry.symbol === symbol && entry.timestamp >= oneDayAgo
-    )
+    ).sort((a, b) => a.timestamp - b.timestamp) // Sort by time ascending
   }, [symbol, alertHistoryRefresh])
 
-  // Group alerts by type and create time series data
-  const alertTimeSeries = useMemo(() => {
-    if (filteredAlerts.length === 0) return new Map<string, LineData[]>()
-
-    // Group by alert type
-    const groupedByType = filteredAlerts.reduce((acc, entry) => {
-      const type = entry.alertType
-      if (!acc.has(type)) {
-        acc.set(type, [])
-      }
-      acc.get(type)!.push(entry)
-      return acc
-    }, new Map<AlertType, typeof filteredAlerts>())
-
-    // Convert to time series data (15-minute buckets)
-    const timeSeriesMap = new Map<AlertType, LineData[]>()
-    const bucketSize = 15 * 60 * 1000 // 15 minutes in ms
-
-    groupedByType.forEach((entries, type) => {
-      // Create buckets for last 24 hours
-      const now = Date.now()
-      const startTime = now - 24 * 60 * 60 * 1000
-      const buckets = new Map<number, number>()
-
-      // Initialize all buckets to 0
-      for (let time = startTime; time <= now; time += bucketSize) {
-        const bucketKey = Math.floor(time / bucketSize) * bucketSize
-        buckets.set(bucketKey, 0)
-      }
-
-      // Count alerts per bucket
-      entries.forEach((entry) => {
-        const bucketKey = Math.floor(entry.timestamp / bucketSize) * bucketSize
-        buckets.set(bucketKey, (buckets.get(bucketKey) || 0) + 1)
-      })
-
-      // Convert to LineData format
-      const lineData: LineData[] = Array.from(buckets.entries())
-        .sort(([a], [b]) => a - b)
-        .map(([timestamp, count]) => ({
-          time: Math.floor(timestamp / 1000) as never, // Convert to seconds for lightweight-charts
-          value: count,
-        }))
-
-      timeSeriesMap.set(type, lineData)
-    })
-
-    return timeSeriesMap
+  // Get unique alert types present in the data
+  const alertTypes = useMemo(() => {
+    const types = new Set(filteredAlerts.map(entry => entry.alertType))
+    return Array.from(types).sort()
   }, [filteredAlerts])
 
-  // Initialize chart
-  useEffect(() => {
-    if (!chartContainerRef.current) return
-
-    const chart = createChart(chartContainerRef.current, {
-      layout: {
-        background: { type: ColorType.Solid, color: 'transparent' },
-        textColor: '#9ca3af', // gray-400
-      },
-      grid: {
-        vertLines: { color: '#374151' }, // gray-700
-        horzLines: { color: '#374151' },
-      },
-      width: chartContainerRef.current.clientWidth,
-      height,
-      timeScale: {
-        timeVisible: true,
-        secondsVisible: false,
-        borderColor: '#4b5563', // gray-600
-      },
-      rightPriceScale: {
-        borderColor: '#4b5563',
-      },
-      crosshair: {
-        mode: 1, // Magnet mode
-        vertLine: {
-          width: 1,
-          color: '#6b7280',
-          style: 2, // Dashed
-        },
-        horzLine: {
-          width: 1,
-          color: '#6b7280',
-          style: 2,
-        },
-      },
-    })
-
-    chartRef.current = chart
-
-    // Handle resize
-    const handleResize = () => {
-      if (chartContainerRef.current && chartRef.current) {
-        chartRef.current.applyOptions({
-          width: chartContainerRef.current.clientWidth,
-        })
-      }
+  // Calculate time range for X-axis
+  const timeRange = useMemo(() => {
+    if (filteredAlerts.length === 0) {
+      const now = Date.now()
+      return { min: now - 24 * 60 * 60 * 1000, max: now }
     }
-
-    window.addEventListener('resize', handleResize)
-
-    return () => {
-      window.removeEventListener('resize', handleResize)
-      chart.remove()
-      chartRef.current = null
-      seriesMapRef.current.clear()
+    const timestamps = filteredAlerts.map(a => a.timestamp)
+    const min = Math.min(...timestamps)
+    const max = Math.max(...timestamps)
+    // Add 5% padding on each side
+    const padding = (max - min) * 0.05
+    return { 
+      min: min - padding, 
+      max: max + padding 
     }
-  }, [height])
-
-  // Update series data
-  useEffect(() => {
-    if (!chartRef.current) return
-
-    // Remove all existing series
-    seriesMapRef.current.forEach((series) => {
-      chartRef.current!.removeSeries(series)
-    })
-    seriesMapRef.current.clear()
-
-    // Add new series for each alert type
-    alertTimeSeries.forEach((data, type) => {
-      const color = ALERT_TYPE_COLORS[type] || ALERT_TYPE_COLORS.custom
-      const series = chartRef.current!.addLineSeries({
-        color,
-        lineWidth: 2,
-        title: ALERT_TYPE_NAMES[type] || type,
-        priceLineVisible: false,
-        lastValueVisible: false,
-      })
-
-      series.setData(data)
-      seriesMapRef.current.set(type, series)
-    })
-
-    // Fit content
-    chartRef.current.timeScale().fitContent()
-  }, [alertTimeSeries])
+  }, [filteredAlerts])
 
   if (filteredAlerts.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full text-gray-500">
+      <div className="flex items-center justify-center text-gray-500" style={{ height }}>
         <div className="text-center">
           <p className="text-sm font-medium">No alerts in the last 24 hours</p>
           <p className="text-xs text-gray-600 mt-1">
@@ -209,14 +98,17 @@ export function AlertTimelineChart({ symbol, height = 200 }: AlertTimelineChartP
     )
   }
 
+  const rowHeight = Math.max(40, height / alertTypes.length)
+  const chartWidth = timeRange.max - timeRange.min
+
   return (
-    <div className="w-full">
+    <div className="w-full overflow-x-auto">
       {/* Legend */}
-      <div className="flex flex-wrap gap-3 mb-3 px-2">
-        {Array.from(alertTimeSeries.keys()).map((type) => (
+      <div className="flex flex-wrap gap-3 mb-4 px-2">
+        {alertTypes.map((type) => (
           <div key={type} className="flex items-center gap-1.5">
             <div
-              className="w-3 h-0.5"
+              className="w-2.5 h-2.5 rounded-full"
               style={{ backgroundColor: ALERT_TYPE_COLORS[type] || ALERT_TYPE_COLORS.custom }}
             />
             <span className="text-xs text-gray-400">
@@ -226,11 +118,88 @@ export function AlertTimelineChart({ symbol, height = 200 }: AlertTimelineChartP
         ))}
       </div>
 
-      {/* Chart */}
-      <div ref={chartContainerRef} className="relative" />
+      {/* Dot Plot Chart */}
+      <div className="relative bg-gray-900/30 rounded border border-gray-700" style={{ height }}>
+        {/* Y-axis labels */}
+        <div className="absolute left-0 top-0 bottom-0 w-32 border-r border-gray-700 bg-gray-900/50">
+          {alertTypes.map((type) => (
+            <div
+              key={type}
+              className="flex items-center px-3 text-xs text-gray-400 border-b border-gray-800"
+              style={{ height: rowHeight }}
+            >
+              {ALERT_TYPE_NAMES[type] || type}
+            </div>
+          ))}
+        </div>
+
+        {/* Chart area with dots */}
+        <div className="absolute left-32 right-0 top-0 bottom-0 overflow-hidden">
+          {/* Grid lines */}
+          {alertTypes.map((_, index) => (
+            <div
+              key={index}
+              className="absolute left-0 right-0 border-b border-gray-800"
+              style={{ top: (index + 1) * rowHeight }}
+            />
+          ))}
+
+          {/* Alert dots */}
+          {filteredAlerts.map((entry, index) => {
+            const typeIndex = alertTypes.indexOf(entry.alertType)
+            const xPos = ((entry.timestamp - timeRange.min) / chartWidth) * 100
+            const yPos = typeIndex * rowHeight + rowHeight / 2
+
+            return (
+              <div
+                key={`${entry.id}-${index}`}
+                className="absolute group"
+                style={{
+                  left: `${xPos}%`,
+                  top: yPos,
+                  transform: 'translate(-50%, -50%)',
+                }}
+              >
+                {/* Dot */}
+                <div
+                  className="w-2.5 h-2.5 rounded-full transition-all hover:scale-150 hover:ring-2 hover:ring-white/50 cursor-pointer"
+                  style={{
+                    backgroundColor: ALERT_TYPE_COLORS[entry.alertType] || ALERT_TYPE_COLORS.custom,
+                  }}
+                />
+                
+                {/* Tooltip */}
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-10 pointer-events-none">
+                  <div className="bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-xs whitespace-nowrap shadow-lg">
+                    <div className="font-medium text-white">
+                      {ALERT_TYPE_NAMES[entry.alertType] || entry.alertType}
+                    </div>
+                    <div className="text-gray-400 mt-0.5">
+                      {formatTime(entry.timestamp)}
+                    </div>
+                    <div className="text-gray-400">
+                      Price: ${entry.priceAtTrigger.toFixed(2)}
+                    </div>
+                    <div className={entry.changePercent >= 0 ? 'text-green-400' : 'text-red-400'}>
+                      {entry.changePercent >= 0 ? '+' : ''}{entry.changePercent.toFixed(2)}%
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Time axis labels (approximate) */}
+        <div className="absolute left-32 right-0 -bottom-6 flex justify-between text-xs text-gray-500 px-2">
+          <span>{formatTime(timeRange.min)}</span>
+          <span>{formatTime((timeRange.min + timeRange.max) / 2)}</span>
+          <span>{formatTime(timeRange.max)}</span>
+        </div>
+      </div>
 
       {/* Summary Stats */}
-      <div className="mt-3 px-2 text-xs text-gray-500">
+      <div className="mt-8 px-2 text-xs text-gray-500">
         <span>Total alerts (24h): </span>
         <span className="font-medium text-gray-300">{filteredAlerts.length}</span>
       </div>
