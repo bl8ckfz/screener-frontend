@@ -201,6 +201,9 @@ export function useMarketData() {
           continue // Skip if in cooldown period
         }
 
+        // Update cooldown tracker immediately to prevent batch duplicates
+        recentAlerts.current.set(symbol, now)
+
         // Check max alerts per symbol
         const symbolAlertCount = Array.from(recentAlerts.current.entries()).filter(
           ([sym]) => sym === symbol
@@ -289,8 +292,7 @@ export function useMarketData() {
           }
         }
 
-        // Update cooldown tracker
-        recentAlerts.current.set(symbol, now)
+        // Cooldown already updated above after initial check
       }
     } catch (error) {
       console.error('Failed to evaluate alerts:', error)
