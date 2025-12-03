@@ -14,6 +14,11 @@ import { sendDiscordWebhook, sendToWebhooks } from '@/services/webhookService'
 import type { Coin } from '@/types/coin'
 import type { Alert } from '@/types/alert'
 
+// Singleton guard to ensure alert evaluation only runs once per data update
+// Tracks the last query data timestamp to prevent duplicate evaluations
+let lastAlertEvaluationTimestamp = 0
+let isEvaluatingAlerts = false
+
 /**
  * Fetch and process market data for current currency pair with smart polling
  */
@@ -137,6 +142,8 @@ export function useMarketData() {
   })
 
   // Evaluate alerts when data is successfully fetched
+  // IMPORTANT: This effect may run in multiple component instances,
+  // so we use module-level guards to ensure alerts are only evaluated once
   useEffect(() => {
     if (!query.data || !alertSettings.enabled || alertRules.length === 0) {
       return
@@ -144,6 +151,24 @@ export function useMarketData() {
 
     const coins = query.data
     const now = Date.now()
+    
+    // Guard: Only evaluate if this is a new data update
+    // query.dataUpdatedAt is the timestamp from TanStack Query
+    const dataTimestamp = query.dataUpdatedAt || 0
+    
+    if (dataTimestamp <= lastAlertEvaluationTimestamp) {
+      // Already evaluated for this data update
+      return
+    }
+    
+    // Guard: Prevent concurrent evaluations
+    if (isEvaluatingAlerts) {
+      return
+    }
+    
+    // Mark as evaluating and update timestamp
+    isEvaluatingAlerts = true
+    lastAlertEvaluationTimestamp = dataTimestamp
 
     // Derive market mode from aggregate momentum (simple heuristic)
     // Average priceChangePercent across top 10 quoteVolume coins
@@ -296,8 +321,11 @@ export function useMarketData() {
       }
     } catch (error) {
       console.error('Failed to evaluate alerts:', error)
+    } finally {
+      // Reset evaluation lock
+      isEvaluatingAlerts = false
     }
-  }, [query.data, alertRules, alertSettings, addAlert])
+  }, [query.data, query.dataUpdatedAt, alertRules, alertSettings, addAlert])
 
   return query
 }
