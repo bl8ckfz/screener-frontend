@@ -15,6 +15,21 @@ Complete migration from Binance Spot API to Futures API with new alert system. T
 ### 🎯 Next Priority: Phase 5 - Testing & Optimization
 Focus on integration testing, performance profiling, and documentation.
 
+### 🔧 Recent Fixes (Phase 4.4.1 & 4.4.2) - December 4, 2025
+**Issues Resolved**:
+1. **CoinGecko 429 Rate Limit Errors** ✅
+   - Extended cache TTL: 1h → 24h (market cap changes slowly)
+   - Reduced rate limit: 30 → 20 calls/min (conservative buffer)
+   - Reduced concurrency: 5 → 2 for market cap fetches
+   - Result: ~25 calls on first load, then ~1/hour (vs 300/hour before)
+
+2. **Binance Futures 403 Forbidden Errors** ✅
+   - Added Vercel serverless proxy: `/api/binance-futures.ts`
+   - Routes: Browser → Vercel → Binance (bypasses region blocks)
+   - Production: Uses `/api/binance-futures?endpoint=...`
+   - Development: Still uses CORS proxy (no changes needed)
+   - Result: All Futures API calls working in production
+
 ---
 
 ## Phase 1: API Clients Implementation (Week 1, Days 1-3) ✅
@@ -34,6 +49,7 @@ Focus on integration testing, performance profiling, and documentation.
 - [x] Add error handling with exponential backoff
 - [x] Add request timeout (10s)
 - [x] Add CORS proxy support for development
+- [x] Add Vercel serverless proxy for production (fixes 403 errors)
 - [x] Write unit tests with mocked responses (9 tests)
 
 **Success Criteria**:
