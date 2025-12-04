@@ -1,7 +1,8 @@
-import type { AlertType } from '@/types/alert'
+import type { CombinedAlertType, AlertType } from '@/types/alert'
+import { FUTURES_ALERT_LABELS } from '@/types/alert'
 
 interface AlertBadgesProps {
-  alertTypes: Set<AlertType>
+  alertTypes: Set<CombinedAlertType>
   maxVisible?: number
 }
 
@@ -14,7 +15,7 @@ export function AlertBadges({ alertTypes, maxVisible = 3 }: AlertBadgesProps) {
   const visibleTypes = types.slice(0, maxVisible)
   const remainingCount = Math.max(0, types.length - maxVisible)
 
-  const getAlertBadgeColor = (type: AlertType): string => {
+  const getAlertBadgeColor = (type: CombinedAlertType): string => {
     // Bullish alerts - green
     if (['price_pump', 'pioneer_bull', '5m_big_bull', '15m_big_bull', 'bottom_hunter'].includes(type)) {
       return 'bg-green-500/20 text-green-400 border-green-500/50'
@@ -29,7 +30,13 @@ export function AlertBadges({ alertTypes, maxVisible = 3 }: AlertBadgesProps) {
     return 'bg-blue-500/20 text-blue-400 border-blue-500/50'
   }
 
-  const getAlertLabel = (type: AlertType): string => {
+  const getAlertLabel = (type: CombinedAlertType): string => {
+    // Check futures alerts first
+    if (type.startsWith('futures_')) {
+      const futuresLabels = FUTURES_ALERT_LABELS as Record<string, string>
+      return futuresLabels[type] || type
+    }
+    // Spot alerts
     const labels: Record<AlertType, string> = {
       price_pump: 'Pump',
       price_dump: 'Dump',
@@ -48,7 +55,7 @@ export function AlertBadges({ alertTypes, maxVisible = 3 }: AlertBadgesProps) {
       top_hunter: 'Top',
       custom: 'Custom',
     }
-    return labels[type] || type
+    return labels[type as AlertType] || type
   }
 
   if (types.length === 0) {

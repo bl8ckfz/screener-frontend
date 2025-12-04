@@ -1,0 +1,302 @@
+# Project State Tracking - Futures API Migration
+
+**Last Updated**: December 4, 2025
+
+## Current Status
+
+- **Project**: Crypto Screener - Futures API Migration
+- **Current Phase**: Futures API Integration (PLANNING)
+- **Start Date**: December 4, 2025
+- **Target Completion**: December 25, 2025 (3 weeks)
+- **Overall Progress**: 0/73 tasks completed (0%)
+- **Bundle Size**: 168.39KB gzipped (target: <500KB) ✅
+
+## Previous Work Completed (Context)
+
+✅ **Phases 1-5**: Foundation, Modularization, Components, UI/UX, Performance  
+✅ **Phase 6**: Alert System (8 legacy alert types, 18 evaluators)  
+✅ **Phase 6.2**: Watchlists, Browser Notifications, Audio Alerts, Webhooks  
+✅ **Phase 7**: Quality Assurance (69 tests, 100% passing)
+
+**Note**: See `docs/ROADMAP.md` for complete project history
+
+## Phase 7: Quality Assurance (IN PROGRESS)
+
+### Test Infrastructure Setup ✅
+- Vitest + jsdom + React Testing Library configured
+- Test scripts added to package.json
+- 52 tests created across 3 test suites
+- All utility tests passing (100% success rate)
+
+### Current Test Status (December 2, 2025) - ALL PASSING ✅
+
+**Test Suites Created**:
+1. `tests/utils/format.test.ts` (28 tests) - ✅ **28 passing**
+2. `tests/utils/indicators.test.ts` (11 tests) - ✅ **11 passing**
+3. `tests/utils/sort.test.ts` (13 tests) - ✅ **13 passing**
+4. `tests/alerts/pioneer.test.ts` (4 tests) - ✅ **4 passing**
+5. `tests/alerts/bigMomentum.test.ts` (5 tests) - ✅ **5 passing**
+6. `tests/alerts/coreSignals.test.ts` (8 tests) - ✅ **8 passing**
+
+**Total**: 69 tests | ✅ **69 passing (100%)** | 0 failing
+
+### All Utility Tests Fixed ✅
+
+#### Format Utilities (28 tests - ALL PASSING):
+- ✅ Implemented `formatTimeAgo()` function (just now, 5s ago, 3m ago, 2h ago, 3d ago)
+- ✅ Added comma separators to `formatNumber()` with smart integer detection
+- ✅ Fixed `formatPrice()` and `formatPercent()` to always show decimals (financial data)
+- ✅ Updated `formatVolume()` suffix handling for small numbers (<1000)
+- ✅ Fixed `formatLargeNumber()` to avoid commas in suffix format
+
+#### Indicator Utilities (11 tests - ALL PASSING):
+- ✅ Exported `calculateFibonacciPivots()` with dual property names (resistance1/r3, support1/s3)
+- ✅ Updated `calculateVCP()` to handle field name aliases (price vs lastPrice)
+
+### Phase 6.2 Enhancements Completed ✅
+
+**Watchlists (Completed December 1)**:
+- Created 3 components: WatchlistManager (262 lines), WatchlistSelector (156 lines), WatchlistBadge (139 lines)
+- Zustand store extended with watchlist state and 6 CRUD actions
+- IndexedDB persistence for unlimited watchlist storage
+- Table integration with filtering and UI badges
+
+**Browser Notifications (Completed December 1)**:
+- notification.ts service (152 lines) with Notification API wrapper
+- Permission handling UI in AlertConfig component
+- Integrated into alert flow with severity mapping
+- Window focus on notification click
+
+**Audio Alerts (Completed December 1)**:
+- audioNotification.ts service using Web Audio API
+- Three severity levels: info (500Hz single tone), warning (600→800Hz dual), critical (900→1100→900Hz triple)
+- Toggle and test controls in AlertConfig
+- Integrated with alert evaluation in useMarketData
+- Bundle impact: ~2KB
+
+**Discord Webhook Integration (Completed December 1)**:
+- webhookService.ts (initially 195 lines) with Discord embed API
+- Rich embed formatting with colors, emojis, and formatted values
+- URL validation and test webhook functionality
+- UI controls in AlertConfig: URL input, test button, toggle switch
+- Integrated into alert flow after audio/browser notifications
+- Error handling and user feedback
+- Bundle impact: ~4KB
+
+**Full Webhook System (Completed December 1)**:
+- Extended webhookService.ts to ~400 lines with enterprise features
+- Telegram Bot API support with HTML formatting
+- Rate limiting: WebhookRateLimiter class (5 messages per 5 seconds per webhook)
+- Retry logic: sendWebhookWithRetry() with 3 attempts, exponential backoff (1s → 2s → 4s, max 10s)
+- Multi-webhook parallel delivery: sendToWebhooks() for batch delivery
+- Extended types: WebhookConfig, WebhookDelivery interfaces
+- WebhookManager component (273 lines): Full CRUD UI for managing multiple webhooks
+- Integrated WebhookManager into AlertConfig with legacy webhook warning
+- Updated useMarketData alert flow to use multi-webhook system
+- Backwards compatibility maintained for legacy discordWebhookUrl
+- Bundle impact: ~12KB total
+
+**UI Bug Fixes (Completed December 1)**:
+- Fixed z-index conflicts: WatchlistSelector (z-[1000]), ListSelector (z-[900])
+- Removed conflicting backdrop element
+- Replaced undefined Tailwind classes (card-bg, primary-bg, etc.) with proper design system colors
+- All dropdowns now render with solid, opaque backgrounds
+- ✅ Rewrote `calculateMarketDominance()` for volume-based percentages
+- ✅ Fixed test data (price 50000→51000 for positive VCP)
+- ✅ Fixed test expectations (negative VCP is correct for bearish signals)
+
+#### Sort Utilities (13 tests - ALL PASSING):
+- ✅ Updated mock data structure with `indicators` property
+- ✅ Fixed test calls to use CoinSort object signature `{ field, direction }`
+- ✅ Updated `sortCoinsByList` tests to verify sorting behavior (not filtering)
+- ✅ Added bear mode test with `isBull: false` parameter
+
+### Pending Tasks
+
+1. **Expand Alert Engine Tests**:
+   - [ ] Cover remaining evaluator functions beyond Pioneer (price pump/dump, volume spike/drop, VCP, Fibonacci break, bottom/top hunter, big bull/bear 5m/15m)
+   - [ ] Test anti-spam logic (60s cooldown, max 5 per symbol)
+   - [ ] Test fallback logic for missing history data
+   - Estimated: +30 tests
+
+2. **Add Component Tests**:
+   - [ ] AlertConfig: Preset selector, enable/disable toggles
+   - [ ] AlertNotification: Color coding, auto-dismiss, sounds
+   - [ ] AlertHistory: Filtering, sorting, export
+   - [ ] CoinTable: Sorting, filtering, rendering
+   - [ ] MarketSummary: Statistics display
+   - Estimated: 40-50 new tests
+
+3. **Run Coverage Analysis**:
+   - [ ] Execute `npm run test:coverage`
+   - [ ] Identify untested code paths
+   - [ ] Add tests for edge cases
+   - [ ] Target: 80%+ line coverage, 75%+ branch coverage
+
+2. **Fix Indicator Utilities**:
+   - [ ] Export `calculateFibonacciPivots()` from utils/indicators.ts
+   - [ ] Export `calculateMarketDominance()` from utils/indicators.ts
+   - [ ] Debug `calculateVCP()` - should return positive values, not 0
+
+3. **Fix Sort Utilities**:
+   - [ ] Update mock coin data to include `indicators: { vcp, priceToWeightedAvg, fibonacci }` property
+   - [ ] Debug `sortCoins()` function - currently returns unsorted arrays
+
+4. **Create Alert Engine Tests**:
+   - [ ] Test all 18 evaluator functions (Pioneer Bull/Bear, Big Bull/Bear, etc.)
+   - [ ] Test anti-spam logic (60s cooldown, max alerts per symbol)
+   - [ ] Test fallback logic for missing history data
+
+5. **Create Component Tests**:
+   - [ ] AlertConfig component (preset selector, enable/disable toggles)
+   - [ ] AlertNotification component (color coding, auto-dismiss)
+   - [ ] AlertHistory component (filtering, sorting, export)
+   - [ ] CoinTable component (sorting, filtering, rendering)
+   - [ ] MarketSummary component (statistics display)
+
+6. **Achieve 80%+ Code Coverage**:
+   - [ ] Run `npm run test:coverage` to measure baseline
+   - [ ] Identify untested code paths
+   - [ ] Add tests for edge cases and error handling
+
+## Key Technical Context
+
+### Alert System Features (Phase 6.1 - Complete)
+- **8 Legacy Alert Types**: Pioneer Bull/Bear, Big Bull/Bear, Bottom/Top Hunter, Price Pump/Dump, Volume Spike, VCP Signal
+- **18 Evaluator Functions**: Timeframe-specific logic (5s/15s/30s/1m/3m/5m/15m)
+- **Color-Coded Notifications**:
+  - Green (bullish): price_pump, pioneer_bull, big_bull (5m/15m), bottom_hunter
+  - Red/Orange (bearish): price_dump, pioneer_bear, big_bear (5m/15m), top_hunter
+  - Blue/Purple (neutral): volume_spike, vcp_signal
+- **Alert History**: Filtering, sorting, export (CSV/JSON), statistics dashboard
+- **Anti-Spam**: 60s cooldown per symbol, max alerts tracking
+- **UI Integration**: Right sidebar with collapsible toggle button
+
+### Watchlist Features (Phase 6.2 - Complete)
+- **Full CRUD Operations**: Create, read, update, delete watchlists via Zustand store
+- **Persistence**: Watchlists saved to IndexedDB with automatic sync
+- **UI Components**:
+  - `WatchlistManager`: Create/edit watchlists with 8 preset colors and 16 icons
+  - `WatchlistSelector`: Dropdown to switch between watchlists (shows coin count)
+  - `WatchlistBadge`: Star badge in coin table for quick add/remove
+- **Data Filtering**: Filter coins by selected watchlist in `useMarketData` hook
+- **Multiple Watchlists**: Coins can belong to multiple watchlists simultaneously
+- **Integration**: Seamlessly works with existing list filtering and sorting
+
+### Browser Notification Features (Phase 6.2 - Complete)
+- **Notification API Integration**: Desktop notifications with permission management
+- **Permission Handling**: Request/check permission status, enable/disable UI
+- **Alert Integration**: Triggered on alert evaluation in useMarketData
+- **Severity Mapping**: Alert severity → notification urgency (low/normal/high)
+- **Window Focus**: Clicking notification focuses browser window
+- **UI Controls**: Permission badge, enable button, toggle switch in AlertConfig
+
+### Audio Alert Features (Phase 6.2 - Complete)
+- **Web Audio API**: Sine wave tone generation with fade in/out
+- **Three Severity Levels**:
+  - Info: Single 500Hz tone (200ms)
+  - Warning: Dual ascending tones (600Hz → 800Hz)
+  - Critical: Triple urgent tones (900Hz → 1100Hz → 900Hz)
+- **User Controls**: Toggle and test button in AlertConfig
+- **Lazy Initialization**: AudioContext created on first user interaction (autoplay policy)
+
+### Webhook Features (Phase 6.2 - Complete)
+- **Discord Integration**: Rich embeds with severity colors, emoji icons, formatted values
+- **Telegram Integration**: HTML-formatted messages via Bot API
+- **Rate Limiting**: 5 messages per 5 seconds per webhook (prevents API abuse)
+- **Retry Logic**: 3 attempts with exponential backoff (1s → 2s → 4s, max 10s)
+- **Multi-Webhook Support**: Parallel delivery to unlimited webhooks
+- **WebhookManager UI**: Full CRUD for webhook configurations (273 lines)
+- **Backwards Compatibility**: Legacy discordWebhookUrl still works
+- **Delivery Tracking**: WebhookDelivery interface for status/attempts/errors
+
+### Test Infrastructure
+- **Framework**: Vitest 2.1.9 + jsdom + React Testing Library
+- **Coverage Target**: 80%+ code coverage
+- **Test Types**: Unit (utils), Integration (services), Component (UI)
+- **Mock Data**: Enhanced with variations for edge case testing
+
+### Critical Implementation Notes
+- **VCP Calculation**: `(P/WA) * [((close-low)-(high-close))/(high-low)]` - primary sorting metric
+- **Fibonacci Pivots**: 7 support/resistance levels from 24hr high/low/close
+- **Currency Pair Parsing**: Handles 3-5 char suffixes (USDT, FDUSD, etc.) - sorted longest-first
+- **Timeframe Snapshots**: Independent tracking at 5s/15s/30s/1m/3m/5m/15m intervals
+
+## Recent Changes (December 2, 2025)
+
+### Market Mode & Pioneer Alert Modernization
+- Added `marketMode` (bull | bear) to Zustand store with auto-derivation from average momentum of top-volume coins.
+- Updated alert evaluation to pass dynamic marketMode instead of hard-coded 'bull'.
+- Aligned Pioneer Bull/Bear preset descriptions and ratio semantics with legacy logic.
+- Added outer gating to Pioneer evaluators (volume delta thresholds: >5000 bull, >1000 bear) to reduce false positives.
+- Created `docs/LEGACY_INDEX_MAP.md` mapping critical FAST_DIZI indices to new structured fields.
+- Added dedicated Pioneer alert tests (4) validating trigger and gating behavior.
+- Result: Pioneer Bear can now trigger correctly in bear market context; reduced noise in low-volume conditions.
+
+### Browser Notification Implementation (Phase 6.2)
+- Created `src/services/notification.ts` (152 lines)
+  - Feature detection: `isNotificationSupported()`
+  - Permission management: `getNotificationPermission()`, `requestNotificationPermission()`
+  - Show notifications: `showNotification()`, `showCryptoAlertNotification()`
+  - Test notification for permission grant confirmation
+- Extended `AlertSettings` type with `browserNotificationEnabled: boolean`
+- Updated Zustand store default settings (disabled by default, requires permission)
+- Modified `useMarketData.ts` to trigger browser notifications on alerts
+  - Maps alert severity to notification urgency (info/warning/critical)
+  - Focuses window when notification clicked
+- Enhanced `AlertConfig.tsx` component (280 lines → 330+ lines)
+  - Permission status badge with color coding
+  - "Enable" button for permission request flow
+  - Toggle switch for enabled/disabled state
+  - Handles denied/unsupported states gracefully
+  - Shows test notification on first grant
+- All TypeScript checks passing ✅
+
+### Watchlist Feature Implementation (Phase 6.2)
+- Extended Zustand store with watchlist state and 6 actions
+- Created `src/components/watchlist/` directory with 3 components:
+  - `WatchlistManager.tsx` (262 lines) - Full CRUD UI with color/icon pickers
+  - `WatchlistSelector.tsx` (156 lines) - Dropdown selector with management link
+  - `WatchlistBadge.tsx` (139 lines) - Quick add/remove badge for coin table
+- Modified `useMarketData.ts` to filter by `currentWatchlistId`
+- Updated query key to include watchlist for proper caching
+- Added watchlist column to `CoinTable.tsx` with badge integration
+- Integrated `WatchlistSelector` into left sidebar in `App.tsx`
+- All TypeScript checks passing ✅
+
+### Test Suite Creation
+- Created `tests/utils/indicators.test.ts` (193 lines, 11 tests)
+- Created `tests/utils/sort.test.ts` (143 lines, 13 tests)
+- Created `tests/utils/format.test.ts` (157 lines, 28 tests)
+- Installed jsdom dependency (43 packages added)
+
+### Test Results
+- Ran `npx vitest run --reporter=verbose`
+- **Result**: 52 tests total | 16 passing ✓ | 36 failing ✗
+- **Duration**: 1.16s (transform 130ms, setup 571ms, collect 164ms, tests 64ms)
+- **Failures**: Revealed implementation gaps in format/indicator/sort utilities
+
+### Documentation
+- Updated ROADMAP.md Phase 6 completion details
+- Updated STATE.md header to Phase 7 (this file)
+
+## Next Steps
+
+1. **Fix Failing Tests** (36 tests):
+   - Start with format utilities (implement formatTimeAgo, add comma separators)
+   - Fix indicator utilities (export functions, debug VCP)
+   - Fix sort utilities (update mock data, debug sorting logic)
+
+2. **Expand Test Coverage**:
+   - Add alert engine tests (18 evaluators)
+   - Add component tests (AlertConfig, AlertNotification, AlertHistory, CoinTable)
+   - Run coverage analysis: `npm run test:coverage`
+
+3. **Achieve 80%+ Coverage Target**:
+   - Identify untested code paths
+   - Add integration tests for services
+   - Add E2E tests for critical flows
+
+---
+
+**Phase 7 Goal**: Comprehensive test coverage ensuring code quality and preventing regressions before deployment.

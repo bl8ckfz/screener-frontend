@@ -1,4 +1,4 @@
-import type { AlertType } from './alert'
+import type { CombinedAlertType } from './alert'
 
 /**
  * Single alert history entry - immutable record of an alert firing
@@ -6,7 +6,7 @@ import type { AlertType } from './alert'
 export interface AlertHistoryEntry {
   id: string // Unique ID: `${timestamp}-${symbol}-${alertType}`
   symbol: string // Coin symbol (e.g., "BTC")
-  alertType: AlertType // Type of alert that triggered
+  alertType: CombinedAlertType // Type of alert that triggered
   timestamp: number // When alert fired (milliseconds since epoch)
   priceAtTrigger: number // Coin price when alert triggered
   changePercent: number // 24h price change % at trigger time
@@ -27,7 +27,7 @@ export interface CoinAlertStats {
   priceChange: number // Current 24h change %
   totalAlerts: number // Total alert count in last 24h
   lastAlertTimestamp: number // Most recent alert time (ms)
-  alertTypes: Set<AlertType> // Unique alert types triggered
+  alertTypes: Set<CombinedAlertType> // Unique alert types triggered
   alerts: AlertHistoryEntry[] // Full alert history for this coin (sorted newest first)
 }
 

@@ -1,5 +1,13 @@
 import { useState } from 'react'
-import { AlertRule, AlertType, LEGACY_ALERT_PRESETS } from '@/types/alert'
+import {
+  AlertRule,
+  AlertType,
+  FuturesAlertType,
+  CombinedAlertType,
+  LEGACY_ALERT_PRESETS,
+  FUTURES_ALERT_PRESETS,
+  FUTURES_ALERT_LABELS,
+} from '@/types/alert'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Input } from '@/components/ui/Input'
@@ -61,24 +69,36 @@ export function AlertConfig({
     // If denied, do nothing (user needs to enable in browser settings)
   }
 
-  const handlePresetSelect = (presetName: string) => {
-    const preset = LEGACY_ALERT_PRESETS.find(p => p.name === presetName)
-    if (!preset) return
+  const handlePresetSelect = (presetName: string, presetType: 'legacy' | 'futures') => {
+    let alertType: CombinedAlertType
+    let severity: 'low' | 'medium' | 'high' | 'critical'
+    
+    if (presetType === 'legacy') {
+      const preset = LEGACY_ALERT_PRESETS.find(p => p.name === presetName)
+      if (!preset) return
+      alertType = preset.type
+      severity = preset.severity
+    } else {
+      const preset = FUTURES_ALERT_PRESETS.find(p => p.name === presetName)
+      if (!preset) return
+      alertType = preset.type
+      severity = preset.severity
+    }
 
     const newRule: AlertRule = {
       id: `rule_${Date.now()}`,
-      name: preset.name,
+      name: presetName,
       enabled: true,
       conditions: [
         {
-          type: preset.type,
-          threshold: 0, // Legacy alerts use preset logic
+          type: alertType,
+          threshold: 0, // Preset alerts use hardcoded logic
           comparison: 'greater_than',
           timeframe: undefined,
         },
       ],
       symbols: [], // Empty = all symbols
-      severity: preset.severity,
+      severity,
       notificationEnabled: true,
       soundEnabled: true,
       createdAt: Date.now(),
@@ -88,7 +108,7 @@ export function AlertConfig({
     setIsCreating(false)
   }
 
-  const getAlertTypeBadgeColor = (type: AlertType): string => {
+  const getAlertTypeBadgeColor = (type: CombinedAlertType): string => {
     if (type.includes('bull') || type === 'price_pump' || type === 'volume_spike') {
       return 'bg-green-500/20 text-green-400'
     }
@@ -101,7 +121,12 @@ export function AlertConfig({
     return 'bg-blue-500/20 text-blue-400'
   }
 
-  const getAlertTypeLabel = (type: AlertType): string => {
+  const getAlertTypeLabel = (type: CombinedAlertType): string => {
+    // Check futures alerts first
+    if (type.startsWith('futures_')) {
+      return FUTURES_ALERT_LABELS[type as FuturesAlertType] || type
+    }
+    // Spot alerts
     const labels: Record<AlertType, string> = {
       price_pump: 'Price Pump',
       price_dump: 'Price Dump',
@@ -120,7 +145,7 @@ export function AlertConfig({
       bottom_hunter: '🎣 Bottom Hunter',
       top_hunter: '🎣 Top Hunter',
     }
-    return labels[type] || type
+    return labels[type as AlertType] || type
   }
 
   return (
@@ -284,11 +309,50 @@ export function AlertConfig({
               <div className="flex-1 border-t border-gray-700"></div>
             </div>
 
+            {/* Futures Presets */}
+            <div className="mb-3">
+              <h5 className="text-xs font-medium text-green-400 mb-2 flex items-center gap-2">
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clipRule="evenodd" />
+                </svg>
+                Futures API Alerts (Recommended)
+              </h5>
+              <p className="text-xs text-gray-500 mb-2">
+                Multi-timeframe analysis with progressive validation
+              </p>
+            </div>
+            {FUTURES_ALERT_PRESETS.map((preset) => (
+              <button
+                key={preset.name}
+                onClick={() => handlePresetSelect(preset.name, 'futures')}
+                className="flex items-center justify-between rounded-lg border border-green-700/50 bg-green-900/10 p-3 text-left transition-colors hover:border-green-500 hover:bg-green-900/20 mb-2"
+              >
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-white">
+                      {preset.name}
+                    </span>
+                    <Badge className={getAlertTypeBadgeColor(preset.type)}>
+                      Futures
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-400">{preset.description}</p>
+                </div>
+              </button>
+            ))}
+
+            {/* Divider */}
+            <div className="flex items-center gap-3 my-3">
+              <div className="flex-1 border-t border-gray-700"></div>
+              <span className="text-xs text-gray-500">LEGACY ALERTS</span>
+              <div className="flex-1 border-t border-gray-700"></div>
+            </div>
+
             {/* Legacy Presets */}
             {LEGACY_ALERT_PRESETS.map((preset) => (
               <button
                 key={preset.name}
-                onClick={() => handlePresetSelect(preset.name)}
+                onClick={() => handlePresetSelect(preset.name, 'legacy')}
                 className="flex items-center justify-between rounded-lg border border-gray-700 bg-gray-800 p-3 text-left transition-colors hover:border-blue-500 hover:bg-gray-700"
               >
                 <div className="flex-1">

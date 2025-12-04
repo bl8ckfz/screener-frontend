@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Alert, AlertSeverity, AlertType } from '@/types/alert'
+import { Alert, AlertSeverity, CombinedAlertType } from '@/types/alert'
 import { useStore } from '@/hooks/useStore'
 import { formatNumber } from '@/utils/format'
 
@@ -95,7 +95,7 @@ function AlertNotificationToast({
     return icons[severity]
   }
 
-  const getAlertTypeIcon = (type: AlertType): string => {
+  const getAlertTypeIcon = (type: CombinedAlertType): string => {
     if (type.includes('bull') || type === 'price_pump') return '📈'
     if (type.includes('bear') || type === 'price_dump') return '📉'
     if (type.includes('hunter')) return '🎣'

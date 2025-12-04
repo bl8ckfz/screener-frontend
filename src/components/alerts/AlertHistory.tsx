@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { AlertHistoryItem, AlertType, AlertSeverity } from '@/types/alert'
+import { AlertHistoryItem, CombinedAlertType, AlertSeverity } from '@/types/alert'
 import { alertHistory } from '@/services/alertHistory'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -28,7 +28,7 @@ export function AlertHistory() {
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('24h')
-  const [typeFilter, setTypeFilter] = useState<AlertType | 'all'>('all')
+  const [typeFilter, setTypeFilter] = useState<CombinedAlertType | 'all'>('all')
   const [severityFilter, setSeverityFilter] = useState<AlertSeverity | 'all'>('all')
   const [sortField, setSortField] = useState<SortField>('timestamp')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
@@ -174,7 +174,7 @@ export function AlertHistory() {
     return colors[severity]
   }
 
-  const getTypeIcon = (type: AlertType): string => {
+  const getTypeIcon = (type: CombinedAlertType): string => {
     if (type.includes('bull') || type === 'price_pump') return '📈'
     if (type.includes('bear') || type === 'price_dump') return '📉'
     if (type.includes('hunter')) return '🎣'
@@ -277,22 +277,36 @@ export function AlertHistory() {
           <label className="mb-1 block text-xs text-gray-400">Alert Type</label>
           <select
             value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value as AlertType | 'all')}
+            onChange={(e) => setTypeFilter(e.target.value as CombinedAlertType | 'all')}
             className="w-full rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
           >
             <option value="all">All Types</option>
-            <option value="pioneer_bull">Pioneer Bull</option>
-            <option value="pioneer_bear">Pioneer Bear</option>
-            <option value="5m_big_bull">5m Big Bull</option>
-            <option value="5m_big_bear">5m Big Bear</option>
-            <option value="15m_big_bull">15m Big Bull</option>
-            <option value="15m_big_bear">15m Big Bear</option>
-            <option value="bottom_hunter">Bottom Hunter</option>
-            <option value="top_hunter">Top Hunter</option>
-            <option value="price_pump">Price Pump</option>
-            <option value="price_dump">Price Dump</option>
-            <option value="volume_spike">Volume Spike</option>
-            <option value="volume_drop">Volume Drop</option>
+            <optgroup label="Futures Alerts">
+              <option value="futures_big_bull_60">60 Big Bull</option>
+              <option value="futures_big_bear_60">60 Big Bear</option>
+              <option value="futures_pioneer_bull">Pioneer Bull (Futures)</option>
+              <option value="futures_pioneer_bear">Pioneer Bear (Futures)</option>
+              <option value="futures_5_big_bull">5 Big Bull (Futures)</option>
+              <option value="futures_5_big_bear">5 Big Bear (Futures)</option>
+              <option value="futures_15_big_bull">15 Big Bull (Futures)</option>
+              <option value="futures_15_big_bear">15 Big Bear (Futures)</option>
+              <option value="futures_bottom_hunter">Bottom Hunter (Futures)</option>
+              <option value="futures_top_hunter">Top Hunter (Futures)</option>
+            </optgroup>
+            <optgroup label="Legacy Alerts">
+              <option value="pioneer_bull">Pioneer Bull (Legacy)</option>
+              <option value="pioneer_bear">Pioneer Bear (Legacy)</option>
+              <option value="5m_big_bull">5m Big Bull (Legacy)</option>
+              <option value="5m_big_bear">5m Big Bear (Legacy)</option>
+              <option value="15m_big_bull">15m Big Bull (Legacy)</option>
+              <option value="15m_big_bear">15m Big Bear (Legacy)</option>
+              <option value="bottom_hunter">Bottom Hunter (Legacy)</option>
+              <option value="top_hunter">Top Hunter (Legacy)</option>
+              <option value="price_pump">Price Pump</option>
+              <option value="price_dump">Price Dump</option>
+              <option value="volume_spike">Volume Spike</option>
+              <option value="volume_drop">Volume Drop</option>
+            </optgroup>
           </select>
         </div>
 
