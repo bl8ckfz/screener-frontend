@@ -492,6 +492,7 @@ export const useStore = create<AppState>()(
         currentPair: state.currentPair,
         currentList: state.currentList,
         sort: state.sort,
+        sentimentFilter: state.sentimentFilter,
         config: state.config,
         autoRefresh: state.autoRefresh,
         refreshInterval: state.refreshInterval,
