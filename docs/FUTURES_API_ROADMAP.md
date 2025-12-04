@@ -263,27 +263,32 @@ Focus on integration testing, performance profiling, and documentation.
 
 **Optimized Implementation**:
 - `/fapi/v1/ticker/24hr` - Call every 5 seconds (for real-time price/volume screening)
-- `/fapi/v1/klines` - Call every 5 minutes (cached with module-level state, **fetched asynchronously**)
+- `/fapi/v1/klines` - Call at 5-minute boundaries (00, 05, 10, 15...) aligned with candle closes
 - **Non-blocking**: Market data list and summary display immediately, klines fetched in background
+- **Boundary-aligned**: Fetches right after Binance closes each 5-min candle for optimal freshness
 - Total: ~25 calls/5s + 125 calls/5min = **~302 calls/minute** ✅ (83% reduction!)
 
-**Implementation**:
+**Implementation Details**:
 - [x] Add module-level `lastKlinesUpdate` timestamp and `cachedKlinesMetrics` Map
 - [x] Move klines fetching to separate background effect (non-blocking)
+- [x] Implement boundary detection: `Math.floor(currentMinute / 5) * 5`
+- [x] Fetch once per boundary window (prevents drift from time-based approach)
 - [x] Market data returns immediately with cached metrics attached
-- [x] Klines fetch asynchronously when cache expires
-- [x] Add detailed logging with time-since-update display ("2m 15s ago")
 - [x] Export `invalidateKlinesCache()` and `getKlinesCacheStats()` utilities
+- [x] **CoinGecko optimization**: 24h cache + reduced concurrency (2 instead of 5)
 - [x] All 127 tests passing
 
 **Files Modified**:
-- `src/hooks/useMarketData.ts` - Added non-blocking klines caching with 5-minute TTL
+- `src/hooks/useMarketData.ts` - Boundary-aligned klines caching with 5-minute TTL
 - `src/hooks/index.ts` - Exported cache utility functions
+- `src/services/coinGeckoApi.ts` - 24h cache TTL, 20 calls/min rate limit
+- `src/services/futuresMetricsService.ts` - Concurrency reduced to 2 for market cap fetches
 
 **Benefits**:
 - ✅ 83% reduction in API calls (from 1,560 to 302 calls/minute)
-- ✅ Reduced risk of rate limiting
 - ✅ **Instant screen rendering** - No waiting for klines (0ms vs 2-3s delay)
+- ✅ **Optimal data freshness** - Synced with Binance candle close times
+- ✅ **CoinGecko rate limit fix** - Reduced from 300 calls/hour to ~25 on first load, then ~1/hour
 - ✅ Alert accuracy maintained (5min granularity matches requirement)
 - ✅ Real-time screening preserved (24hr ticker still updates every 5s)
 - ✅ Background klines fetch doesn't block UI updates
