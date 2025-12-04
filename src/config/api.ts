@@ -23,8 +23,11 @@ export const API_CONFIG = {
     ? `${CORS_PROXY}${encodeURIComponent(import.meta.env.VITE_BINANCE_API_URL || 'https://api.binance.com/api/v3')}`
     : import.meta.env.VITE_BINANCE_API_URL || 'https://api.binance.com/api/v3',
   
-  // Futures API base URL
+  // Futures API base URL (uses CORS proxy in development to avoid rate limits)
   futuresBaseUrl: import.meta.env.VITE_BINANCE_FUTURES_API_URL || 'https://fapi.binance.com',
+  
+  // Whether to use CORS proxy for futures API (helps avoid rate limiting)
+  useCorsProxyForFutures: !!CORS_PROXY,
   
   // CoinGecko API base URL
   coinGeckoBaseUrl: import.meta.env.VITE_COINGECKO_API_URL || 'https://api.coingecko.com/api/v3',

@@ -23,11 +23,12 @@ const CACHE_DURATION = 3600000 // 1 hour in milliseconds
  * Simple rate limiter to prevent 418 errors
  * Binance has strict rate limits, especially through CORS proxies
  * 
- * Strategy: 50ms delay = max 20 req/sec = 1200 req/min (well below typical limits)
+ * Strategy: 200ms delay = max 5 req/sec = 300 req/min (conservative to avoid rate limiting)
+ * Increased from 50ms due to persistent 418 errors - Binance is very strict
  * Testing: Disable in test environment for speed
  */
 let lastRequestTime = 0
-const MIN_REQUEST_INTERVAL = import.meta.env.VITEST ? 0 : 50 // ms between requests
+const MIN_REQUEST_INTERVAL = import.meta.env.VITEST ? 0 : 200 // ms between requests
 
 async function rateLimitedDelay(): Promise<void> {
   if (MIN_REQUEST_INTERVAL === 0) return // Skip in tests
