@@ -128,9 +128,11 @@ export function useMarketData() {
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   })
 
-  // Fetch klines data in background (non-blocking)
-  // This runs separately from the main query to avoid delaying market data display
-  // Aligned to 5-minute boundaries (00, 05, 10, 15, 20, ...) for fresh candle data
+  // DISABLED: Fetch klines data in background (non-blocking)
+  // Reason: Binance rate limits are too strict for klines fetching
+  // Even with 200ms delays, still getting 418 errors
+  // TODO: Re-enable when we have a backend proxy or better rate limit strategy
+  /*
   useEffect(() => {
     if (!query.data) {
       return
@@ -213,6 +215,7 @@ export function useMarketData() {
       }
     })()
   }, [query.data, query.dataUpdatedAt, query.refetch])
+  */
 
   // Evaluate alerts when data is successfully fetched
   // IMPORTANT: This effect may run in multiple component instances,
