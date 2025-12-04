@@ -1,5 +1,10 @@
 export { useStore } from './useStore'
-export { useMarketData, useMarketStats } from './useMarketData'
+export {
+  useMarketData,
+  useMarketStats,
+  invalidateKlinesCache,
+  getKlinesCacheStats,
+} from './useMarketData'
 export {
   useKeyboardShortcuts,
   formatShortcut,
