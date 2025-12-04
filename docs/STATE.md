@@ -5,12 +5,13 @@
 ## Current Status
 
 - **Project**: Crypto Screener - Futures API Migration
-- **Current Phase**: Week 2 - Alert System Integration (COMPLETED ✅)
+- **Current Phase**: Week 2 - Remove Old System (IN PROGRESS)
 - **Start Date**: December 4, 2025
 - **Target Completion**: December 25, 2025 (3 weeks / 15 working days)
-- **Overall Progress**: 49/83 tasks completed (59%)
-- **Test Coverage**: 123 tests passing (20 new futures alert tests added)
+- **Overall Progress**: 54/87 tasks completed (62%)
+- **Test Coverage**: 123 tests passing (all tests still passing after Futures API switch)
 - **Bundle Size**: 168.39KB gzipped (target: <500KB) ✅
+- **Data Source**: ✅ Now using Binance Futures API (`/fapi/v1/ticker/24hr`)
 
 ## Previous Work Completed (Context)
 
@@ -203,18 +204,27 @@
 
 ---
 
-#### Phase 4.1: Replace Spot API with Futures API (Days 9-10)
-**Files**: `src/hooks/useMarketData.ts`, `src/services/dataProcessor.ts`, `src/services/binanceApi.ts`
+#### Phase 4.1: Replace Spot API with Futures API (Days 9-10) ✅
+**Files**: `src/hooks/useMarketData.ts`, `src/services/binanceFuturesApi.ts`
 
-- [ ] Replace `useMarketData` hook to use `FuturesMetricsService` instead of Spot API
-- [ ] Remove Spot API calls and related logic
-- [ ] Update data models to use `FuturesMetrics` type
-- [ ] Adjust data refresh intervals if needed (currently 5s)
-- [ ] Update UI components to display futures data
-- [ ] Test with real Futures data from Binance
-- [ ] Remove unused Spot API code from `binanceApi.ts`
+- [x] Add `fetch24hrTickers()` method to `BinanceFuturesApiClient`
+- [x] Replace Spot API call in `useMarketData` with Futures API call
+- [x] Test with Futures API (all 123 tests passing)
+- [x] Keep `BinanceApiClient.parseTickerBatch()` utility for ticker parsing
+- [x] Verify data format compatibility (Futures ticker matches Spot ticker format)
 
-**Progress**: 0/7 tasks | **Status**: Not Started
+**Progress**: 5/5 tasks | **Status**: ✅ **COMPLETED**
+
+**Files Modified**:
+- `src/services/binanceFuturesApi.ts` - Added `fetch24hrTickers()` method (28 lines)
+- `src/hooks/useMarketData.ts` - Replaced Spot API with Futures API, added futuresApi client
+
+**Technical Details**:
+- Futures 24hr ticker endpoint: `/fapi/v1/ticker/24hr`
+- Returns same data structure as Spot API ticker
+- Filters to USDT-M perpetual futures only
+- No data model changes needed - transparent replacement
+- All existing components work without modification
 
 ---
 

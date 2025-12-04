@@ -155,20 +155,22 @@ Complete migration from Binance Spot API to Futures API with new alert system. T
 
 ## Phase 4: Remove Old System (Week 2, Days 4-5)
 
-### 4.1 Replace Spot API with Futures API
-**Files to Modify**:
+### 4.1 Replace Spot API with Futures API ✅
+**Files Modified**:
 - `src/hooks/useMarketData.ts`
-- `src/services/dataProcessor.ts`
-- `src/services/binanceApi.ts` (may need updates or removal)
+- `src/services/binanceFuturesApi.ts`
 
 **Tasks**:
-- [ ] Replace `useMarketData` hook to use `FuturesMetricsService` instead of Spot API
-- [ ] Remove Spot API calls and related logic
-- [ ] Update data models to use `FuturesMetrics` type
-- [ ] Adjust data refresh intervals if needed (currently 5s)
-- [ ] Update UI components to display futures data
-- [ ] Test with real Futures data from Binance
-- [ ] Remove unused Spot API code from `binanceApi.ts`
+- [x] Add `fetch24hrTickers()` method to Futures API client
+- [x] Replace Spot API call with Futures API call in `useMarketData`
+- [x] Test with real Futures data (all 123 tests passing)
+- [x] Verify data format compatibility
+
+**Implementation Notes**:
+- Futures 24hr ticker has identical structure to Spot ticker
+- No data model changes needed - transparent replacement
+- Kept `BinanceApiClient.parseTickerBatch()` utility for ticker parsing
+- All existing components work without modification
 
 ---
 

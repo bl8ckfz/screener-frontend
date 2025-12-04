@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useStore } from './useStore'
-import { binanceApi, BinanceApiClient } from '@/services/binanceApi'
+import { BinanceFuturesApiClient } from '@/services/binanceFuturesApi'
+import { BinanceApiClient } from '@/services/binanceApi'
 import { processTickersForPair } from '@/services/dataProcessor'
 import { applyTechnicalIndicators } from '@/utils/indicators'
 import { timeframeService } from '@/services/timeframeService'
@@ -13,6 +14,9 @@ import { audioNotificationService } from '@/services/audioNotification'
 import { sendDiscordWebhook, sendToWebhooks } from '@/services/webhookService'
 import type { Coin } from '@/types/coin'
 import type { Alert } from '@/types/alert'
+
+// Initialize Futures API client
+const futuresApi = new BinanceFuturesApiClient()
 
 // Singleton guard to ensure alert evaluation only runs once per data update
 // Tracks the last query data timestamp to prevent duplicate evaluations
@@ -78,17 +82,19 @@ export function useMarketData() {
   const query = useQuery({
     queryKey: ['marketData', 'USDT', currentWatchlistId],
     queryFn: async (): Promise<Coin[]> => {
-      // Use mock data if enabled, otherwise fetch from Binance API
+      // Use mock data if enabled, otherwise fetch from Binance Futures API
       let tickers
       if (USE_MOCK_DATA) {
         console.log('Using mock data with variations for alert testing')
         tickers = getMockDataWithVariations()
       } else {
         try {
-          tickers = await binanceApi.fetch24hrTickers()
+          // Fetch from Futures API instead of Spot API
+          tickers = await futuresApi.fetch24hrTickers()
+          console.log(`✅ Fetched ${tickers.length} futures tickers`)
         } catch (error) {
           console.warn(
-            'Failed to fetch from Binance API, falling back to mock data:',
+            'Failed to fetch from Binance Futures API, falling back to mock data:',
             error
           )
           tickers = getMockDataWithVariations()

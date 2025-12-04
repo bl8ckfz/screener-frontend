@@ -155,6 +155,33 @@ export class BinanceFuturesApiClient {
   }
 
   /**
+   * Fetch 24hr ticker price change statistics for all symbols
+   * 
+   * @returns Array of 24hr ticker data for all USDT-M perpetual futures
+   * 
+   * @example
+   * const tickers = await client.fetch24hrTickers()
+   */
+  async fetch24hrTickers(): Promise<any[]> {
+    try {
+      const endpoint = '/fapi/v1/ticker/24hr'
+      const url = API_CONFIG.corsProxy
+        ? `${API_CONFIG.corsProxy}${encodeURIComponent(`https://fapi.binance.com${endpoint}`)}`
+        : `${this.baseUrl}${endpoint}`
+
+      const data = await this.fetchWithRetry<any[]>(url)
+
+      // Filter to USDT-M perpetual futures only
+      const usdtTickers = data.filter((ticker: any) => ticker.symbol.endsWith('USDT'))
+
+      return usdtTickers
+    } catch (error) {
+      console.error('Failed to fetch 24hr tickers:', error)
+      throw error
+    }
+  }
+
+  /**
    * Process kline data into structured format with previous and current candles
    * 
    * @param klines - Array of klines (expected: 2 for previous + current)
