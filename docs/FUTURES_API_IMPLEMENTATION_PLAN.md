@@ -682,22 +682,41 @@ export const COINGECKO_CONFIG = {
 
 ### 12.9 Bottom Hunter
 **Type:** `futures_bottom_hunter`  
-**Purpose:** Detect potential reversals with volume confirmation
+**Purpose:** Detect reversal from bottom with volume confirmation
 
 **Criteria:**
-1. `change_5m > 0.21%` - Starting recovery
-2. `change_15m > 0.5%` - Confirming reversal
-3. `change_1h < 1%` - Not parabolic yet
-4. `volume_5m > 2.5 * volume_15m` - Volume spike at bottom
-5. `volume_15m > 1.67 * volume_1h` - Volume acceleration
-6. `marketCap > $200M` - Minimum liquidity
+1. `change_1h < -0.7%` - Hourly in decline (establishing bottom)
+2. `change_15m < -0.6%` - 15m also in decline (confirming bottom)
+3. `change_5m > 0.5%` - BUT 5m showing recovery (reversal signal!)
+4. `volume_5m > volume_15m / 2` - 5m volume acceleration (2x ratio)
+5. `volume_5m > volume_1h / 8` - 5m vs 1h volume (8x ratio)
+6. `marketCap > $23M` - Minimum liquidity
+7. `marketCap < $2.5B` - Maximum cap (avoid mega-caps)
 
 **Timeframes:** 5m, 15m, 1h  
 **Volume Intervals:** 5m, 15m, 1h
 
 ---
 
-### 12.10 Implementation Notes
+### 12.10 Top Hunter
+**Type:** `futures_top_hunter`  
+**Purpose:** Detect reversal from top with volume confirmation
+
+**Criteria:**
+1. `change_1h > 0.7%` - Hourly in rally (establishing top)
+2. `change_15m > 0.6%` - 15m also in rally (confirming top)
+3. `change_5m < -0.5%` - BUT 5m showing decline (reversal signal!)
+4. `volume_5m > volume_15m / 2` - 5m volume acceleration (2x ratio)
+5. `volume_5m > volume_1h / 8` - 5m vs 1h volume (8x ratio)
+6. `marketCap > $23M` - Minimum liquidity
+7. `marketCap < $2.5B` - Maximum cap (avoid mega-caps)
+
+**Timeframes:** 5m, 15m, 1h  
+**Volume Intervals:** 5m, 15m, 1h
+
+---
+
+### 12.11 Implementation Notes
 
 #### Alert Evaluator Structure
 ```typescript
@@ -833,6 +852,34 @@ function evaluateFutures15BigBear(metrics: FuturesMetrics): boolean {
   );
 }
 
+function evaluateFuturesBottomHunter(metrics: FuturesMetrics): boolean {
+  if (!metrics.marketCap) return false;
+  
+  return (
+    metrics.change_1h < -0.7 &&
+    metrics.change_15m < -0.6 &&
+    metrics.change_5m > 0.5 &&
+    2 * metrics.volume_5m > metrics.volume_15m &&
+    8 * metrics.volume_5m > metrics.volume_1h &&
+    metrics.marketCap > 23_000_000 &&
+    metrics.marketCap < 2_500_000_000
+  );
+}
+
+function evaluateFuturesTopHunter(metrics: FuturesMetrics): boolean {
+  if (!metrics.marketCap) return false;
+  
+  return (
+    metrics.change_1h > 0.7 &&
+    metrics.change_15m > 0.6 &&
+    metrics.change_5m < -0.5 &&
+    2 * metrics.volume_5m > metrics.volume_15m &&
+    8 * metrics.volume_5m > metrics.volume_1h &&
+    metrics.marketCap > 23_000_000 &&
+    metrics.marketCap < 2_500_000_000
+  );
+}
+
 // ... similar functions for other alerts
 ```
 
@@ -849,7 +896,8 @@ export type FuturesAlertType =
   | 'futures_5_big_bear'
   | 'futures_15_big_bull'
   | 'futures_15_big_bear'
-  | 'futures_bottom_hunter';
+  | 'futures_bottom_hunter'
+  | 'futures_top_hunter';
 
 export interface FuturesAlertConfig extends BaseAlertConfig {
   type: FuturesAlertType;
@@ -871,6 +919,7 @@ const FUTURES_ALERT_LABELS: Record<FuturesAlertType, string> = {
   futures_15_big_bull: '15 Big Bull',
   futures_15_big_bear: '15 Big Bear',
   futures_bottom_hunter: 'Bottom Hunter',
+  futures_top_hunter: 'Top Hunter',
 };
 ```
 
