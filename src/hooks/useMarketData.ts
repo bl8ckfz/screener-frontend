@@ -150,6 +150,13 @@ export function useMarketData() {
     // Check if we've already fetched for this boundary
     const alreadyFetchedForBoundary = lastKlinesUpdate >= lastBoundaryTimestamp
     
+    // Debug logging
+    if (import.meta.env.DEV || window.location.search.includes('debug')) {
+      const currentTime = currentDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      const boundaryTime = lastBoundary.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+      console.log(`⏱️  Boundary check at ${currentTime}: current=${currentMinute}min, boundary=${lastBoundaryMinute}min (${boundaryTime}), already fetched=${alreadyFetchedForBoundary}`)
+    }
+    
     if (alreadyFetchedForBoundary) {
       // Already fetched for current 5-min window, skip
       return
@@ -159,7 +166,10 @@ export function useMarketData() {
     ;(async () => {
       try {
         const boundaryTime = lastBoundary.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-        console.log(`🔄 Fetching fresh klines data for ${boundaryTime} boundary...`)
+        const lastFetchedTime = lastKlinesUpdate > 0 
+          ? new Date(lastKlinesUpdate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+          : 'never'
+        console.log(`🔄 Fetching fresh klines data for ${boundaryTime} boundary (last fetch: ${lastFetchedTime})`)
         const { futuresMetricsService } = await import('@/services/futuresMetricsService')
         
         const metricsArray = await futuresMetricsService.fetchMultipleSymbolMetrics(
@@ -465,4 +475,45 @@ export function useMarketStats() {
             : ('neutral' as const),
     },
   }
+}
+
+/**
+ * Get klines cache statistics for debugging
+ * Exposed to window for console access
+ */
+export function getKlinesFetchInfo() {
+  const now = Date.now()
+  const lastFetchDate = lastKlinesUpdate > 0 ? new Date(lastKlinesUpdate) : null
+  const timeSinceLastFetch = lastKlinesUpdate > 0 ? now - lastKlinesUpdate : null
+  
+  const currentDate = new Date(now)
+  const currentMinute = currentDate.getMinutes()
+  const lastBoundaryMinute = Math.floor(currentMinute / 5) * 5
+  const lastBoundary = new Date(currentDate)
+  lastBoundary.setMinutes(lastBoundaryMinute, 0, 0)
+  
+  const nextBoundaryMinute = (lastBoundaryMinute + 5) % 60
+  const nextBoundary = new Date(currentDate)
+  nextBoundary.setMinutes(nextBoundaryMinute, 0, 0)
+  if (nextBoundaryMinute < lastBoundaryMinute) {
+    nextBoundary.setHours(nextBoundary.getHours() + 1)
+  }
+  const timeUntilNextBoundary = nextBoundary.getTime() - now
+  
+  return {
+    currentTime: currentDate.toLocaleString(),
+    lastFetchTime: lastFetchDate?.toLocaleString() || 'Never',
+    timeSinceLastFetchMs: timeSinceLastFetch,
+    timeSinceLastFetchMinutes: timeSinceLastFetch ? Math.floor(timeSinceLastFetch / 60000) : null,
+    cachedSymbolsCount: cachedKlinesMetrics.size,
+    currentBoundary: lastBoundary.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+    nextBoundary: nextBoundary.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+    timeUntilNextBoundarySeconds: Math.floor(timeUntilNextBoundary / 1000),
+    shouldFetchNow: lastKlinesUpdate < lastBoundary.getTime(),
+  }
+}
+
+// Expose to window for debugging in console
+if (typeof window !== 'undefined') {
+  (window as any).getKlinesFetchInfo = getKlinesFetchInfo
 }
