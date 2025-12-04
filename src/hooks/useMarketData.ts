@@ -100,57 +100,12 @@ export function useMarketData() {
       // Apply technical indicators (VCP, Fibonacci, etc.)
       coins = applyTechnicalIndicators(coins)
 
-      // Fetch futures metrics (klines data) for all coins
-      // OPTIMIZATION: Cache klines for 5 minutes since smallest alert timeframe is 5m
-      // This reduces API calls from ~1,800/min to ~302/min (83% reduction)
-      try {
-        const symbols = coins.map(coin => coin.fullSymbol)
-        const now = Date.now()
-        const timeSinceLastUpdate = now - lastKlinesUpdate
-        const shouldFetchKlines = timeSinceLastUpdate > KLINES_CACHE_DURATION
-
-        if (shouldFetchKlines) {
-          // Fetch fresh klines data
-          console.log('🔄 Fetching fresh klines data (cache expired)...')
-          const { futuresMetricsService } = await import('@/services/futuresMetricsService')
-          
-          const metricsArray = await futuresMetricsService.fetchMultipleSymbolMetrics(
-            symbols,
-            (progress) => {
-              if (progress.completed % 10 === 0) {
-                console.log(`📊 Fetched metrics: ${progress.completed}/${progress.total}`)
-              }
-            },
-            { skipMarketCap: true } // Skip market cap to avoid rate limits
-          )
-
-          // Update cache
-          lastKlinesUpdate = now
-          cachedKlinesMetrics.clear()
-          metricsArray.forEach(metrics => {
-            cachedKlinesMetrics.set(metrics.symbol, metrics)
-          })
-
-          console.log(`✅ Cached ${metricsArray.length} futures metrics (valid for 5 minutes)`)
-        } else {
-          // Use cached data
-          const minutesAgo = Math.round(timeSinceLastUpdate / 60000)
-          const secondsAgo = Math.round((timeSinceLastUpdate % 60000) / 1000)
-          const timeStr = minutesAgo > 0 ? `${minutesAgo}m ${secondsAgo}s` : `${secondsAgo}s`
-          console.log(`⏱️ Using cached klines data (last updated ${timeStr} ago)`)
-        }
-
-        // Attach futures metrics from cache
-        coins = coins.map(coin => {
-          const metrics = cachedKlinesMetrics.get(coin.fullSymbol)
-          return metrics ? { ...coin, futuresMetrics: metrics } : coin
-        })
-
-        const coinsWithMetrics = coins.filter(c => c.futuresMetrics).length
-        console.log(`✅ Attached futures metrics to ${coinsWithMetrics}/${coins.length} coins`)
-      } catch (error) {
-        console.warn('Failed to fetch/cache futures metrics, continuing without them:', error)
-      }
+      // Attach cached futures metrics immediately (non-blocking)
+      // This ensures market data list and summary don't wait for klines
+      coins = coins.map(coin => {
+        const metrics = cachedKlinesMetrics.get(coin.fullSymbol)
+        return metrics ? { ...coin, futuresMetrics: metrics } : coin
+      })
 
       // Filter by watchlist if one is selected
       if (currentWatchlistId) {
@@ -172,6 +127,54 @@ export function useMarketData() {
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   })
+
+  // Fetch klines data in background (non-blocking)
+  // This runs separately from the main query to avoid delaying market data display
+  useEffect(() => {
+    if (!query.data) {
+      return
+    }
+
+    const symbols = query.data.map(coin => coin.fullSymbol)
+    const now = Date.now()
+    const timeSinceLastUpdate = now - lastKlinesUpdate
+    const shouldFetchKlines = timeSinceLastUpdate > KLINES_CACHE_DURATION
+
+    if (!shouldFetchKlines) {
+      // Cache still valid, no need to fetch
+      return
+    }
+
+    // Fetch klines asynchronously (doesn't block UI)
+    ;(async () => {
+      try {
+        console.log('🔄 Fetching fresh klines data in background (cache expired)...')
+        const { futuresMetricsService } = await import('@/services/futuresMetricsService')
+        
+        const metricsArray = await futuresMetricsService.fetchMultipleSymbolMetrics(
+          symbols,
+          (progress) => {
+            if (progress.completed % 10 === 0) {
+              console.log(`📊 Fetched metrics: ${progress.completed}/${progress.total}`)
+            }
+          },
+          { skipMarketCap: true } // Skip market cap to avoid rate limits
+        )
+
+        // Update cache
+        lastKlinesUpdate = now
+        cachedKlinesMetrics.clear()
+        metricsArray.forEach(metrics => {
+          cachedKlinesMetrics.set(metrics.symbol, metrics)
+        })
+
+        console.log(`✅ Cached ${metricsArray.length} futures metrics (valid for 5 minutes)`)
+        console.log('ℹ️ Metrics will be attached on next scheduled refresh')
+      } catch (error) {
+        console.warn('Failed to fetch/cache futures metrics in background:', error)
+      }
+    })()
+  }, [query.data, query.dataUpdatedAt])
 
   // Evaluate alerts when data is successfully fetched
   // IMPORTANT: This effect may run in multiple component instances,

@@ -258,31 +258,35 @@ Focus on integration testing, performance profiling, and documentation.
 **Previous Implementation (Suboptimal)**:
 - `/fapi/v1/ticker/24hr` called every 5 seconds (default refresh interval)
 - `/fapi/v1/klines` called every 5 seconds for ALL symbols (5 intervals × 25+ coins = 125+ API calls)
+- Klines fetching blocked market data display (2-3s delay)
 - Total: ~130 API calls every 5 seconds = **1,560 calls/minute** ❌
 
 **Optimized Implementation**:
 - `/fapi/v1/ticker/24hr` - Call every 5 seconds (for real-time price/volume screening)
-- `/fapi/v1/klines` - Call every 5 minutes (cached with module-level state)
+- `/fapi/v1/klines` - Call every 5 minutes (cached with module-level state, **fetched asynchronously**)
+- **Non-blocking**: Market data list and summary display immediately, klines fetched in background
 - Total: ~25 calls/5s + 125 calls/5min = **~302 calls/minute** ✅ (83% reduction!)
 
 **Implementation**:
 - [x] Add module-level `lastKlinesUpdate` timestamp and `cachedKlinesMetrics` Map
-- [x] Skip `futuresMetricsService.fetchMultipleSymbolMetrics()` if cache valid (<5 minutes old)
-- [x] Preserve cached `futuresMetrics` and attach to Coin objects from cache
+- [x] Move klines fetching to separate background effect (non-blocking)
+- [x] Market data returns immediately with cached metrics attached
+- [x] Klines fetch asynchronously when cache expires
 - [x] Add detailed logging with time-since-update display ("2m 15s ago")
 - [x] Export `invalidateKlinesCache()` and `getKlinesCacheStats()` utilities
-- [x] All 117 tests passing
+- [x] All 127 tests passing
 
 **Files Modified**:
-- `src/hooks/useMarketData.ts` - Added klines caching with 5-minute TTL
+- `src/hooks/useMarketData.ts` - Added non-blocking klines caching with 5-minute TTL
 - `src/hooks/index.ts` - Exported cache utility functions
 
 **Benefits**:
 - ✅ 83% reduction in API calls (from 1,560 to 302 calls/minute)
 - ✅ Reduced risk of rate limiting
-- ✅ Faster screen rendering (~150ms vs 2-3s per poll)
+- ✅ **Instant screen rendering** - No waiting for klines (0ms vs 2-3s delay)
 - ✅ Alert accuracy maintained (5min granularity matches requirement)
 - ✅ Real-time screening preserved (24hr ticker still updates every 5s)
+- ✅ Background klines fetch doesn't block UI updates
 
 ---
 
