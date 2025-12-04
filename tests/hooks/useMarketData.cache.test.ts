@@ -33,20 +33,26 @@ describe('useMarketData - Klines Caching', () => {
     it('should return cache statistics with correct structure', () => {
       const stats = getKlinesCacheStats()
 
-      // Verify structure
+      // Verify structure (boundary-aligned fields)
       expect(stats).toHaveProperty('lastUpdate')
+      expect(stats).toHaveProperty('lastUpdateDate')
       expect(stats).toHaveProperty('cacheSize')
       expect(stats).toHaveProperty('cacheDurationMs')
       expect(stats).toHaveProperty('timeSinceUpdateMs')
-      expect(stats).toHaveProperty('timeUntilNextUpdateMs')
+      expect(stats).toHaveProperty('timeUntilNextBoundaryMs')
+      expect(stats).toHaveProperty('nextBoundaryTime')
+      expect(stats).toHaveProperty('isFetchedForCurrentBoundary')
       expect(stats).toHaveProperty('isExpired')
 
       // Verify types
       expect(typeof stats.lastUpdate).toBe('number')
+      expect(typeof stats.lastUpdateDate).toBe('string')
       expect(typeof stats.cacheSize).toBe('number')
       expect(typeof stats.cacheDurationMs).toBe('number')
       expect(typeof stats.timeSinceUpdateMs).toBe('number')
-      expect(typeof stats.timeUntilNextUpdateMs).toBe('number')
+      expect(typeof stats.timeUntilNextBoundaryMs).toBe('number')
+      expect(typeof stats.nextBoundaryTime).toBe('string')
+      expect(typeof stats.isFetchedForCurrentBoundary).toBe('boolean')
       expect(typeof stats.isExpired).toBe('boolean')
     })
 
@@ -63,10 +69,10 @@ describe('useMarketData - Klines Caching', () => {
 
       const stats = getKlinesCacheStats()
 
-      // With lastUpdate = 0, cache should be expired
+      // With lastUpdate = 0, cache should be expired (not fetched for current boundary)
       expect(stats.isExpired).toBe(true)
+      expect(stats.isFetchedForCurrentBoundary).toBe(false)
       expect(stats.timeSinceUpdateMs).toBeGreaterThan(stats.cacheDurationMs)
-      expect(stats.timeUntilNextUpdateMs).toBe(0)
     })
   })
 
@@ -83,6 +89,7 @@ describe('useMarketData - Klines Caching', () => {
       const stats = getKlinesCacheStats()
 
       expect(stats.isExpired).toBe(true)
+      expect(stats.isFetchedForCurrentBoundary).toBe(false)
     })
 
     it('should calculate time values correctly', () => {
@@ -91,13 +98,12 @@ describe('useMarketData - Klines Caching', () => {
       // Time since update should be >= 0
       expect(stats.timeSinceUpdateMs).toBeGreaterThanOrEqual(0)
 
-      // Time until next update should be >= 0
-      expect(stats.timeUntilNextUpdateMs).toBeGreaterThanOrEqual(0)
+      // Time until next boundary should be >= 0 and < 5 minutes
+      expect(stats.timeUntilNextBoundaryMs).toBeGreaterThanOrEqual(0)
+      expect(stats.timeUntilNextBoundaryMs).toBeLessThanOrEqual(5 * 60 * 1000)
 
-      // If expired, time until next should be 0
-      if (stats.isExpired) {
-        expect(stats.timeUntilNextUpdateMs).toBe(0)
-      }
+      // Next boundary time should be a valid time string
+      expect(stats.nextBoundaryTime).toMatch(/\d{1,2}:\d{2}/)
     })
   })
 

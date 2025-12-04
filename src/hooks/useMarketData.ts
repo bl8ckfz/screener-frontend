@@ -130,6 +130,7 @@ export function useMarketData() {
 
   // Fetch klines data in background (non-blocking)
   // This runs separately from the main query to avoid delaying market data display
+  // Aligned to 5-minute boundaries (00, 05, 10, 15, 20, ...) for fresh candle data
   useEffect(() => {
     if (!query.data) {
       return
@@ -137,18 +138,28 @@ export function useMarketData() {
 
     const symbols = query.data.map(coin => coin.fullSymbol)
     const now = Date.now()
-    const timeSinceLastUpdate = now - lastKlinesUpdate
-    const shouldFetchKlines = timeSinceLastUpdate > KLINES_CACHE_DURATION
-
-    if (!shouldFetchKlines) {
-      // Cache still valid, no need to fetch
+    const currentDate = new Date(now)
+    const currentMinute = currentDate.getMinutes()
+    
+    // Calculate the last 5-minute boundary
+    const lastBoundaryMinute = Math.floor(currentMinute / 5) * 5
+    const lastBoundary = new Date(currentDate)
+    lastBoundary.setMinutes(lastBoundaryMinute, 0, 0) // Set to boundary with 0 seconds/ms
+    const lastBoundaryTimestamp = lastBoundary.getTime()
+    
+    // Check if we've already fetched for this boundary
+    const alreadyFetchedForBoundary = lastKlinesUpdate >= lastBoundaryTimestamp
+    
+    if (alreadyFetchedForBoundary) {
+      // Already fetched for current 5-min window, skip
       return
     }
 
     // Fetch klines asynchronously (doesn't block UI)
     ;(async () => {
       try {
-        console.log('🔄 Fetching fresh klines data in background (cache expired)...')
+        const boundaryTime = lastBoundary.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+        console.log(`🔄 Fetching fresh klines data for ${boundaryTime} boundary...`)
         const { futuresMetricsService } = await import('@/services/futuresMetricsService')
         
         const metricsArray = await futuresMetricsService.fetchMultipleSymbolMetrics(
@@ -161,14 +172,14 @@ export function useMarketData() {
           { skipMarketCap: false } // Include market cap for alerts (Pioneer Bull requires it)
         )
 
-        // Update cache
-        lastKlinesUpdate = now
+        // Update cache with boundary timestamp
+        lastKlinesUpdate = lastBoundaryTimestamp
         cachedKlinesMetrics.clear()
         metricsArray.forEach(metrics => {
           cachedKlinesMetrics.set(metrics.symbol, metrics)
         })
 
-        console.log(`✅ Cached ${metricsArray.length} futures metrics (valid for 5 minutes)`)
+        console.log(`✅ Cached ${metricsArray.length} futures metrics for ${boundaryTime} boundary`)
         
         // Trigger query refetch to:
         // 1. Attach new metrics to coins
@@ -386,16 +397,34 @@ export function invalidateKlinesCache(): void {
  */
 export function getKlinesCacheStats() {
   const now = Date.now()
+  const currentDate = new Date(now)
+  const currentMinute = currentDate.getMinutes()
+  
+  // Calculate next 5-minute boundary
+  const nextBoundaryMinute = Math.ceil((currentMinute + 1) / 5) * 5
+  const nextBoundary = new Date(currentDate)
+  nextBoundary.setMinutes(nextBoundaryMinute, 0, 0)
+  const timeUntilNextBoundary = nextBoundary.getTime() - now
+  
+  // Calculate last 5-minute boundary  
+  const lastBoundaryMinute = Math.floor(currentMinute / 5) * 5
+  const lastBoundary = new Date(currentDate)
+  lastBoundary.setMinutes(lastBoundaryMinute, 0, 0)
+  const lastBoundaryTimestamp = lastBoundary.getTime()
+  
   const timeSinceUpdate = now - lastKlinesUpdate
-  const timeUntilNextUpdate = Math.max(0, KLINES_CACHE_DURATION - timeSinceUpdate)
+  const isFetchedForCurrentBoundary = lastKlinesUpdate >= lastBoundaryTimestamp
   
   return {
     lastUpdate: lastKlinesUpdate,
+    lastUpdateDate: new Date(lastKlinesUpdate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
     cacheSize: cachedKlinesMetrics.size,
     cacheDurationMs: KLINES_CACHE_DURATION,
     timeSinceUpdateMs: timeSinceUpdate,
-    timeUntilNextUpdateMs: timeUntilNextUpdate,
-    isExpired: timeSinceUpdate > KLINES_CACHE_DURATION,
+    timeUntilNextBoundaryMs: timeUntilNextBoundary,
+    nextBoundaryTime: nextBoundary.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+    isFetchedForCurrentBoundary,
+    isExpired: !isFetchedForCurrentBoundary,
   }
 }
 
