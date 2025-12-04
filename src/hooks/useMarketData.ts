@@ -1,11 +1,10 @@
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useStore } from './useStore'
 import { BinanceFuturesApiClient } from '@/services/binanceFuturesApi'
 import { BinanceApiClient } from '@/services/binanceApi'
 import { processTickersForPair } from '@/services/dataProcessor'
 import { applyTechnicalIndicators } from '@/utils/indicators'
-import { timeframeService } from '@/services/timeframeService'
 import { USE_MOCK_DATA, getMockDataWithVariations } from '@/services/mockData'
 import { isTabVisible, onVisibilityChange } from '@/utils/performance'
 import { evaluateAlertRules } from '@/services/alertEngine'
@@ -59,24 +58,8 @@ export function useMarketData() {
     return cleanup
   }, [])
 
-  // Store previous coins data outside query for history preservation
+  // Store previous coins data outside query
   const previousCoinsRef = useRef<Coin[]>([])
-
-  // Function to clear historical snapshot data
-  const clearHistoricalData = useCallback(() => {
-    console.log('🗑️ Clearing historical snapshot data')
-    previousCoinsRef.current = []
-    timeframeService.reset()
-  }, [])
-
-  // Expose clear function to store actions
-  useEffect(() => {
-    // Add clear function to window for store to access
-    ;(window as any).__clearMarketHistory = clearHistoricalData
-    return () => {
-      delete (window as any).__clearMarketHistory
-    }
-  }, [clearHistoricalData])
 
   // Query for market data
   const query = useQuery({
@@ -107,24 +90,34 @@ export function useMarketData() {
       // Convert to Coin objects (all are USDT pairs now)
       let coins = processTickersForPair(processedTickers)
 
-      // CRITICAL: Preserve history from previous fetch
-      const previousCoins = previousCoinsRef.current
-      if (previousCoins && previousCoins.length > 0) {
-        coins = coins.map(coin => {
-          const previousCoin = previousCoins.find((prev: Coin) => prev.symbol === coin.symbol)
-          if (previousCoin?.history && Object.keys(previousCoin.history).length > 0) {
-            // Preserve existing history and deltas
-            return { ...coin, history: previousCoin.history, deltas: previousCoin.deltas }
-          }
-          return coin
-        })
-      }
-
       // Apply technical indicators (VCP, Fibonacci, etc.)
       coins = applyTechnicalIndicators(coins)
 
-      // Update timeframe snapshots
-      coins = timeframeService.updateSnapshots(coins)
+      // Fetch futures metrics (klines data) for all coins
+      // This replaces the old timeframe snapshot approach
+      try {
+        const symbols = coins.map(coin => coin.fullSymbol)
+        const { futuresMetricsService } = await import('@/services/futuresMetricsService')
+        
+        const metricsArray = await futuresMetricsService.fetchMultipleSymbolMetrics(
+          symbols,
+          (progress) => {
+            if (progress.completed % 10 === 0) {
+              console.log(`📊 Fetched metrics: ${progress.completed}/${progress.total}`)
+            }
+          }
+        )
+
+        // Attach futures metrics to coins
+        coins = coins.map(coin => {
+          const metrics = metricsArray.find(m => m.symbol === coin.fullSymbol)
+          return metrics ? { ...coin, futuresMetrics: metrics } : coin
+        })
+
+        console.log(`✅ Attached futures metrics to ${coins.filter(c => c.futuresMetrics).length} coins`)
+      } catch (error) {
+        console.warn('Failed to fetch futures metrics, continuing without them:', error)
+      }
 
       // Filter by watchlist if one is selected
       if (currentWatchlistId) {
@@ -134,7 +127,7 @@ export function useMarketData() {
         }
       }
 
-      // Save coins for next fetch to preserve history
+      // Save coins for next fetch (no longer need history preservation)
       previousCoinsRef.current = coins
 
       return coins
@@ -193,14 +186,12 @@ export function useMarketData() {
       console.warn('Market mode derivation failed', e)
     }
 
-    // Check if we have sufficient historical data for alerts
+    // Check if we have futures metrics for alerts
     const sampleCoin = coins[0]
-    const has1m = !!sampleCoin?.history?.['1m']
-    const has5m = !!sampleCoin?.history?.['5m']
-    const has15m = !!sampleCoin?.history?.['15m']
-    const hasMinimumHistory = has1m && has5m && has15m
+    const hasFuturesMetrics = !!sampleCoin?.futuresMetrics
     
-    if (!hasMinimumHistory) {
+    if (!hasFuturesMetrics) {
+      console.log('⏳ Waiting for futures metrics to be fetched for alert evaluation')
       return
     }
 

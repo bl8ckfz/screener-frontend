@@ -103,8 +103,8 @@ export function tickerToCoin(
       paxgDominance: 0,
     },
 
-    // Empty history for now
-    history: {},
+    // Futures metrics will be attached later by useMarketData
+    futuresMetrics: undefined,
 
     // Metadata
     lastUpdated: Date.now(),

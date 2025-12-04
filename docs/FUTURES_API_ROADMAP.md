@@ -174,24 +174,73 @@ Complete migration from Binance Spot API to Futures API with new alert system. T
 
 ---
 
-### 4.2 Remove Legacy Spot-Based Alerts
-**Files to Modify**:
-- `src/services/alertEngine.ts`
-- `src/types/alert.ts`
-- `src/components/alerts/AlertConfig.tsx`
+### 4.2 Remove Legacy Spot-Based Alerts ✅
+**Files Modified**:
+- `src/services/alertEngine.ts` - Completely rewritten (reduced from 860 to 486 lines)
+- `src/services/index.ts` - Removed `createDefaultAlertRules` export
+- `src/utils/coinToMetrics.ts` - Created converter utility (90 lines)
+- `tests/alerts/` - Removed 3 legacy test files
 
 **Tasks**:
-- [ ] Remove legacy alert evaluators from `alertEngine.ts` (8 functions)
-  - `evaluatePioneerBull`, `evaluatePioneerBear`
-  - `evaluate5mBigBull`, `evaluate5mBigBear`
-  - `evaluate15mBigBull`, `evaluate15mBigBear`
-  - `evaluateBottomHunter`, `evaluateTopHunter`
-- [ ] Remove `AlertType` union and `LEGACY_ALERT_PRESETS` from `alert.ts`
-- [ ] Replace `CombinedAlertType` with `FuturesAlertType` throughout codebase
-- [ ] Remove legacy preset selector section from `AlertConfig.tsx`
-- [ ] Update `AlertHistory.tsx` to only show futures alerts
-- [ ] Clean up unused legacy alert helper functions
-- [ ] Remove legacy alert tests from `tests/alerts/` if any exist
+- [x] Create `coinToFuturesMetrics()` converter utility
+- [x] Rewrite `alertEngine.ts` to use futures evaluators only
+- [x] Remove all 8 legacy alert evaluators (pioneer, bigBull, bigBear, hunters)
+- [x] Remove all 6 standard evaluators (price_pump, volume_spike, VCP, Fibonacci)
+- [x] Update `evaluateCondition()` to convert Coin → FuturesMetrics
+- [x] Update switch statement with 10 futures alert cases
+- [x] Update momentumAlerts array with futures types
+- [x] Simplify generateAlertTitle/Message for futures types
+- [x] Remove `createDefaultAlertRules()` function and export
+- [x] Remove legacy tests: bigMomentum.test.ts, coreSignals.test.ts, pioneer.test.ts
+- [x] All 106 tests passing
+
+**Implementation Notes**:
+- Alert engine reduced from 860 lines to 486 lines (44% reduction)
+- `coinToMetrics` approximates metrics from Coin timeframe snapshots
+- Market cap set to `null` - alerts requiring it will skip (no CoinGecko in Coin)
+- Approximations: `change_1h = change_24h / 24`, `volume_1h = volume_15m * 4`
+- Backup created: `alertEngine.ts.backup`
+
+---
+
+### 4.3 Switch from 24hr Ticker to Klines API ✅
+**Files Modified**:
+- `src/types/coin.ts` - Added `futuresMetrics` field, removed `TimeframeSnapshot` interface and `history`/`deltas` fields
+- `src/hooks/useMarketData.ts` - Integrated `futuresMetricsService.fetchMultipleSymbolMetrics()`
+- `src/services/alertEngine.ts` - Changed to use `coin.futuresMetrics` directly
+- `src/services/dataProcessor.ts` - Removed `history` field initialization
+
+**Files Deleted**:
+- `src/services/timeframeService.ts` (174 lines) - No longer needed with klines
+- `src/utils/coinToMetrics.ts` (94 lines) - No longer needed with direct metrics
+- `src/services/alertHelpers.ts` (79 lines) - Legacy helper functions
+- `src/components/controls/TimeframeSelector.tsx` - Already obsolete
+
+**Tasks**:
+- [x] Add `futuresMetrics?: FuturesMetrics` field to Coin type
+- [x] Remove `TimeframeSnapshot`, `history`, `deltas` from Coin type
+- [x] Integrate klines fetching in useMarketData via futuresMetricsService
+- [x] Update alertEngine to use `coin.futuresMetrics` directly (no converter!)
+- [x] Remove timeframeService, coinToMetrics, alertHelpers files
+- [x] Remove obsolete TimeframeSelector component
+- [x] Fix type errors and update imports
+- [x] All 106 tests passing, type-check passes
+
+**Implementation Notes**:
+- **Data Source**: Switched from 24hr ticker to klines API (5m, 15m, 1h, 8h, 1d intervals)
+- **Accuracy**: No more approximations - alerts now use real kline data!
+- **Simplification**: Removed 3 utility files (347 lines), TimeframeSnapshot architecture
+- **Architecture**: Coin → FuturesMetricsService → FuturesMetrics → Alert evaluation
+- **VCP Preserved**: Still calculated from 24hr ticker data via `applyTechnicalIndicators()`
+- **Trade-off**: More API calls per poll (~5 klines per symbol), but much more accurate
+- **Concurrency**: Uses futuresMetricsService batching (5 symbols at a time) to avoid rate limits
+
+**Benefits**:
+- ✅ Alert metrics are precise (from real klines, not estimated)
+- ✅ Consistent with FuturesMetricsService architecture
+- ✅ No more `coinToMetrics` converter overhead
+- ✅ Simplified codebase (removed 347 lines of approximation logic)
+- ✅ Market cap integration via CoinGecko (when available)
 
 ---
 

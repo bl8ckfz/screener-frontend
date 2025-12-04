@@ -35,7 +35,8 @@ export type CurrencyPair =
   | 'BKRW'
 
 /**
- * Timeframe for historical comparison
+ * Timeframe for alert conditions (legacy compatibility)
+ * Note: No longer used for snapshots, only for alert type definitions
  */
 export type Timeframe =
   | '5s'
@@ -47,33 +48,6 @@ export type Timeframe =
   | '3m'
   | '5m'
   | '15m'
-
-/**
- * Array of all supported timeframes
- */
-export const TIMEFRAMES: Timeframe[] = [
-  '5s',
-  '10s',
-  '15s',
-  '30s',
-  '45s',
-  '1m',
-  '3m',
-  '5m',
-  '15m',
-]
-
-/**
- * Historical snapshot of coin data at a specific timeframe
- */
-export interface TimeframeSnapshot {
-  volume: number
-  price: number
-  weightedAvg: number
-  priceToWA: number // price/weightedAvg ratio
-  vcp: number // Volatility Contraction Pattern
-  timestamp: number
-}
 
 /**
  * Fibonacci pivot levels
@@ -160,29 +134,8 @@ export interface Coin {
   // Technical indicators
   indicators: TechnicalIndicators
 
-  // Historical data for different timeframes
-  history: {
-    '5s'?: TimeframeSnapshot
-    '10s'?: TimeframeSnapshot
-    '15s'?: TimeframeSnapshot
-    '30s'?: TimeframeSnapshot
-    '45s'?: TimeframeSnapshot
-    '1m'?: TimeframeSnapshot
-    '3m'?: TimeframeSnapshot
-    '5m'?: TimeframeSnapshot
-    '15m'?: TimeframeSnapshot
-  }
-
-  // Delta calculations (change from historical snapshots)
-  deltas?: {
-    [key in Timeframe]?: {
-      priceChange: number
-      priceChangePercent: number
-      volumeChange: number
-      volumeChangePercent: number
-      vcpChange: number
-    }
-  }
+  // Futures metrics (calculated from klines)
+  futuresMetrics?: import('@/types/api').FuturesMetrics
 
   // Metadata
   lastUpdated: number

@@ -10,7 +10,6 @@ export type {
 export type {
   CurrencyPair,
   Timeframe,
-  TimeframeSnapshot,
   FibonacciLevels,
   TechnicalIndicators,
   Coin,

@@ -1,0 +1,825 @@
+/**
+ * Alert Engine - Evaluates alert rules against market data
+ * 
+ * This service replicates the alert logic from fast.html while providing
+ * a flexible, extensible architecture for custom alerts.
+ */
+
+import type { Coin, Timeframe } from '@/types/coin'
+import type {
+  Alert,
+  AlertRule,
+  AlertCondition,
+} from '@/types/alert'
+import type { FuturesMetrics } from '@/types/api'
+import { coinToFuturesMetrics } from '@/utils/coinToMetrics'
+
+/**
+ * Helper to get timeframe data from coin history
+ */
+function getTimeframeData(coin: Coin, timeframe: Timeframe) {
+  return coin.history[timeframe]
+}
+
+/**
+ * Evaluate all alert rules against the given coins
+ */
+export function evaluateAlertRules(
+  coins: Coin[],
+  rules: AlertRule[],
+  marketMode: 'bull' | 'bear' = 'bull'
+): Alert[] {
+  const alerts: Alert[] = []
+  const enabledRules = rules.filter((rule) => rule.enabled)
+
+  for (const coin of coins) {
+    for (const rule of enabledRules) {
+      const triggeredAlert = evaluateRule(coin, rule, marketMode)
+      if (triggeredAlert) {
+        alerts.push(triggeredAlert)
+      }
+    }
+  }
+
+  return alerts
+}
+
+/**
+ * Evaluate a single alert rule against a coin
+ */
+function evaluateRule(
+  coin: Coin,
+  rule: AlertRule,
+  marketMode: 'bull' | 'bear'
+): Alert | null {
+  // Check if rule applies to this symbol
+  if (rule.symbols.length > 0 && !rule.symbols.includes(coin.symbol)) {
+    return null
+  }
+
+  // Evaluate each condition
+  const allConditionsMet = rule.conditions.every((condition) =>
+    evaluateCondition(coin, condition, marketMode)
+  )
+
+  if (!allConditionsMet) {
+    return null
+  }
+
+  // Get first condition for alert metadata
+  const firstCondition = rule.conditions[0]
+  const alertType = firstCondition?.type || 'custom'
+
+  // For momentum-based alerts, show price change % instead of absolute price
+  const momentumAlerts = [
+    'futures_big_bull_60',
+    'futures_big_bear_60',
+    'futures_pioneer_bull',
+    'futures_pioneer_bear',
+    'futures_5_big_bull',
+    'futures_5_big_bear',
+    'futures_15_big_bull',
+    'futures_15_big_bear',
+    'futures_bottom_hunter',
+    'futures_top_hunter'
+  ]
+  const usePercentage = momentumAlerts.includes(alertType)
+
+  // Create alert
+  return {
+    id: `${coin.symbol}-${rule.id}-${Date.now()}`,
+    symbol: coin.symbol,
+    type: alertType,
+    severity: rule.severity,
+    title: generateAlertTitle(coin, rule),
+    message: generateAlertMessage(coin, rule),
+    value: usePercentage ? coin.priceChangePercent : coin.lastPrice,
+    threshold: firstCondition?.threshold || 0,
+    timeframe: firstCondition?.timeframe,
+    timestamp: Date.now(),
+    read: false,
+    dismissed: false,
+  }
+}
+
+/**
+ * Evaluate a single condition
+ */
+function evaluateCondition(
+  coin: Coin,
+  condition: AlertCondition,
+  marketMode: 'bull' | 'bear'
+): boolean {
+  const { type } = condition
+
+  // Convert coin to futures metrics for evaluation
+  const metrics = coinToFuturesMetrics(coin)
+  if (!metrics) {
+    return false
+  }
+
+  switch (type) {
+    // Futures alert types
+    case 'futures_big_bull_60':
+      return marketMode === 'bull' && evaluateFuturesBigBull60(metrics)
+    
+    case 'futures_big_bear_60':
+      return marketMode === 'bear' && evaluateFuturesBigBear60(metrics)
+    
+    case 'futures_pioneer_bull':
+      return marketMode === 'bull' && evaluateFuturesPioneerBull(metrics)
+    
+    case 'futures_pioneer_bear':
+      return marketMode === 'bear' && evaluateFuturesPioneerBear(metrics)
+    
+    case 'futures_5_big_bull':
+      return marketMode === 'bull' && evaluateFutures5BigBull(metrics)
+    
+    case 'futures_5_big_bear':
+      return marketMode === 'bear' && evaluateFutures5BigBear(metrics)
+    
+    case 'futures_15_big_bull':
+      return marketMode === 'bull' && evaluateFutures15BigBull(metrics)
+    
+    case 'futures_15_big_bear':
+      return marketMode === 'bear' && evaluateFutures15BigBear(metrics)
+    
+    case 'futures_bottom_hunter':
+      return evaluateFuturesBottomHunter(metrics)
+    
+    case 'futures_top_hunter':
+      return evaluateFuturesTopHunter(metrics)
+    
+    default:
+      return false
+  }
+}
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+/**
+ * Generate alert title based on rule
+ */
+function generateAlertTitle(coin: Coin, rule: AlertRule): string {
+  return `${rule.name}: ${coin.symbol}`
+}
+
+function generateAlertMessage(coin: Coin, rule: AlertRule): string {
+  const condition = rule.conditions[0]
+  if (!condition) return `Alert triggered for ${coin.symbol}`
+  const { priceRatio5mInv, priceRatio15mInv, priceRatioPrevInv } = ratios
+  const historyOk = hasDistinctHistory(coin)
+  const gatingOk = pioneerBearGate(coin)
+  const volAccel = volumeAcceleration(coin)
+  const check5m = priceRatio5mInv > 1.01
+  const check15m = priceRatio15mInv > 1.01
+  const check3x = 3 * priceRatio5mInv > priceRatioPrevInv
+  const result = historyOk && gatingOk && check5m && check15m && check3x && volAccel
+  if (!result && historyOk && (check5m || check15m)) {
+    console.log(`🐻 ${coin.symbol} Pioneer Bear near-miss:`, {
+      priceRatio5mInv: priceRatio5mInv.toFixed(4),
+      priceRatio15mInv: priceRatio15mInv.toFixed(4),
+      priceRatioPrevInv: priceRatioPrevInv.toFixed(4),
+      gatingOk,
+      volAccel,
+      check5m,
+      check15m,
+      check3x
+    })
+  }
+  return result
+}
+
+/**
+ * 5M BIG BULL ALARM
+ * Condition: 5-minute volume spike with price increase
+ * Original: price/3m > 1.006 && volume delta > 100k && ascending volumes
+ * For testing: If history unavailable, use strong momentum as proxy
+ */
+function evaluate5mBigBull(coin: Coin): boolean {
+  const price1m = getTimeframeData(coin, '1m')?.price
+  const price3m = getTimeframeData(coin, '3m')?.price
+  const volume5m = getTimeframeData(coin, '5m')?.volume
+  
+  // If we have history, use original logic
+  if (price1m && price3m && volume5m) {
+    const volume1m = getTimeframeData(coin, '1m')?.volume || coin.quoteVolume
+    const volume3m = getTimeframeData(coin, '3m')?.volume || coin.quoteVolume
+    
+    const priceRatio3m = coin.lastPrice / price3m
+    const volumeDelta3m = coin.quoteVolume - volume3m
+    const volumeDelta5m = coin.quoteVolume - volume5m
+    
+    const priceAscending = price3m < price1m && price1m < coin.lastPrice
+    const volumeAscending =
+      volume3m < volume1m &&
+      volume1m < volume5m &&
+      volume5m < coin.quoteVolume
+    
+    // Ensure historical prices are actually different
+    const hasValidHistory = price1m !== price3m
+    
+    return hasValidHistory && (
+      priceRatio3m > 1.006 &&
+      volumeDelta3m > 100000 &&
+      volumeDelta5m > 50000 &&
+      priceAscending &&
+      volumeAscending
+    )
+  }
+  
+  // No fallback - require historical data
+  return false
+}
+
+/**
+ * 5M BIG BEAR ALARM
+ * Condition: 5-minute volume spike with price decrease
+ */
+function evaluate5mBigBear(coin: Coin): boolean {
+  const price1m = getTimeframeData(coin, '1m')?.price
+  const price3m = getTimeframeData(coin, '3m')?.price
+  const volume5m = getTimeframeData(coin, '5m')?.volume
+  
+  // If we have history, use original logic
+  if (price1m && price3m && volume5m) {
+    const volume1m = getTimeframeData(coin, '1m')?.volume || coin.quoteVolume
+    const volume3m = getTimeframeData(coin, '3m')?.volume || coin.quoteVolume
+    
+    const priceRatio3m = coin.lastPrice / price3m
+    const volumeDelta3m = coin.quoteVolume - volume3m
+    const volumeDelta5m = coin.quoteVolume - volume5m
+    
+    // Check price descending: 3m > 1m > current
+    const priceDescending =
+      price3m > price1m && price1m > coin.lastPrice
+    
+    // Check volume ascending
+    const volumeAscending =
+      volume3m < volume1m &&
+      volume1m < volume5m &&
+      volume5m < coin.quoteVolume
+    
+    // Ensure historical prices are actually different
+    const hasValidHistory = price1m !== price3m
+    
+    return hasValidHistory && (
+      priceRatio3m < 0.994 && // < 2-1.006
+      volumeDelta3m > 100000 &&
+      volumeDelta5m > 50000 &&
+      priceDescending &&
+      volumeAscending
+    )
+  }
+  
+  // No fallback - require historical data
+  return false
+}
+
+/**
+ * 15M BIG BULL ALARM
+ * Condition: 15-minute volume spike with price increase
+ * Original: price/15m > 1.01 && volume delta > 400k
+ */
+function evaluate15mBigBull(coin: Coin): boolean {
+  const price3m = getTimeframeData(coin, '3m')?.price
+  const price15m = getTimeframeData(coin, '15m')?.price
+  
+  const volume1m = getTimeframeData(coin, '1m')?.volume
+  const volume3m = getTimeframeData(coin, '3m')?.volume
+  const volume5m = getTimeframeData(coin, '5m')?.volume
+  const volume15m = getTimeframeData(coin, '15m')?.volume
+  
+  // Require all historical data
+  if (!price3m || !price15m || !volume1m || !volume3m || !volume5m || !volume15m) {
+    return false
+  }
+  
+  const priceRatio15m = coin.lastPrice / price15m
+  const volumeDelta3m = coin.quoteVolume - volume3m
+  const volumeDelta15m = coin.quoteVolume - volume15m
+  
+  // Check price ascending: 15m < 3m < current
+  const priceAscending =
+    price15m < price3m && price3m < coin.lastPrice
+  
+  // Check volume ascending
+  const volumeAscending =
+    volume15m < volume3m &&
+    volume3m < volume5m &&
+    volume5m < coin.quoteVolume &&
+    volume1m > volume3m
+  
+  // Ensure historical prices are actually different
+  const hasValidHistory = price3m !== price15m
+  
+  return hasValidHistory && (
+    priceRatio15m > 1.01 &&
+    volumeDelta15m > 400000 &&
+    volumeDelta3m > 100000 &&
+    priceAscending &&
+    volumeAscending
+  )
+}
+
+/**
+ * 15M BIG BEAR ALARM
+ * Condition: 15-minute volume spike with price decrease
+ */
+function evaluate15mBigBear(coin: Coin): boolean {
+  const price3m = getTimeframeData(coin, '3m')?.price
+  const price15m = getTimeframeData(coin, '15m')?.price
+  
+  const volume1m = getTimeframeData(coin, '1m')?.volume
+  const volume3m = getTimeframeData(coin, '3m')?.volume
+  const volume5m = getTimeframeData(coin, '5m')?.volume
+  const volume15m = getTimeframeData(coin, '15m')?.volume
+  
+  // Require all historical data
+  if (!price3m || !price15m || !volume1m || !volume3m || !volume5m || !volume15m) {
+    return false
+  }
+  
+  const priceRatio15m = coin.lastPrice / price15m
+  const volumeDelta3m = coin.quoteVolume - volume3m
+  const volumeDelta15m = coin.quoteVolume - volume15m
+  
+  // Check price descending: 15m > 3m > current
+  const priceDescending =
+    price15m > price3m && price3m > coin.lastPrice
+  
+  // Check volume ascending
+  const volumeAscending =
+    volume15m < volume3m &&
+    volume3m < volume5m &&
+    volume5m < coin.quoteVolume &&
+    volume1m > volume3m
+  
+  // Ensure historical prices are actually different
+  const hasValidHistory = price3m !== price15m
+  
+  return hasValidHistory && (
+    priceRatio15m < 0.99 &&
+    volumeDelta15m > 400000 &&
+    volumeDelta3m > 100000 &&
+    priceDescending &&
+    volumeAscending
+  )
+}
+
+/**
+ * BOTTOM HUNTER ALARM
+ * Condition: Price declining but showing reversal signs
+ * Original: price/15m < 0.994 && price/3m < 0.995 && price/1m > 1.004
+ */
+function evaluateBottomHunter(coin: Coin): boolean {
+  const price1m = getTimeframeData(coin, '1m')?.price
+  const price3m = getTimeframeData(coin, '3m')?.price
+  const price15m = getTimeframeData(coin, '15m')?.price
+  
+  const volume3m = getTimeframeData(coin, '3m')?.volume
+  const volume5m = getTimeframeData(coin, '5m')?.volume
+  const volume15m = getTimeframeData(coin, '15m')?.volume
+  
+  // Require all historical data
+  if (!price1m || !price3m || !price15m || !volume3m || !volume5m || !volume15m) {
+    return false
+  }
+  
+  const priceRatio1m = coin.lastPrice / price1m
+  const priceRatio3m = coin.lastPrice / price3m
+  const priceRatio15m = coin.lastPrice / price15m
+  
+  // Volume increasing
+  const volumeIncreasing =
+    coin.quoteVolume > volume5m &&
+    volume5m > volume3m &&
+    2 * volume3m > volume15m
+  
+  // Ensure historical prices are actually different
+  const hasValidHistory = price1m !== price3m && price3m !== price15m
+  
+  return hasValidHistory && (
+    priceRatio15m < 0.994 && // Declining from 15m
+    priceRatio3m < 0.995 && // Declining from 3m
+    priceRatio1m > 1.004 && // But reversing in last 1m
+    volumeIncreasing
+  )
+}
+
+/**
+ * TOP HUNTER ALARM
+ * Condition: Price rising but losing momentum
+ * Original: price/15m > 1.006 && price/3m > 1.005 && price/1m slowing
+ */
+function evaluateTopHunter(coin: Coin): boolean {
+  const price1m = getTimeframeData(coin, '1m')?.price
+  const price3m = getTimeframeData(coin, '3m')?.price
+  const price15m = getTimeframeData(coin, '15m')?.price
+  
+  const volume3m = getTimeframeData(coin, '3m')?.volume
+  const volume5m = getTimeframeData(coin, '5m')?.volume
+  const volume15m = getTimeframeData(coin, '15m')?.volume
+  
+  // Require all historical data
+  if (!price1m || !price3m || !price15m || !volume3m || !volume5m || !volume15m) {
+    return false
+  }
+  
+  const priceRatio1m = coin.lastPrice / price1m
+  const priceRatio3m = coin.lastPrice / price3m
+  const priceRatio15m = coin.lastPrice / price15m
+  
+  // Volume increasing
+  const volumeIncreasing =
+    coin.quoteVolume > volume5m &&
+    volume5m > volume3m &&
+    2 * volume3m > volume15m
+  
+  // Ensure historical prices are actually different
+  const hasValidHistory = price1m !== price3m && price3m !== price15m
+  
+  return hasValidHistory && (
+    priceRatio15m > 1.006 && // Rising from 15m
+    priceRatio3m > 1.005 && // Rising from 3m
+    priceRatio1m > 0.996 && // But slowing in last 1m (> 2-1.004)
+    volumeIncreasing
+  )
+}
+
+// ============================================================================
+// STANDARD ALERT EVALUATORS
+// ============================================================================
+
+function evaluatePricePump(
+  coin: Coin,
+  threshold: number,
+  timeframe?: Timeframe
+): boolean {
+  if (!timeframe) return false
+  
+  const pastPrice = getTimeframeData(coin, timeframe)?.price
+  if (!pastPrice) return false
+  
+  const changePercent = ((coin.lastPrice - pastPrice) / pastPrice) * 100
+  return changePercent >= threshold
+}
+
+function evaluatePriceDump(
+  coin: Coin,
+  threshold: number,
+  timeframe?: Timeframe
+): boolean {
+  if (!timeframe) return false
+  
+  const pastPrice = getTimeframeData(coin, timeframe)?.price
+  if (!pastPrice) return false
+  
+  const changePercent = ((coin.lastPrice - pastPrice) / pastPrice) * 100
+  return changePercent <= -threshold
+}
+
+function evaluateVolumeSpike(
+  coin: Coin,
+  threshold: number,
+  timeframe?: Timeframe
+): boolean {
+  if (!timeframe) return false
+  
+  const pastVolume = getTimeframeData(coin, timeframe)?.volume
+  if (!pastVolume) return false
+  
+  const changePercent = ((coin.quoteVolume - pastVolume) / pastVolume) * 100
+  return changePercent >= threshold
+}
+
+function evaluateVolumeDrop(
+  coin: Coin,
+  threshold: number,
+  timeframe?: Timeframe
+): boolean {
+  if (!timeframe) return false
+  
+  const pastVolume = getTimeframeData(coin, timeframe)?.volume
+  if (!pastVolume) return false
+  
+  const changePercent = ((coin.quoteVolume - pastVolume) / pastVolume) * 100
+  return changePercent <= -threshold
+}
+
+function evaluateVCPSignal(coin: Coin, threshold: number): boolean {
+  return coin.indicators.vcp >= threshold
+}
+
+function evaluateFibonacciBreak(coin: Coin, threshold: number): boolean {
+  // Check if price crossed a significant Fibonacci level
+  const { resistance1, resistance0618, resistance0382, support0382, support0618, support1, pivot } = coin.indicators.fibonacci
+  
+  // Check if price is near any Fibonacci level (within threshold %)
+  const levels = [resistance1, resistance0618, resistance0382, support0382, support0618, support1, pivot]
+  return levels.some((level) => {
+    const distance = Math.abs((coin.lastPrice - level) / level) * 100
+    return distance <= threshold
+  })
+}
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+function generateAlertTitle(coin: Coin, rule: AlertRule): string {
+  return `${rule.name}: ${coin.symbol}`
+}
+
+function generateAlertMessage(coin: Coin, rule: AlertRule): string {
+  const condition = rule.conditions[0]
+  if (!condition) return `Alert triggered for ${coin.symbol}`
+  
+  switch (condition.type) {
+    case 'price_pump':
+      return `${coin.symbol} price increased by ${condition.threshold}% in ${condition.timeframe}`
+    
+    case 'price_dump':
+      return `${coin.symbol} price decreased by ${condition.threshold}% in ${condition.timeframe}`
+    
+    case 'volume_spike':
+      return `${coin.symbol} volume spiked by ${condition.threshold}% in ${condition.timeframe}`
+    
+    case 'pioneer_bull':
+      return `${coin.symbol} showing strong bullish momentum with accelerating growth`
+    
+    case 'pioneer_bear':
+      return `${coin.symbol} showing strong bearish momentum with accelerating decline`
+    
+    case '5m_big_bull':
+      return `${coin.symbol} 5-minute volume spike with significant price increase`
+    
+    case '5m_big_bear':
+      return `${coin.symbol} 5-minute volume spike with significant price decrease`
+    
+    case '15m_big_bull':
+      return `${coin.symbol} 15-minute volume spike with significant price increase`
+    
+    case '15m_big_bear':
+      return `${coin.symbol} 15-minute volume spike with significant price decrease`
+    
+    case 'bottom_hunter':
+      return `${coin.symbol} potential bottom reversal detected`
+    
+    case 'top_hunter':
+      return `${coin.symbol} potential top reversal detected`
+    
+    default:
+      return `Alert triggered for ${coin.symbol}`
+  }
+}
+
+/**
+ * Create default alert rules from legacy presets
+ */
+export function createDefaultAlertRules(): AlertRule[] {
+  return LEGACY_ALERT_PRESETS.map((preset) => ({
+    id: `legacy-${preset.type}`,
+    name: preset.name,
+    enabled: false, // Disabled by default - user can enable
+    symbols: [], // Empty = applies to all symbols
+    conditions: [
+      {
+        type: preset.type,
+        threshold: 0, // Legacy alerts don't use simple thresholds
+        comparison: 'greater_than' as const,
+      },
+    ],
+    severity: preset.severity,
+    notificationEnabled: true,
+    soundEnabled: true,
+    createdAt: Date.now(),
+  }))
+}
+
+// ============================================================================
+// FUTURES ALERT EVALUATORS
+// ============================================================================
+
+import type { FuturesMetrics } from '@/types/api'
+
+/**
+ * Evaluate 60 Big Bull alert
+ * Detects coins with sustained momentum over multiple timeframes
+ */
+export function evaluateFuturesBigBull60(metrics: FuturesMetrics): boolean {
+  if (!metrics.marketCap) return false
+
+  return (
+    metrics.change_1h > 1.6 &&
+    metrics.change_1d < 15 &&
+    metrics.change_8h > metrics.change_1h &&
+    metrics.change_1d > metrics.change_8h &&
+    metrics.volume_1h > 500_000 &&
+    metrics.volume_8h > 5_000_000 &&
+    6 * metrics.volume_1h > metrics.volume_8h &&
+    16 * metrics.volume_1h > metrics.volume_1d &&
+    metrics.marketCap > 23_000_000 &&
+    metrics.marketCap < 2_500_000_000
+  )
+}
+
+/**
+ * Evaluate 60 Big Bear alert
+ * Detects coins with sustained downward momentum over multiple timeframes
+ */
+export function evaluateFuturesBigBear60(metrics: FuturesMetrics): boolean {
+  if (!metrics.marketCap) return false
+
+  return (
+    metrics.change_1h < -1.6 &&
+    metrics.change_1d > -15 &&
+    metrics.change_8h < metrics.change_1h &&
+    metrics.change_1d < metrics.change_8h &&
+    metrics.volume_1h > 500_000 &&
+    metrics.volume_8h > 5_000_000 &&
+    6 * metrics.volume_1h > metrics.volume_8h &&
+    16 * metrics.volume_1h > metrics.volume_1d &&
+    metrics.marketCap > 23_000_000 &&
+    metrics.marketCap < 2_500_000_000
+  )
+}
+
+/**
+ * Evaluate Pioneer Bull alert
+ * Early detection of emerging trends with accelerating momentum
+ */
+export function evaluateFuturesPioneerBull(metrics: FuturesMetrics): boolean {
+  if (!metrics.marketCap) return false
+
+  return (
+    metrics.change_5m > 1 &&
+    metrics.change_15m > 1 &&
+    3 * metrics.change_5m > metrics.change_15m &&
+    2 * metrics.volume_5m > metrics.volume_15m &&
+    metrics.marketCap > 23_000_000 &&
+    metrics.marketCap < 2_500_000_000
+  )
+}
+
+/**
+ * Evaluate Pioneer Bear alert
+ * Early detection of emerging downtrends with accelerating downward momentum
+ */
+export function evaluateFuturesPioneerBear(metrics: FuturesMetrics): boolean {
+  if (!metrics.marketCap) return false
+
+  return (
+    metrics.change_5m < -1 &&
+    metrics.change_15m < -1 &&
+    3 * metrics.change_5m < metrics.change_15m &&
+    2 * metrics.volume_5m > metrics.volume_15m &&
+    metrics.marketCap > 23_000_000 &&
+    metrics.marketCap < 2_500_000_000
+  )
+}
+
+/**
+ * Evaluate 5 Big Bull alert
+ * Catches explosive moves with progressive momentum acceleration
+ */
+export function evaluateFutures5BigBull(metrics: FuturesMetrics): boolean {
+  if (!metrics.marketCap) return false
+
+  return (
+    metrics.change_5m > 0.6 &&
+    metrics.change_1d < 15 &&
+    metrics.change_15m > metrics.change_5m &&
+    metrics.change_1h > metrics.change_15m &&
+    metrics.volume_5m > 100_000 &&
+    metrics.volume_1h > 1_000_000 &&
+    metrics.volume_5m > metrics.volume_15m / 3 &&
+    metrics.volume_5m > metrics.volume_1h / 6 &&
+    metrics.volume_5m > metrics.volume_8h / 66 &&
+    metrics.marketCap > 23_000_000 &&
+    metrics.marketCap < 2_500_000_000
+  )
+}
+
+/**
+ * Evaluate 5 Big Bear alert
+ * Catches explosive downward moves with progressive momentum acceleration
+ */
+export function evaluateFutures5BigBear(metrics: FuturesMetrics): boolean {
+  if (!metrics.marketCap) return false
+
+  return (
+    metrics.change_5m < -0.6 &&
+    metrics.change_1d > -15 &&
+    metrics.change_15m < metrics.change_5m &&
+    metrics.change_1h < metrics.change_15m &&
+    metrics.volume_5m > 100_000 &&
+    metrics.volume_1h > 1_000_000 &&
+    metrics.volume_5m > metrics.volume_15m / 3 &&
+    metrics.volume_5m > metrics.volume_1h / 6 &&
+    metrics.volume_5m > metrics.volume_8h / 66 &&
+    metrics.marketCap > 23_000_000 &&
+    metrics.marketCap < 2_500_000_000
+  )
+}
+
+/**
+ * Evaluate 15 Big Bull alert
+ * Identifies strong trending moves with progressive momentum acceleration
+ */
+export function evaluateFutures15BigBull(metrics: FuturesMetrics): boolean {
+  if (!metrics.marketCap) return false
+
+  return (
+    metrics.change_15m > 1 &&
+    metrics.change_1d < 15 &&
+    metrics.change_1h > metrics.change_15m &&
+    metrics.change_8h > metrics.change_1h &&
+    metrics.volume_15m > 400_000 &&
+    metrics.volume_1h > 1_000_000 &&
+    metrics.volume_15m > metrics.volume_1h / 3 &&
+    metrics.volume_15m > metrics.volume_8h / 26 &&
+    metrics.marketCap > 23_000_000 &&
+    metrics.marketCap < 2_500_000_000
+  )
+}
+
+/**
+ * Evaluate 15 Big Bear alert
+ * Identifies strong downward trending moves with progressive momentum acceleration
+ */
+export function evaluateFutures15BigBear(metrics: FuturesMetrics): boolean {
+  if (!metrics.marketCap) return false
+
+  return (
+    metrics.change_15m < -1 &&
+    metrics.change_1d > -15 &&
+    metrics.change_1h < metrics.change_15m &&
+    metrics.change_8h < metrics.change_1h &&
+    metrics.volume_15m > 400_000 &&
+    metrics.volume_1h > 1_000_000 &&
+    metrics.volume_15m > metrics.volume_1h / 3 &&
+    metrics.volume_15m > metrics.volume_8h / 26 &&
+    metrics.marketCap > 23_000_000 &&
+    metrics.marketCap < 2_500_000_000
+  )
+}
+
+/**
+ * Evaluate Bottom Hunter alert
+ * Detects reversal from bottom with volume confirmation
+ */
+export function evaluateFuturesBottomHunter(metrics: FuturesMetrics): boolean {
+  if (!metrics.marketCap) return false
+
+  return (
+    metrics.change_1h < -0.7 &&
+    metrics.change_15m < -0.6 &&
+    metrics.change_5m > 0.5 &&
+    metrics.volume_5m > metrics.volume_15m / 2 &&
+    metrics.volume_5m > metrics.volume_1h / 8 &&
+    metrics.marketCap > 23_000_000 &&
+    metrics.marketCap < 2_500_000_000
+  )
+}
+
+/**
+ * Evaluate Top Hunter alert
+ * Detects reversal from top with volume confirmation
+ */
+export function evaluateFuturesTopHunter(metrics: FuturesMetrics): boolean {
+  if (!metrics.marketCap) return false
+
+  return (
+    metrics.change_1h > 0.7 &&
+    metrics.change_15m > 0.6 &&
+    metrics.change_5m < -0.5 &&
+    metrics.volume_5m > metrics.volume_15m / 2 &&
+    metrics.volume_5m > metrics.volume_1h / 8 &&
+    metrics.marketCap > 23_000_000 &&
+    metrics.marketCap < 2_500_000_000
+  )
+}
+
+/**
+ * Evaluate all futures alerts for given metrics
+ * Returns array of triggered alert types
+ */
+export function evaluateAllFuturesAlerts(metrics: FuturesMetrics): string[] {
+  const triggeredAlerts: string[] = []
+
+  if (evaluateFuturesBigBull60(metrics)) triggeredAlerts.push('futures_big_bull_60')
+  if (evaluateFuturesBigBear60(metrics)) triggeredAlerts.push('futures_big_bear_60')
+  if (evaluateFuturesPioneerBull(metrics)) triggeredAlerts.push('futures_pioneer_bull')
+  if (evaluateFuturesPioneerBear(metrics)) triggeredAlerts.push('futures_pioneer_bear')
+  if (evaluateFutures5BigBull(metrics)) triggeredAlerts.push('futures_5_big_bull')
+  if (evaluateFutures5BigBear(metrics)) triggeredAlerts.push('futures_5_big_bear')
+  if (evaluateFutures15BigBull(metrics)) triggeredAlerts.push('futures_15_big_bull')
+  if (evaluateFutures15BigBear(metrics)) triggeredAlerts.push('futures_15_big_bear')
+  if (evaluateFuturesBottomHunter(metrics)) triggeredAlerts.push('futures_bottom_hunter')
+  if (evaluateFuturesTopHunter(metrics)) triggeredAlerts.push('futures_top_hunter')
+
+  return triggeredAlerts
+}
