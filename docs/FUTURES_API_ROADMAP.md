@@ -155,44 +155,41 @@ Complete migration from Binance Spot API to Futures API with new alert system. T
 
 ## Phase 4: Remove Old System (Week 2, Days 4-5)
 
-### 4.1 Deprecate Spot API Data Gathering
+### 4.1 Replace Spot API with Futures API
 **Files to Modify**:
-- `src/services/binanceApi.ts`
-- `src/services/dataProcessor.ts`
 - `src/hooks/useMarketData.ts`
+- `src/services/dataProcessor.ts`
+- `src/services/binanceApi.ts` (may need updates or removal)
 
 **Tasks**:
-- [ ] Replace Spot API calls with Futures API calls in `useMarketData`
-- [ ] Update `BinanceApiClient` to use futures endpoints
-- [ ] Remove/deprecate Spot-specific logic
-- [ ] Update data refresh intervals if needed
-- [ ] Test with real Futures data
-
-**Migration Strategy**:
-- Keep Spot API as fallback during transition
-- Add feature flag to toggle between Spot/Futures
-- Monitor for 1 week before full removal
+- [ ] Replace `useMarketData` hook to use `FuturesMetricsService` instead of Spot API
+- [ ] Remove Spot API calls and related logic
+- [ ] Update data models to use `FuturesMetrics` type
+- [ ] Adjust data refresh intervals if needed (currently 5s)
+- [ ] Update UI components to display futures data
+- [ ] Test with real Futures data from Binance
+- [ ] Remove unused Spot API code from `binanceApi.ts`
 
 ---
 
-### 4.2 Remove Old Alerts
+### 4.2 Remove Legacy Spot-Based Alerts
 **Files to Modify**:
 - `src/services/alertEngine.ts`
 - `src/types/alert.ts`
-- `src/components/alerts/*`
+- `src/components/alerts/AlertConfig.tsx`
 
 **Tasks**:
-- [ ] Identify all Spot-based alert types
-- [ ] Mark as deprecated in UI with migration notice
-- [ ] Disable creation of new Spot alerts
-- [ ] Keep evaluation logic for existing alerts (backward compatibility)
-- [ ] Add migration tool to convert Spot alerts to Futures alerts
-- [ ] After 2 weeks: Remove Spot alert logic entirely
-
-**Old Alerts to Remove/Replace**:
-- Review existing alert types in `src/types/alert.ts`
-- Map each to new Futures equivalent or mark for deletion
-- Document mapping for user migration guide
+- [ ] Remove legacy alert evaluators from `alertEngine.ts` (8 functions)
+  - `evaluatePioneerBull`, `evaluatePioneerBear`
+  - `evaluate5mBigBull`, `evaluate5mBigBear`
+  - `evaluate15mBigBull`, `evaluate15mBigBear`
+  - `evaluateBottomHunter`, `evaluateTopHunter`
+- [ ] Remove `AlertType` union and `LEGACY_ALERT_PRESETS` from `alert.ts`
+- [ ] Replace `CombinedAlertType` with `FuturesAlertType` throughout codebase
+- [ ] Remove legacy preset selector section from `AlertConfig.tsx`
+- [ ] Update `AlertHistory.tsx` to only show futures alerts
+- [ ] Clean up unused legacy alert helper functions
+- [ ] Remove legacy alert tests from `tests/alerts/` if any exist
 
 ---
 

@@ -203,30 +203,33 @@
 
 ---
 
-#### Phase 4.1: Deprecate Spot API (Days 9-10)
-**Files**: `src/services/binanceApi.ts`, `dataProcessor.ts`, `useMarketData.ts`
+#### Phase 4.1: Replace Spot API with Futures API (Days 9-10)
+**Files**: `src/hooks/useMarketData.ts`, `src/services/dataProcessor.ts`, `src/services/binanceApi.ts`
 
-- [ ] Replace Spot API calls with Futures API calls in `useMarketData`
-- [ ] Update `BinanceApiClient` to use futures endpoints
-- [ ] Remove/deprecate Spot-specific logic
-- [ ] Update data refresh intervals if needed
-- [ ] Test with real Futures data
-- [ ] Add feature flag to toggle between Spot/Futures
+- [ ] Replace `useMarketData` hook to use `FuturesMetricsService` instead of Spot API
+- [ ] Remove Spot API calls and related logic
+- [ ] Update data models to use `FuturesMetrics` type
+- [ ] Adjust data refresh intervals if needed (currently 5s)
+- [ ] Update UI components to display futures data
+- [ ] Test with real Futures data from Binance
+- [ ] Remove unused Spot API code from `binanceApi.ts`
 
-**Progress**: 0/6 tasks | **Status**: Not Started
+**Progress**: 0/7 tasks | **Status**: Not Started
 
 ---
 
-#### Phase 4.2: Remove Old Alerts (Days 9-10)
+#### Phase 4.2: Remove Legacy Spot-Based Alerts (Days 9-10)
 **Files**: `src/services/alertEngine.ts`, `src/types/alert.ts`, `src/components/alerts/*`
 
-- [ ] Identify all Spot-based alert types (8 legacy alerts)
-- [ ] Mark as deprecated in UI with migration notice
-- [ ] Disable creation of new Spot alerts
-- [ ] Keep evaluation logic for existing alerts (backward compatibility)
-- [ ] Add migration tool to convert Spot alerts to Futures alerts
+- [ ] Remove legacy alert evaluators from `alertEngine.ts` (8 functions)
+- [ ] Remove `AlertType` union and `LEGACY_ALERT_PRESETS` from `alert.ts`
+- [ ] Replace `CombinedAlertType` with `FuturesAlertType` throughout codebase
+- [ ] Remove legacy preset selector section from `AlertConfig.tsx`
+- [ ] Update `AlertHistory.tsx` to only show futures alerts
+- [ ] Clean up unused legacy alert helper functions
+- [ ] Remove legacy alert tests from `tests/alerts/` if any exist
 
-**Progress**: 0/5 tasks | **Status**: Not Started
+**Progress**: 0/7 tasks | **Status**: Not Started
 
 ---
 
