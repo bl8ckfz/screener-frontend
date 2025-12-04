@@ -20,6 +20,28 @@ let cacheTimestamp: number = 0
 const CACHE_DURATION = 3600000 // 1 hour in milliseconds
 
 /**
+ * Simple rate limiter to prevent 418 errors
+ * Binance has strict rate limits, especially through CORS proxies
+ * 
+ * Strategy: 50ms delay = max 20 req/sec = 1200 req/min (well below typical limits)
+ * Testing: Disable in test environment for speed
+ */
+let lastRequestTime = 0
+const MIN_REQUEST_INTERVAL = import.meta.env.VITEST ? 0 : 50 // ms between requests
+
+async function rateLimitedDelay(): Promise<void> {
+  if (MIN_REQUEST_INTERVAL === 0) return // Skip in tests
+  
+  const now = Date.now()
+  const timeSinceLastRequest = now - lastRequestTime
+  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+    const delay = MIN_REQUEST_INTERVAL - timeSinceLastRequest
+    await new Promise(resolve => setTimeout(resolve, delay))
+  }
+  lastRequestTime = Date.now()
+}
+
+/**
  * Binance Futures API client for fetching kline data and exchange information
  * 
  * API Documentation: https://binance-docs.github.io/apidocs/futures/en/
@@ -76,7 +98,9 @@ export class BinanceFuturesApiClient {
   }
 
   /**
-   * Fetch klines for multiple intervals in parallel
+   * Fetch klines for multiple intervals with rate limiting
+   * 
+   * Fetches sequentially to avoid 418 rate limit errors
    * 
    * @param symbol - Trading pair symbol
    * @param intervals - Array of intervals to fetch
@@ -89,12 +113,16 @@ export class BinanceFuturesApiClient {
     symbol: string,
     intervals: KlineInterval[]
   ): Promise<Map<KlineInterval, BinanceFuturesKline[]>> {
-    const promises = intervals.map(interval =>
-      this.fetchKlines(symbol, interval, 2)
-    )
+    const results = new Map<KlineInterval, BinanceFuturesKline[]>()
+    
+    // Fetch sequentially with rate limiting to avoid 418 errors
+    for (const interval of intervals) {
+      await rateLimitedDelay()
+      const klines = await this.fetchKlines(symbol, interval, 2)
+      results.set(interval, klines)
+    }
 
-    const results = await Promise.all(promises)
-    return new Map(intervals.map((interval, i) => [interval, results[i]]))
+    return results
   }
 
   /**
@@ -247,13 +275,16 @@ export class BinanceFuturesApiClient {
   }
 
   /**
-   * Fetch with retry logic and exponential backoff
+   * Fetch with retry logic, rate limiting, and exponential backoff
    * 
    * @param url - URL to fetch
    * @param attempt - Current attempt number (for recursion)
    * @returns Parsed JSON response
    */
   private async fetchWithRetry<T>(url: string, attempt: number = 1): Promise<T> {
+    // Apply rate limiting to all requests
+    await rateLimitedDelay()
+    
     try {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), this.timeout)
