@@ -13,14 +13,6 @@ import { API_CONFIG } from '@/config/api'
 export type KlineInterval = '5m' | '15m' | '1h' | '8h' | '1d'
 
 /**
- * Check if running in production (Vercel)
- */
-const isProduction = () => {
-  return window.location.hostname.includes('vercel.app') || 
-         window.location.hostname !== 'localhost'
-}
-
-/**
  * Cache for USDT-M futures symbols (avoid repeated API calls)
  */
 let cachedFuturesSymbols: string[] | null = null
@@ -70,18 +62,9 @@ export class BinanceFuturesApiClient {
       limit: limit.toString(),
     })
 
-    // Use Vercel serverless proxy in production to avoid CORS/403 errors
-    let url: string
-    if (isProduction() && !API_CONFIG.corsProxy) {
-      // Production: Use Vercel serverless function
-      url = `/api/binance-futures?endpoint=${endpoint}&${params}`
-    } else if (API_CONFIG.corsProxy) {
-      // Development with CORS proxy
-      url = `${API_CONFIG.corsProxy}${encodeURIComponent(`https://fapi.binance.com${endpoint}?${params}`)}`
-    } else {
-      // Direct call (will likely fail with CORS/403)
-      url = `${this.baseUrl}${endpoint}?${params}`
-    }
+    const url = API_CONFIG.corsProxy
+      ? `${API_CONFIG.corsProxy}${encodeURIComponent(`https://fapi.binance.com${endpoint}?${params}`)}`
+      : `${this.baseUrl}${endpoint}?${params}`
 
     try {
       const data = await this.fetchWithRetry<any[]>(url)
@@ -135,16 +118,9 @@ export class BinanceFuturesApiClient {
 
     try {
       const endpoint = '/fapi/v1/exchangeInfo'
-      
-      // Use Vercel serverless proxy in production to avoid 403 errors
-      let url: string
-      if (isProduction() && !API_CONFIG.corsProxy) {
-        url = `/api/binance-futures?endpoint=${endpoint}`
-      } else if (API_CONFIG.corsProxy) {
-        url = `${API_CONFIG.corsProxy}${encodeURIComponent(`https://fapi.binance.com${endpoint}`)}`
-      } else {
-        url = `${this.baseUrl}${endpoint}`
-      }
+      const url = API_CONFIG.corsProxy
+        ? `${API_CONFIG.corsProxy}${encodeURIComponent(`https://fapi.binance.com${endpoint}`)}`
+        : `${this.baseUrl}${endpoint}`
 
       console.log('Fetching USDT-M futures symbols from exchange info...')
       const data = await this.fetchWithRetry<BinanceFuturesExchangeInfo>(url)
@@ -189,16 +165,9 @@ export class BinanceFuturesApiClient {
   async fetch24hrTickers(): Promise<any[]> {
     try {
       const endpoint = '/fapi/v1/ticker/24hr'
-      
-      // Use Vercel serverless proxy in production
-      let url: string
-      if (isProduction() && !API_CONFIG.corsProxy) {
-        url = `/api/binance-futures?endpoint=${endpoint}`
-      } else if (API_CONFIG.corsProxy) {
-        url = `${API_CONFIG.corsProxy}${encodeURIComponent(`https://fapi.binance.com${endpoint}`)}`
-      } else {
-        url = `${this.baseUrl}${endpoint}`
-      }
+      const url = API_CONFIG.corsProxy
+        ? `${API_CONFIG.corsProxy}${encodeURIComponent(`https://fapi.binance.com${endpoint}`)}`
+        : `${this.baseUrl}${endpoint}`
 
       const data = await this.fetchWithRetry<any[]>(url)
 
