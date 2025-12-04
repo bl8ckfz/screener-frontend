@@ -136,40 +136,53 @@ export function useMarketData() {
       return
     }
 
-    const symbols = query.data.map(coin => coin.fullSymbol)
-    const now = Date.now()
-    const currentDate = new Date(now)
-    const currentMinute = currentDate.getMinutes()
-    
-    // Calculate the last 5-minute boundary
-    const lastBoundaryMinute = Math.floor(currentMinute / 5) * 5
-    const lastBoundary = new Date(currentDate)
-    lastBoundary.setMinutes(lastBoundaryMinute, 0, 0) // Set to boundary with 0 seconds/ms
-    const lastBoundaryTimestamp = lastBoundary.getTime()
-    
-    // Check if we've already fetched for this boundary
-    const alreadyFetchedForBoundary = lastKlinesUpdate >= lastBoundaryTimestamp
-    
-    // Debug logging
-    if (import.meta.env.DEV || window.location.search.includes('debug')) {
-      const currentTime = currentDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-      const boundaryTime = lastBoundary.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-      console.log(`⏱️  Boundary check at ${currentTime}: current=${currentMinute}min, boundary=${lastBoundaryMinute}min (${boundaryTime}), already fetched=${alreadyFetchedForBoundary}`)
-    }
-    
-    if (alreadyFetchedForBoundary) {
-      // Already fetched for current 5-min window, skip
-      return
-    }
-
     // Fetch klines asynchronously (doesn't block UI)
     ;(async () => {
       try {
+        // Get available Futures symbols (will use cache after first fetch)
+        const futuresSymbols = await futuresApi.fetchAllFuturesSymbols()
+
+        // Only fetch metrics for coins that have futures contracts
+        const symbols = query.data
+          .map(coin => coin.fullSymbol)
+          .filter(symbol => futuresSymbols.includes(symbol))
+        
+        if (symbols.length === 0) {
+          console.log('No matching futures symbols found for current coins')
+          return
+        }
+
+        const now = Date.now()
+        const currentDate = new Date(now)
+        const currentMinute = currentDate.getMinutes()
+        
+        // Calculate the last 5-minute boundary
+        const lastBoundaryMinute = Math.floor(currentMinute / 5) * 5
+        const lastBoundary = new Date(currentDate)
+        lastBoundary.setMinutes(lastBoundaryMinute, 0, 0) // Set to boundary with 0 seconds/ms
+        const lastBoundaryTimestamp = lastBoundary.getTime()
+        
+        // Check if we've already fetched for this boundary
+        const alreadyFetchedForBoundary = lastKlinesUpdate >= lastBoundaryTimestamp
+        
+        // Debug logging
+        if (import.meta.env.DEV || window.location.search.includes('debug')) {
+          const currentTime = currentDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+          const boundaryTime = lastBoundary.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+          console.log(`⏱️  Boundary check at ${currentTime}: current=${currentMinute}min, boundary=${lastBoundaryMinute}min (${boundaryTime}), already fetched=${alreadyFetchedForBoundary}`)
+        }
+        
+        if (alreadyFetchedForBoundary) {
+          // Already fetched for current 5-min window, skip
+          return
+        }
+
         const boundaryTime = lastBoundary.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
         const lastFetchedTime = lastKlinesUpdate > 0 
           ? new Date(lastKlinesUpdate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
           : 'never'
         console.log(`🔄 Fetching fresh klines data for ${boundaryTime} boundary (last fetch: ${lastFetchedTime})`)
+        console.log(`📊 Filtering to ${symbols.length} futures symbols (from ${query.data.length} total coins)`)
         const { futuresMetricsService } = await import('@/services/futuresMetricsService')
         
         const metricsArray = await futuresMetricsService.fetchMultipleSymbolMetrics(
