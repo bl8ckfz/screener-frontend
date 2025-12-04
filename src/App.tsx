@@ -150,7 +150,10 @@ function App() {
   // Ref for search input
   const searchInputRef = useRef<HTMLInputElement>(null)
 
-  // Filter and sort coins based on search query and selected list
+  // Sentiment filter
+  const sentimentFilter = useStore((state) => state.sentimentFilter)
+
+  // Filter and sort coins based on search query, sentiment, and selected list
   const filteredCoins = useMemo(() => {
     if (!coins) return []
 
@@ -165,14 +168,32 @@ function App() {
       )
     }
 
-    // Apply list-based sorting
-    const list = getListById(currentList)
-    if (list) {
-      return sortCoinsByList(filtered, currentList, list.sortField, list.isBull)
+    // Apply sentiment filter
+    if (sentimentFilter !== 'all') {
+      filtered = filtered.filter((coin) => {
+        if (sentimentFilter === 'bullish') {
+          return coin.priceChangePercent > 0
+        } else if (sentimentFilter === 'bearish') {
+          return coin.priceChangePercent < 0
+        } else { // neutral
+          return coin.priceChangePercent === 0
+        }
+      })
+
+      // Sort by volume when sentiment filter is active
+      filtered = [...filtered].sort((a, b) => b.quoteVolume - a.quoteVolume)
+    }
+
+    // Apply list-based sorting only if no sentiment filter
+    if (sentimentFilter === 'all') {
+      const list = getListById(currentList)
+      if (list) {
+        return sortCoinsByList(filtered, currentList, list.sortField, list.isBull)
+      }
     }
 
     return filtered
-  }, [coins, searchQuery, currentList])
+  }, [coins, searchQuery, currentList, sentimentFilter])
 
   // Keyboard shortcuts
   useKeyboardShortcuts([

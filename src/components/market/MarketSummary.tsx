@@ -1,8 +1,11 @@
 import { useMarketStats } from '@/hooks/useMarketData'
+import { useStore } from '@/hooks/useStore'
 import { StatsCardSkeleton } from '@/components/ui'
 
 export function MarketSummary() {
   const { isLoading, stats } = useMarketStats()
+  const setSentimentFilter = useStore((state) => state.setSentimentFilter)
+  const currentFilter = useStore((state) => state.sentimentFilter)
 
   if (isLoading || !stats) {
     return (
@@ -85,7 +88,12 @@ export function MarketSummary() {
 
       {/* Statistics */}
       <div className="grid grid-cols-3 gap-2 text-sm">
-        <div className="text-center">
+        <button
+          onClick={() => setSentimentFilter(currentFilter === 'bullish' ? 'all' : 'bullish')}
+          className={`text-center p-2 rounded transition-colors hover:bg-gray-800 ${
+            currentFilter === 'bullish' ? 'bg-gray-800 ring-2 ring-bullish' : ''
+          }`}
+        >
           <div className="text-bullish font-bold text-lg">
             {stats.bullishCount}
           </div>
@@ -93,8 +101,13 @@ export function MarketSummary() {
           <div className="text-xs text-gray-500">
             {bullishPercent.toFixed(1)}%
           </div>
-        </div>
-        <div className="text-center">
+        </button>
+        <button
+          onClick={() => setSentimentFilter(currentFilter === 'neutral' ? 'all' : 'neutral')}
+          className={`text-center p-2 rounded transition-colors hover:bg-gray-800 ${
+            currentFilter === 'neutral' ? 'bg-gray-800 ring-2 ring-neutral' : ''
+          }`}
+        >
           <div className="text-neutral font-bold text-lg">
             {stats.neutralCount}
           </div>
@@ -102,8 +115,13 @@ export function MarketSummary() {
           <div className="text-xs text-gray-500">
             {neutralPercent.toFixed(1)}%
           </div>
-        </div>
-        <div className="text-center">
+        </button>
+        <button
+          onClick={() => setSentimentFilter(currentFilter === 'bearish' ? 'all' : 'bearish')}
+          className={`text-center p-2 rounded transition-colors hover:bg-gray-800 ${
+            currentFilter === 'bearish' ? 'bg-gray-800 ring-2 ring-bearish' : ''
+          }`}
+        >
           <div className="text-bearish font-bold text-lg">
             {stats.bearishCount}
           </div>
@@ -111,7 +129,7 @@ export function MarketSummary() {
           <div className="text-xs text-gray-500">
             {bearishPercent.toFixed(1)}%
           </div>
-        </div>
+        </button>
       </div>
 
       {/* Total */}

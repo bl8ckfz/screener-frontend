@@ -30,6 +30,9 @@ interface AppState {
   // Sorting
   sort: CoinSort
 
+  // Sentiment filter
+  sentimentFilter: 'all' | 'bullish' | 'neutral' | 'bearish'
+
   // Settings
   config: AppConfig
   autoRefresh: boolean
@@ -75,6 +78,7 @@ interface AppState {
   setError: (error: string | null) => void
   setLastUpdated: (timestamp: number) => void
   setSort: (sort: CoinSort) => void
+  setSentimentFilter: (filter: 'all' | 'bullish' | 'neutral' | 'bearish') => void
   setMarketMode: (mode: 'bull' | 'bear') => void
   setAutoRefresh: (enabled: boolean) => void
   setRefreshInterval: (interval: number) => void
@@ -119,6 +123,7 @@ const initialState = {
   currentList: DEFAULT_CONFIG.data.currentList,
   currentPage: 1,
   marketMode: 'bull',
+  sentimentFilter: 'all' as 'all' | 'bullish' | 'neutral' | 'bearish',
   coins: [],
   filteredCoins: [],
   isLoading: false,
@@ -201,6 +206,9 @@ export const useStore = create<AppState>()(
 
       setSort: (sort) =>
         set({ sort }),
+
+      setSentimentFilter: (sentimentFilter) =>
+        set({ sentimentFilter }),
 
       setMarketMode: (marketMode) =>
         set({ marketMode }),
