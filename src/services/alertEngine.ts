@@ -210,9 +210,6 @@ function generateAlertMessage(coin: Coin, rule: AlertRule): string {
  * Detects coins with sustained momentum over multiple timeframes
  */
 export function evaluateFuturesBigBull60(metrics: FuturesMetrics): boolean {
-  // Skip if no market cap data (won't pass criteria anyway)
-  if (!metrics.marketCap) return false
-
   return (
     metrics.change_1h > 1.6 &&
     metrics.change_1d < 15 &&
@@ -221,9 +218,7 @@ export function evaluateFuturesBigBull60(metrics: FuturesMetrics): boolean {
     metrics.volume_1h > 500_000 &&
     metrics.volume_8h > 5_000_000 &&
     6 * metrics.volume_1h > metrics.volume_8h &&
-    16 * metrics.volume_1h > metrics.volume_1d &&
-    metrics.marketCap > 23_000_000 &&
-    metrics.marketCap < 2_500_000_000
+    16 * metrics.volume_1h > metrics.volume_1d
   )
 }
 
@@ -232,8 +227,6 @@ export function evaluateFuturesBigBull60(metrics: FuturesMetrics): boolean {
  * Detects coins with sustained downward momentum over multiple timeframes
  */
 export function evaluateFuturesBigBear60(metrics: FuturesMetrics): boolean {
-  if (!metrics.marketCap) return false
-
   return (
     metrics.change_1h < -1.6 &&
     metrics.change_1d > -15 &&
@@ -242,9 +235,7 @@ export function evaluateFuturesBigBear60(metrics: FuturesMetrics): boolean {
     metrics.volume_1h > 500_000 &&
     metrics.volume_8h > 5_000_000 &&
     6 * metrics.volume_1h > metrics.volume_8h &&
-    16 * metrics.volume_1h > metrics.volume_1d &&
-    metrics.marketCap > 23_000_000 &&
-    metrics.marketCap < 2_500_000_000
+    16 * metrics.volume_1h > metrics.volume_1d
   )
 }
 
@@ -253,15 +244,11 @@ export function evaluateFuturesBigBear60(metrics: FuturesMetrics): boolean {
  * Early detection of emerging trends with accelerating momentum
  */
 export function evaluateFuturesPioneerBull(metrics: FuturesMetrics): boolean {
-  if (!metrics.marketCap) return false
-
   return (
     metrics.change_5m > 1 &&
     metrics.change_15m > 1 &&
     3 * metrics.change_5m > metrics.change_15m &&
-    2 * metrics.volume_5m > metrics.volume_15m &&
-    metrics.marketCap > 23_000_000 &&
-    metrics.marketCap < 2_500_000_000
+    2 * metrics.volume_5m > metrics.volume_15m
   )
 }
 
@@ -270,15 +257,11 @@ export function evaluateFuturesPioneerBull(metrics: FuturesMetrics): boolean {
  * Early detection of emerging downtrends with accelerating downward momentum
  */
 export function evaluateFuturesPioneerBear(metrics: FuturesMetrics): boolean {
-  if (!metrics.marketCap) return false
-
   return (
     metrics.change_5m < -1 &&
     metrics.change_15m < -1 &&
     3 * metrics.change_5m < metrics.change_15m &&
-    2 * metrics.volume_5m > metrics.volume_15m &&
-    metrics.marketCap > 23_000_000 &&
-    metrics.marketCap < 2_500_000_000
+    2 * metrics.volume_5m > metrics.volume_15m
   )
 }
 
@@ -287,8 +270,6 @@ export function evaluateFuturesPioneerBear(metrics: FuturesMetrics): boolean {
  * Catches explosive moves with progressive momentum acceleration
  */
 export function evaluateFutures5BigBull(metrics: FuturesMetrics): boolean {
-  if (!metrics.marketCap) return false
-
   return (
     metrics.change_5m > 0.6 &&
     metrics.change_1d < 15 &&
@@ -298,9 +279,7 @@ export function evaluateFutures5BigBull(metrics: FuturesMetrics): boolean {
     metrics.volume_1h > 1_000_000 &&
     metrics.volume_5m > metrics.volume_15m / 3 &&
     metrics.volume_5m > metrics.volume_1h / 6 &&
-    metrics.volume_5m > metrics.volume_8h / 66 &&
-    metrics.marketCap > 23_000_000 &&
-    metrics.marketCap < 2_500_000_000
+    metrics.volume_5m > metrics.volume_8h / 66
   )
 }
 
@@ -309,8 +288,6 @@ export function evaluateFutures5BigBull(metrics: FuturesMetrics): boolean {
  * Catches explosive downward moves with progressive momentum acceleration
  */
 export function evaluateFutures5BigBear(metrics: FuturesMetrics): boolean {
-  if (!metrics.marketCap) return false
-
   return (
     metrics.change_5m < -0.6 &&
     metrics.change_1d > -15 &&
@@ -320,9 +297,7 @@ export function evaluateFutures5BigBear(metrics: FuturesMetrics): boolean {
     metrics.volume_1h > 1_000_000 &&
     metrics.volume_5m > metrics.volume_15m / 3 &&
     metrics.volume_5m > metrics.volume_1h / 6 &&
-    metrics.volume_5m > metrics.volume_8h / 66 &&
-    metrics.marketCap > 23_000_000 &&
-    metrics.marketCap < 2_500_000_000
+    metrics.volume_5m > metrics.volume_8h / 66
   )
 }
 
@@ -331,8 +306,6 @@ export function evaluateFutures5BigBear(metrics: FuturesMetrics): boolean {
  * Identifies strong trending moves with progressive momentum acceleration
  */
 export function evaluateFutures15BigBull(metrics: FuturesMetrics): boolean {
-  if (!metrics.marketCap) return false
-
   return (
     metrics.change_15m > 1 &&
     metrics.change_1d < 15 &&
@@ -341,9 +314,7 @@ export function evaluateFutures15BigBull(metrics: FuturesMetrics): boolean {
     metrics.volume_15m > 400_000 &&
     metrics.volume_1h > 1_000_000 &&
     metrics.volume_15m > metrics.volume_1h / 3 &&
-    metrics.volume_15m > metrics.volume_8h / 26 &&
-    metrics.marketCap > 23_000_000 &&
-    metrics.marketCap < 2_500_000_000
+    metrics.volume_15m > metrics.volume_8h / 26
   )
 }
 
@@ -352,8 +323,6 @@ export function evaluateFutures15BigBull(metrics: FuturesMetrics): boolean {
  * Identifies strong downward trending moves with progressive momentum acceleration
  */
 export function evaluateFutures15BigBear(metrics: FuturesMetrics): boolean {
-  if (!metrics.marketCap) return false
-
   return (
     metrics.change_15m < -1 &&
     metrics.change_1d > -15 &&
@@ -362,9 +331,7 @@ export function evaluateFutures15BigBear(metrics: FuturesMetrics): boolean {
     metrics.volume_15m > 400_000 &&
     metrics.volume_1h > 1_000_000 &&
     metrics.volume_15m > metrics.volume_1h / 3 &&
-    metrics.volume_15m > metrics.volume_8h / 26 &&
-    metrics.marketCap > 23_000_000 &&
-    metrics.marketCap < 2_500_000_000
+    metrics.volume_15m > metrics.volume_8h / 26
   )
 }
 
@@ -373,16 +340,12 @@ export function evaluateFutures15BigBear(metrics: FuturesMetrics): boolean {
  * Detects reversal from bottom with volume confirmation
  */
 export function evaluateFuturesBottomHunter(metrics: FuturesMetrics): boolean {
-  if (!metrics.marketCap) return false
-
   return (
     metrics.change_1h < -0.7 &&
     metrics.change_15m < -0.6 &&
     metrics.change_5m > 0.5 &&
     metrics.volume_5m > metrics.volume_15m / 2 &&
-    metrics.volume_5m > metrics.volume_1h / 8 &&
-    metrics.marketCap > 23_000_000 &&
-    metrics.marketCap < 2_500_000_000
+    metrics.volume_5m > metrics.volume_1h / 8
   )
 }
 
@@ -391,16 +354,12 @@ export function evaluateFuturesBottomHunter(metrics: FuturesMetrics): boolean {
  * Detects reversal from top with volume confirmation
  */
 export function evaluateFuturesTopHunter(metrics: FuturesMetrics): boolean {
-  if (!metrics.marketCap) return false
-
   return (
     metrics.change_1h > 0.7 &&
     metrics.change_15m > 0.6 &&
     metrics.change_5m < -0.5 &&
     metrics.volume_5m > metrics.volume_15m / 2 &&
-    metrics.volume_5m > metrics.volume_1h / 8 &&
-    metrics.marketCap > 23_000_000 &&
-    metrics.marketCap < 2_500_000_000
+    metrics.volume_5m > metrics.volume_1h / 8
   )
 }
 

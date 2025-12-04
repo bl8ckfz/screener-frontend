@@ -179,7 +179,7 @@ export function useMarketData() {
               console.log(`📊 Fetched metrics: ${progress.completed}/${progress.total}`)
             }
           },
-          { skipMarketCap: false } // Include market cap for alerts (Pioneer Bull requires it)
+          { skipMarketCap: true } // Skip CoinGecko calls - market cap not needed for alerts
         )
 
         // Update cache with boundary timestamp
