@@ -23,14 +23,23 @@ export function evaluateAlertRules(
   const alerts: Alert[] = []
   const enabledRules = rules.filter((rule) => rule.enabled)
 
+  let coinsChecked = 0
+  let conditionsEvaluated = 0
+  
   for (const coin of coins) {
+    if (!coin.futuresMetrics) continue
+    coinsChecked++
+    
     for (const rule of enabledRules) {
+      conditionsEvaluated++
       const triggeredAlert = evaluateRule(coin, rule, marketMode)
       if (triggeredAlert) {
         alerts.push(triggeredAlert)
       }
     }
   }
+
+  console.log(`🔍 Alert engine: checked ${coinsChecked} coins × ${enabledRules.length} rules = ${conditionsEvaluated} evaluations`)
 
   return alerts
 }

@@ -283,14 +283,29 @@ export function useMarketData(wsMetricsMap?: Map<string, any>) {
       return
     }
 
-    console.log(`📋 Evaluating ${enabledRules.length} enabled alert rules...`)
+    const marketMode = useStore.getState().marketMode
+    console.log(`📋 Evaluating ${enabledRules.length} enabled alert rules (market mode: ${marketMode})...`)
+    
+    // Debug: Log sample of metrics
+    const sampleCoin = coinsWithMetrics[0]
+    if (sampleCoin?.futuresMetrics) {
+      console.log(`🔍 Sample metrics for ${sampleCoin.symbol}:`, {
+        change_5m: sampleCoin.futuresMetrics.change_5m?.toFixed(2) + '%',
+        change_15m: sampleCoin.futuresMetrics.change_15m?.toFixed(2) + '%',
+        change_1h: sampleCoin.futuresMetrics.change_1h?.toFixed(2) + '%',
+        volume_5m: '$' + (sampleCoin.futuresMetrics.volume_5m / 1000).toFixed(0) + 'K',
+        volume_15m: '$' + (sampleCoin.futuresMetrics.volume_15m / 1000).toFixed(0) + 'K',
+      })
+    }
 
     try {
       // Evaluate all rules against current coins
-      const triggeredAlerts = evaluateAlertRules(coins, enabledRules, useStore.getState().marketMode)
+      const triggeredAlerts = evaluateAlertRules(coins, enabledRules, marketMode)
+      
+      console.log(`✅ Alert evaluation complete: ${triggeredAlerts.length} alert(s) triggered`)
       
       if (triggeredAlerts.length > 0) {
-        console.log(`🔔 ${triggeredAlerts.length} alert(s) triggered`)
+        console.log(`🔔 Triggered alerts:`, triggeredAlerts.map(a => `${a.symbol} (${a.type})`))
       }
 
       // Process each triggered alert
