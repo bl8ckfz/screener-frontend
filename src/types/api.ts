@@ -179,6 +179,32 @@ export interface CoinGeckoMarketData {
 }
 
 /**
+ * Binance Futures ticker data from !ticker@arr stream
+ * Used for real-time market data and coin list
+ * https://binance-docs.github.io/apidocs/futures/en/#individual-symbol-ticker-streams
+ */
+export interface FuturesTickerData {
+  symbol: string               // Symbol (e.g., "BTCUSDT")
+  eventTime: number            // Event time
+  close: number                // Last price
+  open: number                 // Open price (24h ago)
+  high: number                 // High price (24h)
+  low: number                  // Low price (24h)
+  volume: number               // Base asset volume (24h)
+  quoteVolume: number          // Quote asset volume (24h)
+  priceChange: number          // Price change (24h)
+  priceChangePercent: number   // Price change % (24h)
+  lastQty: number              // Last traded quantity
+  
+  // Futures-specific fields
+  weightedAvgPrice: number     // Weighted average price
+  fundingRate: number          // Current funding rate
+  indexPrice: number           // Index price
+  markPrice: number            // Mark price
+  openInterest: number         // Open interest
+}
+
+/**
  * Futures metrics with all calculated values
  */
 export interface FuturesMetrics {
