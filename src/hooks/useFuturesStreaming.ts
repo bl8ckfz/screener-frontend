@@ -94,31 +94,10 @@ export function useFuturesStreaming() {
         const allSymbols = await futuresMetricsService.getAllFuturesSymbols()
         console.log(`📋 Found ${allSymbols.length} futures symbols`)
         
-        // Fetch 24hr tickers to sort by volume (most liquid first)
-        console.log('📊 Fetching 24hr data to sort by liquidity...')
-        const { BinanceFuturesApiClient } = await import('@/services/binanceFuturesApi')
-        const futuresApi = new BinanceFuturesApiClient()
-        const tickers = await futuresApi.fetch24hrTickers()
-        
-        // Create volume map for sorting
-        const volumeMap = new Map<string, number>()
-        tickers.forEach((ticker: any) => {
-          volumeMap.set(ticker.symbol, parseFloat(ticker.quoteVolume || '0'))
-        })
-        
-        // Sort symbols by 24h quote volume (descending)
-        const symbols = [...allSymbols].sort((a, b) => {
-          const volA = volumeMap.get(a) || 0
-          const volB = volumeMap.get(b) || 0
-          return volB - volA // Descending order
-        })
-        
-        // Log top 10 for verification
-        console.log('🔝 Top 10 most liquid pairs:')
-        symbols.slice(0, 10).forEach((symbol, i) => {
-          const volume = volumeMap.get(symbol) || 0
-          console.log(`  ${i + 1}. ${symbol}: $${(volume / 1e9).toFixed(2)}B`)
-        })
+        // Use alphabetical order (major pairs like BTC, ETH naturally come first)
+        // This avoids REST API call for volume sorting
+        const symbols = [...allSymbols].sort()
+        console.log(`🔝 First 10 symbols: ${symbols.slice(0, 10).join(', ')}`)
         
         // Start streaming (connects, subscribes, starts receiving data)
         // Will be automatically limited to 200 by webSocketStreamManager
