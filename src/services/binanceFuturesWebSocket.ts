@@ -13,7 +13,7 @@ const WS_BASE_URL = 'wss://fstream.binance.com/stream'
 // Default configuration
 const DEFAULT_MAX_RECONNECT_ATTEMPTS = 10
 const DEFAULT_RECONNECT_DELAY = 1000 // Base delay in ms
-const DEFAULT_PING_INTERVAL = 30000 // 30 seconds
+// Note: No ping interval - Binance server handles heartbeat automatically
 
 /**
  * WebSocket connection states
@@ -61,8 +61,6 @@ export class BinanceFuturesWebSocket {
   private reconnectAttempts: number = 0
   private maxReconnectAttempts: number
   private reconnectDelay: number
-  private pingInterval: number
-  private pingTimer: NodeJS.Timeout | null = null
   private reconnectTimer: NodeJS.Timeout | null = null
   private subscriptions: Set<string> = new Set()
   private eventHandlers: Map<string, EventHandler[]> = new Map()
@@ -72,7 +70,7 @@ export class BinanceFuturesWebSocket {
   constructor(options: WebSocketOptions = {}) {
     this.maxReconnectAttempts = options.maxReconnectAttempts ?? DEFAULT_MAX_RECONNECT_ATTEMPTS
     this.reconnectDelay = options.reconnectDelay ?? DEFAULT_RECONNECT_DELAY
-    this.pingInterval = options.pingInterval ?? DEFAULT_PING_INTERVAL
+    // Note: pingInterval option ignored - Binance handles ping/pong automatically
   }
 
   /**
@@ -422,12 +420,9 @@ export class BinanceFuturesWebSocket {
   }
 
   /**
-   * Stop ping/pong heartbeat
+   * Stop ping/pong heartbeat (no-op since ping is handled by server)
    */
   private stopPingInterval(): void {
-    if (this.pingTimer) {
-      clearInterval(this.pingTimer)
-      this.pingTimer = null
-    }
+    // No timer to clear - ping/pong handled automatically
   }
 }
