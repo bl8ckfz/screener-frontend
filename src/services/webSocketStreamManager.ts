@@ -147,9 +147,13 @@ export class WebSocketStreamManager extends SimpleEventEmitter {
         if (result.failed.length > 0) {
           console.warn(`⚠️  Failed to backfill ${result.failed.length} symbols:`, result.failed)
         }
+
+        // Initialize ticker data from backfilled candles so we have all 200 symbols
+        console.log('📊 Initializing ticker data from backfill...')
+        this.initializeTickerDataFromBackfill(symbols)
       }
 
-      // Step 3: Connect to Futures WebSocket
+      // Step 3: Connect to Binance Futures WebSocket
       console.log('📡 Connecting to Binance Futures WebSocket...')
       await this.wsClient.connect()
 
@@ -174,6 +178,45 @@ export class WebSocketStreamManager extends SimpleEventEmitter {
       this.emit('error', error)
       throw error
     }
+  }
+
+  /**
+   * Initialize ticker data from backfilled candles
+   * This ensures we have ticker data for all symbols, even if they haven't traded recently
+   */
+  private initializeTickerDataFromBackfill(symbols: string[]): void {
+    let initialized = 0
+    
+    for (const symbol of symbols) {
+      const buffer = this.bufferManager.getBuffer(symbol)
+      const latestCandle = buffer?.getNewestCandle()
+      if (latestCandle) {
+        // Create initial ticker data from latest 5m candle
+        const tickerData: FuturesTickerData = {
+          symbol,
+          eventTime: latestCandle.closeTime,
+          close: latestCandle.close,
+          open: latestCandle.open,
+          high: latestCandle.high,
+          low: latestCandle.low,
+          volume: latestCandle.volume,
+          quoteVolume: latestCandle.quoteVolume,
+          priceChange: latestCandle.close - latestCandle.open,
+          priceChangePercent: ((latestCandle.close - latestCandle.open) / latestCandle.open) * 100,
+          lastQty: 0, // Not available from candle
+          weightedAvgPrice: (latestCandle.high + latestCandle.low + latestCandle.close) / 3, // Approximate
+          fundingRate: 0, // Will be updated from ticker stream
+          indexPrice: latestCandle.close, // Approximate
+          markPrice: latestCandle.close, // Approximate
+          openInterest: 0, // Will be updated from ticker stream
+        }
+        
+        this.tickerData.set(symbol, tickerData)
+        initialized++
+      }
+    }
+    
+    console.log(`✅ Initialized ${initialized}/${symbols.length} tickers from backfill`)
   }
 
   /**
