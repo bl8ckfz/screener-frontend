@@ -466,44 +466,16 @@ describe('BinanceFuturesWebSocket', () => {
   })
 
   describe('Heartbeat (Ping/Pong)', () => {
-    it('should send ping at regular intervals', async () => {
-      ws = new BinanceFuturesWebSocket({ pingInterval: 30000 })
-      
-      const connectPromise = ws.connect()
-      vi.advanceTimersByTime(20)
-      await connectPromise
-
-      // @ts-ignore - access internal ws object and spy on send()
-      const mockWs = ws['ws']
-      const sendSpy = vi.spyOn(mockWs, 'send')
-
-      // Fast-forward 30 seconds to trigger first ping
-      await vi.advanceTimersByTimeAsync(30100)
-      expect(sendSpy).toHaveBeenCalledWith(JSON.stringify({ method: 'ping' }))
-      expect(sendSpy).toHaveBeenCalledTimes(1)
-
-      // Fast-forward another 30 seconds to trigger second ping
-      await vi.advanceTimersByTimeAsync(30000)
-      expect(sendSpy).toHaveBeenCalledTimes(2)
+    // NOTE: Tests skipped - Binance Futures WebSocket handles ping/pong automatically
+    // The server sends ping frames and browser responds with pong automatically
+    // Manual ping messages are not needed and cause "Invalid request" errors
+    
+    it.skip('should send ping at regular intervals', async () => {
+      // Skipped: Ping/pong handled automatically by Binance server
     })
 
-    it('should stop ping after disconnect', async () => {
-      ws = new BinanceFuturesWebSocket({ pingInterval: 30000 })
-      
-      const connectPromise = ws.connect()
-      vi.advanceTimersByTime(20)
-      await connectPromise
-
-      // @ts-ignore - access internal ws and spy on send()
-      const mockWs = ws['ws']
-      const sendSpy = vi.spyOn(mockWs, 'send')
-
-      // Disconnect clears the ping timer
-      ws.disconnect()
-
-      // Advance time - send should not be called with ping after disconnect
-      await vi.advanceTimersByTimeAsync(30000)
-      expect(sendSpy).not.toHaveBeenCalledWith(JSON.stringify({ method: 'ping' }))
+    it.skip('should stop ping after disconnect', async () => {
+      // Skipped: Ping/pong handled automatically by Binance server
     })
   })
 

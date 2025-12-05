@@ -410,18 +410,15 @@ export class BinanceFuturesWebSocket {
 
   /**
    * Start ping/pong heartbeat
+   * 
+   * NOTE: Binance Futures WebSocket handles ping/pong automatically.
+   * The server sends ping frames and expects pong responses (handled by browser).
+   * We don't need to send any ping messages - doing so causes "Invalid request" errors.
    */
   private startPingInterval(): void {
-    this.pingTimer = setInterval(() => {
-      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        // WebSocket ping (browser will handle pong automatically)
-        try {
-          this.ws.send(JSON.stringify({ method: 'ping' }))
-        } catch (error) {
-          console.error('❌ Failed to send ping:', error)
-        }
-      }
-    }, this.pingInterval)
+    // Ping/pong is handled automatically by Binance server and browser WebSocket API
+    // No manual ping needed - keeping this method for interface compatibility
+    console.log('💓 Heartbeat managed by Binance server (automatic ping/pong)')
   }
 
   /**
