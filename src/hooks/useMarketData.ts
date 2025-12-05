@@ -1,12 +1,10 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useStore } from './useStore'
-import { BinanceFuturesApiClient } from '@/services/binanceFuturesApi'
 import { BinanceApiClient } from '@/services/binanceApi'
 import { processTickersForPair } from '@/services/dataProcessor'
 import { applyTechnicalIndicators } from '@/utils/indicators'
 import { USE_MOCK_DATA, getMockDataWithVariations } from '@/services/mockData'
-import { isTabVisible, onVisibilityChange } from '@/utils/performance'
 import { evaluateAlertRules } from '@/services/alertEngine'
 import { showCryptoAlertNotification, getNotificationPermission } from '@/services/notification'
 import { audioNotificationService } from '@/services/audioNotification'
@@ -14,9 +12,6 @@ import { sendDiscordWebhook, sendToWebhooks } from '@/services/webhookService'
 import type { Coin } from '@/types/coin'
 import type { Alert } from '@/types/alert'
 import type { FuturesMetrics } from '@/types/api'
-
-// Initialize Futures API client
-const futuresApi = new BinanceFuturesApiClient()
 
 // Singleton guard to ensure alert evaluation only runs once per data update
 // Tracks the last query data timestamp to prevent duplicate evaluations
@@ -35,8 +30,6 @@ const KLINES_CACHE_DURATION = 5 * 60 * 1000 // 5 minutes in milliseconds
  * @param wsGetTickerData - Function to get live ticker data from WebSocket
  */
 export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?: () => any[]) {
-  const refreshInterval = useStore((state) => state.refreshInterval)
-  const autoRefresh = useStore((state) => state.autoRefresh)
   
   // Watchlist filtering
   const currentWatchlistId = useStore((state) => state.currentWatchlistId)
@@ -50,22 +43,8 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
   // Track recent alerts to prevent spam (symbol -> last alert timestamp)
   const recentAlerts = useRef<Map<string, number>>(new Map())
 
-  // Track tab visibility for smart polling
-  const [isVisible, setIsVisible] = useState(isTabVisible())
-
-  useEffect(() => {
-    // Listen for tab visibility changes
-    const cleanup = onVisibilityChange((visible) => {
-      setIsVisible(visible)
-      if (visible) {
-        console.log('Tab visible - resuming data refresh')
-      } else {
-        console.log('Tab hidden - pausing data refresh')
-      }
-    })
-
-    return cleanup
-  }, [])
+  // Track if we've loaded WebSocket data
+  const hasRefetchedForWebSocket = useRef(false)
 
   // Store previous coins data outside query
   const previousCoinsRef = useRef<Coin[]>([])
@@ -74,7 +53,7 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
   const query = useQuery({
     queryKey: ['marketData', 'USDT', currentWatchlistId],
     queryFn: async (): Promise<Coin[]> => {
-      // Use WebSocket ticker data if available, otherwise fetch from REST API
+      // ALWAYS use WebSocket ticker data (no REST API calls!)
       let tickers
       
       if (USE_MOCK_DATA) {
@@ -86,23 +65,14 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
         if (tickers && tickers.length > 0) {
           console.log(`✅ Using ${tickers.length} tickers from WebSocket stream`)
         } else {
-          // Fallback to REST API if WebSocket not ready
-          console.log('⏳ WebSocket not ready, fetching from REST API...')
-          tickers = await futuresApi.fetch24hrTickers()
-          console.log(`✅ Fetched ${tickers.length} futures tickers from REST API`)
+          // WebSocket not ready yet - return empty array, will populate when ready
+          console.log('⏳ WebSocket not ready yet, waiting for ticker data...')
+          tickers = []
         }
       } else {
-        // No WebSocket available, use REST API
-        try {
-          tickers = await futuresApi.fetch24hrTickers()
-          console.log(`✅ Fetched ${tickers.length} futures tickers from REST API`)
-        } catch (error) {
-          console.warn(
-            'Failed to fetch from Binance Futures API, falling back to mock data:',
-            error
-          )
-          tickers = getMockDataWithVariations()
-        }
+        // No WebSocket available - return empty, WebSocket will be initialized soon
+        console.log('⏳ Waiting for WebSocket initialization...')
+        tickers = []
       }
 
       // Parse to numeric values
@@ -134,13 +104,27 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
 
       return coins
     },
-    staleTime: (refreshInterval * 1000) / 2, // Half of refresh interval
-    // Smart polling: only refetch when tab is visible AND user is authenticated
-    refetchInterval: autoRefresh && isVisible ? refreshInterval * 1000 : false,
-    refetchOnWindowFocus: false, // Disable refetch on focus to prevent auth disruption
+    staleTime: Infinity, // Never consider data stale when using WebSocket
+    // Disable automatic refetching when WebSocket is providing live data
+    // Only refetch manually on mount or when explicitly needed
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   })
+
+  // Refetch once when WebSocket ticker data becomes available
+  useEffect(() => {
+    if (wsGetTickerData && !hasRefetchedForWebSocket.current) {
+      const tickers = wsGetTickerData()
+      if (tickers && tickers.length > 0) {
+        console.log('🔄 WebSocket ticker data ready, loading market data...')
+        hasRefetchedForWebSocket.current = true
+        query.refetch()
+      }
+    }
+  }, [wsGetTickerData, query])
 
   // DISABLED: Fetch klines data in background (non-blocking)
   // Reason: Binance rate limits are too strict for klines fetching
