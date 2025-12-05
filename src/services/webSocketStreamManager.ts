@@ -87,7 +87,7 @@ export class WebSocketStreamManager extends SimpleEventEmitter {
     
     this.options = {
       autoReconnect: options.autoReconnect ?? true,
-      batchSize: options.batchSize ?? 200,
+      batchSize: options.batchSize ?? 100, // Reduced from 200 to avoid payload size limits
       enableBackfill: options.enableBackfill ?? true,
     }
 
@@ -109,8 +109,15 @@ export class WebSocketStreamManager extends SimpleEventEmitter {
    */
   async start(symbols: string[]): Promise<void> {
     if (this.isRunning) {
-      console.warn('⚠️  Stream manager already running')
+      console.warn('⚠️  Stream already running')
       return
+    }
+
+    // Binance limit: max 200 streams per WebSocket connection
+    const MAX_STREAMS = 200
+    if (symbols.length > MAX_STREAMS) {
+      console.warn(`⚠️  Limiting to ${MAX_STREAMS} symbols (requested ${symbols.length}) due to Binance WebSocket limits`)
+      symbols = symbols.slice(0, MAX_STREAMS)
     }
 
     this.symbols = symbols
@@ -147,7 +154,7 @@ export class WebSocketStreamManager extends SimpleEventEmitter {
       await this.wsClient.subscribe(['!ticker@arr'])
 
       // Step 5: Subscribe to kline streams
-      console.log('📡 Subscribing to kline streams...')
+      console.log(`📡 Subscribing to ${symbols.length} kline streams...`)
       await this.subscribeKlineStreams(symbols)
 
       this.isRunning = true

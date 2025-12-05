@@ -105,7 +105,7 @@ describe('WebSocketStreamManager - Integration', () => {
       const consoleWarn = vi.spyOn(console, 'warn')
       await manager.start(symbols)
 
-      expect(consoleWarn).toHaveBeenCalledWith('⚠️  Stream manager already running')
+      expect(consoleWarn).toHaveBeenCalledWith('⚠️  Stream already running')
       consoleWarn.mockRestore()
     })
 

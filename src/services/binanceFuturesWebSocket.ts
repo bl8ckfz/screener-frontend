@@ -380,12 +380,23 @@ export class BinanceFuturesWebSocket {
       try {
         await this.connect()
 
-        // Resubscribe to all previous streams
+        // Resubscribe to all previous streams in batches
         if (this.subscriptions.size > 0) {
           const streams = Array.from(this.subscriptions)
           // Clear subscriptions temporarily to avoid duplication
           this.subscriptions.clear()
-          await this.subscribe(streams)
+          
+          // Subscribe in batches of 100 to avoid "Payload too long" error
+          const BATCH_SIZE = 100
+          for (let i = 0; i < streams.length; i += BATCH_SIZE) {
+            const batch = streams.slice(i, i + BATCH_SIZE)
+            await this.subscribe(batch)
+            
+            // Small delay between batches
+            if (i + BATCH_SIZE < streams.length) {
+              await new Promise(resolve => setTimeout(resolve, 100))
+            }
+          }
         }
 
         this.emit('reconnect')
