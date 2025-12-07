@@ -176,6 +176,34 @@ export class BinanceFuturesWebSocket {
   }
 
   /**
+   * Subscribe to 1m kline streams for specific symbols
+   * Helper method for subscribing to 1m candlestick data
+   * 
+   * @param symbols - Array of symbols to subscribe (e.g., ['BTCUSDT', 'ETHUSDT'])
+   * @example
+   * await ws.subscribe1mKlines(['BTCUSDT', 'ETHUSDT'])
+   * // Subscribes to btcusdt@kline_1m and ethusdt@kline_1m
+   */
+  async subscribe1mKlines(symbols: string[]): Promise<void> {
+    const streams = symbols.map(s => `${s.toLowerCase()}@kline_1m`)
+    await this.subscribe(streams)
+  }
+
+  /**
+   * Subscribe to 5m kline streams for specific symbols
+   * Helper method for subscribing to 5m candlestick data
+   * 
+   * @param symbols - Array of symbols to subscribe (e.g., ['BTCUSDT', 'ETHUSDT'])
+   * @example
+   * await ws.subscribe5mKlines(['BTCUSDT', 'ETHUSDT'])
+   * // Subscribes to btcusdt@kline_5m and ethusdt@kline_5m
+   */
+  async subscribe5mKlines(symbols: string[]): Promise<void> {
+    const streams = symbols.map(s => `${s.toLowerCase()}@kline_5m`)
+    await this.subscribe(streams)
+  }
+
+  /**
    * Subscribe to all market tickers stream (!ticker@arr)
    * Provides 24h statistics for all futures symbols
    */

@@ -4,7 +4,7 @@
 
 ## Current Phase
 
-**Phase 1: Core Data Structures** - COMPLETE ✅  
+**Phase 2: API Integration** - COMPLETE ✅  
 **Status**: Complete  
 **Progress**: 2/2 tasks (100%)
 
@@ -101,7 +101,80 @@ Goal: 5x faster updates (1min vs 5min), O(1) window updates using running sums, 
 - ✅ Type-safe interfaces for Candle1m, RunningSums, WindowMetrics
 - ✅ Standard float64 precision validated (accurate after 1440 updates)
 
-**Next**: Phase 2 - API Integration (1m klines fetch + WebSocket streams)
+---
+
+### Phase 2: API Integration (Day 2-3)
+
+**Goal**: Add 1m klines API methods and WebSocket subscription helpers
+
+#### Task 2.1: Extend Binance Futures API Client ✅ COMPLETE
+**File**: `src/services/binanceFuturesApi.ts`  
+**Tests**: `tests/services/binanceFuturesApi.test.ts`  
+**Status**: ✅ Complete - All tests passing (17/17)
+
+**Requirements** (All Done):
+- ✅ `fetch1mKlines(symbol, limit=1440)` - Fetch 1-1500 1m candles
+- ✅ Returns minimal `Candle1m` format (4 fields only)
+- ✅ Rate limiting via `rateLimitedDelay()`
+- ✅ `backfill1mCandles(symbols, options)` - Batch backfill multiple symbols
+- ✅ Configurable batch size (default 10) and delay (default 1000ms)
+- ✅ Progress callbacks for UI feedback
+- ✅ Error handling with retry logic (3 attempts)
+- ✅ Console logging with emojis for visibility
+
+**Tests** (8 new tests, all passing):
+- ✅ fetch1mKlines (4 tests)
+  - Minimal Candle1m format validation
+  - 1500 candle limit enforcement
+  - Default 1440 candles (24h)
+  - Error handling with retry
+- ✅ backfill1mCandles (4 tests)
+  - Batched processing
+  - Partial failure handling
+  - Progress callback invocation
+  - Empty symbol list handling
+
+---
+
+#### Task 2.2: WebSocket 1m Kline Subscriptions ✅ COMPLETE
+**File**: `src/services/binanceFuturesWebSocket.ts`  
+**Tests**: `tests/services/binanceFuturesWebSocket.test.ts`  
+**Status**: ✅ Complete - All tests passing (40/40)
+
+**Requirements** (All Done):
+- ✅ `subscribe1mKlines(symbols)` - Convenience method for @kline_1m streams
+- ✅ `subscribe5mKlines(symbols)` - Convenience method for @kline_5m streams
+- ✅ Lowercase symbol conversion (btcusdt@kline_1m)
+- ✅ Reuses existing subscribe() infrastructure
+- ✅ Connection state validation
+
+**Tests** (6 new tests, all passing):
+- ✅ 1m Kline Subscription (4 tests)
+  - Stream format validation
+  - Lowercase conversion
+  - Empty list handling
+  - Connection requirement
+- ✅ 5m Kline Subscription (2 tests)
+  - Stream format validation
+  - Lowercase conversion
+
+---
+
+### Phase 2 Summary ✅
+
+**Duration**: ~1.5 hours  
+**Files Modified**: 2 (binanceFuturesApi.ts, binanceFuturesWebSocket.ts)  
+**Test Files Modified**: 2 (8 new API tests, 6 new WebSocket tests)  
+**Test Coverage**: 14 new tests, all passing (17/17 API, 40/40 WebSocket)  
+
+**Key Achievements**:
+- ✅ 1m candles API with minimal data format (32 bytes per candle)
+- ✅ Batched backfill with progress tracking
+- ✅ WebSocket subscription helpers for 1m and 5m klines
+- ✅ Comprehensive test coverage with proper mocking
+- ✅ CORS proxy URL handling in tests
+
+**Next**: Phase 3 - Integration (connect RingBufferManager with API/WebSocket)
 
 ---
 

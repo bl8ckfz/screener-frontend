@@ -4,6 +4,7 @@ import type {
   ApiError,
   BinanceFuturesExchangeInfo,
   BinanceFuturesSymbol,
+  Candle1m,
 } from '@/types/api'
 import { API_CONFIG } from '@/config/api'
 
@@ -123,6 +124,139 @@ export class BinanceFuturesApiClient {
       results.set(interval, klines)
     }
 
+    return results
+  }
+
+  /**
+   * Fetch 1m klines for backfill (optimized for 1m sliding windows)
+   * 
+   * Returns minimal Candle1m format (only essential fields)
+   * Used to backfill 24 hours of 1m candles (1440 candles)
+   * 
+   * @param symbol - Trading pair symbol (e.g., 'BTCUSDT')
+   * @param limit - Number of candles to fetch (default: 1440 for 24h, max: 1500)
+   * @returns Array of 1m candles in minimal format
+   * 
+   * @example
+   * const candles = await client.fetch1mKlines('BTCUSDT', 1440)
+   * // Returns 24 hours of 1m candles
+   */
+  async fetch1mKlines(
+    symbol: string,
+    limit: number = 1440
+  ): Promise<Candle1m[]> {
+    const endpoint = '/fapi/v1/klines'
+    const params = new URLSearchParams({
+      symbol,
+      interval: '1m',
+      limit: Math.min(limit, 1500).toString(), // Binance max per request
+    })
+
+    const url = API_CONFIG.corsProxy
+      ? `${API_CONFIG.corsProxy}${encodeURIComponent(`https://fapi.binance.com${endpoint}?${params}`)}`
+      : `${this.baseUrl}${endpoint}?${params}`
+
+    try {
+      await rateLimitedDelay()
+      const data = await this.fetchWithRetry<any[]>(url)
+      
+      // Convert to minimal Candle1m format (32 bytes per candle)
+      return data.map((kline: any[]) => ({
+        openTime: kline[0],
+        close: parseFloat(kline[4]),
+        volume: parseFloat(kline[5]),
+        quoteVolume: parseFloat(kline[7]),
+      }))
+    } catch (error) {
+      console.error(`❌ Failed to fetch 1m klines for ${symbol}:`, error)
+      throw error
+    }
+  }
+
+  /**
+   * Backfill 1m candles for multiple symbols (batched with rate limiting)
+   * 
+   * Fetches 24h of 1m candles for each symbol in batches to avoid rate limiting
+   * Provides progress callbacks for UI feedback
+   * 
+   * @param symbols - Array of symbols to backfill
+   * @param options - Backfill configuration
+   * @returns Backfill results with successful/failed symbols and data
+   * 
+   * @example
+   * const result = await client.backfill1mCandles(['BTCUSDT', 'ETHUSDT'], {
+   *   batchSize: 10,
+   *   batchDelay: 1000,
+   *   onProgress: (completed, total) => console.log(`${completed}/${total}`)
+   * })
+   */
+  async backfill1mCandles(
+    symbols: string[],
+    options: {
+      batchSize?: number
+      batchDelay?: number
+      onProgress?: (completed: number, total: number, symbol: string) => void
+    } = {}
+  ): Promise<{
+    successful: string[]
+    failed: Array<{ symbol: string; error: string }>
+    data: Map<string, Candle1m[]>
+  }> {
+    const batchSize = options.batchSize ?? 10
+    const batchDelay = options.batchDelay ?? 1000 // 1s delay between batches
+    
+    const results = {
+      successful: [] as string[],
+      failed: [] as Array<{ symbol: string; error: string }>,
+      data: new Map<string, Candle1m[]>(),
+    }
+    
+    console.log(`🔧 Starting backfill for ${symbols.length} symbols...`)
+    console.log(`📊 Batch size: ${batchSize}, delay: ${batchDelay}ms`)
+    
+    for (let i = 0; i < symbols.length; i += batchSize) {
+      const batch = symbols.slice(i, i + batchSize)
+      const batchNum = Math.floor(i / batchSize) + 1
+      const totalBatches = Math.ceil(symbols.length / batchSize)
+      
+      console.log(`📦 Processing batch ${batchNum}/${totalBatches} (${batch.length} symbols)...`)
+      
+      const batchPromises = batch.map(async (symbol) => {
+        try {
+          const candles = await this.fetch1mKlines(symbol, 1440)
+          results.data.set(symbol, candles)
+          results.successful.push(symbol)
+          console.log(`✅ Backfilled ${symbol}: ${candles.length} candles`)
+          
+          if (options.onProgress) {
+            options.onProgress(
+              results.successful.length + results.failed.length,
+              symbols.length,
+              symbol
+            )
+          }
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : String(error)
+          console.error(`❌ Failed to backfill ${symbol}: ${errorMsg}`)
+          results.failed.push({ symbol, error: errorMsg })
+        }
+      })
+      
+      await Promise.all(batchPromises)
+      
+      // Rate limiting delay between batches
+      if (i + batchSize < symbols.length) {
+        console.log(`⏳ Waiting ${batchDelay}ms before next batch...`)
+        await new Promise(resolve => setTimeout(resolve, batchDelay))
+      }
+    }
+    
+    console.log(`✅ Backfill complete: ${results.successful.length} successful, ${results.failed.length} failed`)
+    
+    if (results.failed.length > 0) {
+      console.warn(`❌ Failed symbols:`, results.failed.map(f => f.symbol).join(', '))
+    }
+    
     return results
   }
 

@@ -601,4 +601,91 @@ describe('BinanceFuturesWebSocket', () => {
       expect(ws.getState()).toBe('connected')
     })
   })
+
+  describe('1m Kline Subscription', () => {
+    it('should subscribe to 1m kline streams', async () => {
+      ws = new BinanceFuturesWebSocket()
+      const connectPromise = ws.connect()
+      vi.advanceTimersByTime(20)
+      await connectPromise
+
+      const sendSpy = vi.spyOn(ws['ws']!, 'send')
+      
+      await ws.subscribe1mKlines(['BTCUSDT', 'ETHUSDT'])
+
+      expect(sendSpy).toHaveBeenCalledOnce()
+      const sentMessage = JSON.parse(sendSpy.mock.calls[0][0])
+      expect(sentMessage.method).toBe('SUBSCRIBE')
+      expect(sentMessage.params).toEqual(['btcusdt@kline_1m', 'ethusdt@kline_1m'])
+    })
+
+    it('should format stream names with lowercase', async () => {
+      ws = new BinanceFuturesWebSocket()
+      const connectPromise = ws.connect()
+      vi.advanceTimersByTime(20)
+      await connectPromise
+
+      const sendSpy = vi.spyOn(ws['ws']!, 'send')
+      
+      await ws.subscribe1mKlines(['BTCUSDT', 'ETHUSDT', 'BNBUSDT'])
+
+      const sentMessage = JSON.parse(sendSpy.mock.calls[0][0])
+      expect(sentMessage.params).toContain('btcusdt@kline_1m')
+      expect(sentMessage.params).toContain('ethusdt@kline_1m')
+      expect(sentMessage.params).toContain('bnbusdt@kline_1m')
+    })
+
+    it('should handle empty symbol list', async () => {
+      ws = new BinanceFuturesWebSocket()
+      const connectPromise = ws.connect()
+      vi.advanceTimersByTime(20)
+      await connectPromise
+
+      const sendSpy = vi.spyOn(ws['ws']!, 'send')
+      
+      await ws.subscribe1mKlines([])
+
+      expect(sendSpy).toHaveBeenCalledOnce()
+      const sentMessage = JSON.parse(sendSpy.mock.calls[0][0])
+      expect(sentMessage.params).toEqual([])
+    })
+
+    it('should throw if not connected', async () => {
+      ws = new BinanceFuturesWebSocket()
+      
+      await expect(ws.subscribe1mKlines(['BTCUSDT'])).rejects.toThrow('WebSocket not connected')
+    })
+  })
+
+  describe('5m Kline Subscription', () => {
+    it('should subscribe to 5m kline streams', async () => {
+      ws = new BinanceFuturesWebSocket()
+      const connectPromise = ws.connect()
+      vi.advanceTimersByTime(20)
+      await connectPromise
+
+      const sendSpy = vi.spyOn(ws['ws']!, 'send')
+      
+      await ws.subscribe5mKlines(['BTCUSDT', 'ETHUSDT'])
+
+      expect(sendSpy).toHaveBeenCalledOnce()
+      const sentMessage = JSON.parse(sendSpy.mock.calls[0][0])
+      expect(sentMessage.method).toBe('SUBSCRIBE')
+      expect(sentMessage.params).toEqual(['btcusdt@kline_5m', 'ethusdt@kline_5m'])
+    })
+
+    it('should format stream names with lowercase', async () => {
+      ws = new BinanceFuturesWebSocket()
+      const connectPromise = ws.connect()
+      vi.advanceTimersByTime(20)
+      await connectPromise
+
+      const sendSpy = vi.spyOn(ws['ws']!, 'send')
+      
+      await ws.subscribe5mKlines(['BTCUSDT'])
+
+      const sentMessage = JSON.parse(sendSpy.mock.calls[0][0])
+      expect(sentMessage.params).toEqual(['btcusdt@kline_5m'])
+    })
+  })
 })
