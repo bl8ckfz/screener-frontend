@@ -1,24 +1,113 @@
-# Project State - WebSocket Streaming Migration
+# Project State - 1m Sliding Windows Migration
 
-**Last Updated**: December 5, 2025
+**Last Updated**: December 7, 2025
 
 ## Current Phase
 
-**Phase 6: Testing & Optimization** - Day 9 of 12  
-**Status**: In Progress ✅  
-**Progress**: 161/162 tasks (99%) - 4 out of 6 Phase 6 tasks complete
+**Phase 1: Core Data Structures** - COMPLETE ✅  
+**Status**: Complete  
+**Progress**: 2/2 tasks (100%)
 
 ### Context
-Migrating from REST API polling (2,950 requests/5min) to WebSocket streaming (0 requests).  
-Goal: Real-time data with <1s latency, 24h natural warm-up phase.
+Migrating from 5m candles (288 per day) to 1m candles (1440 per day) with efficient sliding window calculations.  
+Goal: 5x faster updates (1min vs 5min), O(1) window updates using running sums, same memory footprint.
 
-**Reference**: `docs/WEBSOCKET_STREAMING_ROADMAP.md` for complete plan
+**Previous**: WebSocket streaming with 5m candles ✅ Complete  
+**Current**: 1m candles with sliding windows 🚧 In Progress  
+**Reference**: `docs/1M_SLIDING_WINDOWS_ROADMAP.md` for complete plan
+
+### Migration Strategy
+- ✅ Git tag created: `v5m-stable` (emergency rollback point)
+- 🚧 Building 1m system (no backward compatibility)
+- 📦 Will delete 5m files as new 1m equivalents are completed
+- 🚀 Single deployment cutover when complete
 
 ---
 
 ## Implementation Tracking
 
-### Phase 1.1: WebSocket Connection Layer ✅ COMPLETE
+### Phase 1: Core Data Structures (Days 1-2)
+
+**Goal**: Build ring buffer for 1440 1m candles and sliding window calculator with running sums
+
+#### Task 1.1: Candle1m Ring Buffer ✅ COMPLETE
+**File**: `src/utils/candle1mRingBuffer.ts` (245 lines)  
+**Tests**: `tests/utils/candle1mRingBuffer.test.ts` (486 lines)  
+**Status**: ✅ Complete - All tests passing
+
+**Requirements** (All Done):
+- ✅ Create `Candle1m` interface (4 fields: openTime, close, volume, quoteVolume)
+- ✅ Implement circular buffer (capacity: 1440)
+- ✅ `push()` - Add candle, return evicted candle
+- ✅ `get(i)` - Access by index (0 = oldest, count-1 = newest)
+- ✅ `getNewest()` / `getOldest(n)` - Boundary access
+- ✅ `hasWindow(n)` - Check if enough data for window
+- ✅ Memory: 32 bytes per candle × 1440 = ~46 KB per symbol
+
+**Tests** (13 test suites, all passing):
+- ✅ Initialization (3 tests)
+- ✅ Push operations with wraparound (5 tests)
+- ✅ Index access with circular logic (6 tests)
+- ✅ Boundary access (7 tests)
+- ✅ Window availability (4 tests)
+- ✅ Utility methods (5 tests)
+- ✅ Edge cases (6 tests)
+- ✅ Memory efficiency (2 tests)
+
+---
+
+#### Task 1.2: Sliding Window Calculator ✅ COMPLETE
+**File**: `src/utils/slidingWindowCalculator.ts` (263 lines)  
+**Tests**: `tests/utils/slidingWindowCalculator.test.ts` (565 lines)  
+**Status**: ✅ Complete - All tests passing (38 tests)
+
+**Requirements** (All Done):
+- ✅ Create `RunningSums` interface (10 fields: sumBase5/15/60/480/1440, sumQuote5/15/60/480/1440)
+- ✅ Create `WindowMetrics` interface (output format with price changes, volumes, boundaries)
+- ✅ `initializeSymbol()` - Initialize running sums to zero
+- ✅ `addCandle()` - Add volumes to all running sums (O(1))
+- ✅ `removeCandle()` - Subtract evicted candle from all sums (O(1))
+- ✅ `getMetrics()` - Calculate metrics for specific window (5/15/60/480/1440)
+- ✅ `getAllMetrics()` - Get all timeframes at once
+
+**Tests** (11 test suites, 38 tests, all passing):
+- ✅ Initialization (3 tests)
+- ✅ addCandle (3 tests)
+- ✅ removeCandle (4 tests)
+- ✅ getMetrics - Data Availability (4 tests)
+- ✅ getMetrics - Price Calculations (3 tests)
+- ✅ getMetrics - Volume Calculations (3 tests)
+- ✅ getMetrics - Window Boundaries (2 tests)
+- ✅ getAllMetrics (4 tests)
+- ✅ Precision & Accuracy (3 tests)
+- ✅ Utility Methods (3 tests)
+- ✅ Error Handling (2 tests)
+- ✅ Edge Cases (4 tests)
+
+---
+
+### Phase 1 Summary ✅
+
+**Duration**: ~2 hours  
+**Files Created**: 4 (2 implementation, 2 test suites)  
+**Lines of Code**: 1,559 (808 implementation + 751 tests)  
+**Test Coverage**: 51 tests, all passing  
+**Memory Footprint**: ~46KB per symbol (ring buffer) + 80 bytes (running sums) = ~46KB total  
+
+**Key Achievements**:
+- ✅ Circular buffer with O(1) push/get operations
+- ✅ Running sums for O(1) window calculations
+- ✅ Comprehensive test coverage (initialization, operations, edge cases, precision)
+- ✅ Type-safe interfaces for Candle1m, RunningSums, WindowMetrics
+- ✅ Standard float64 precision validated (accurate after 1440 updates)
+
+**Next**: Phase 2 - API Integration (1m klines fetch + WebSocket streams)
+
+---
+
+## Previous Work (5m System - Will Be Deleted)
+
+### Phase 1.1: WebSocket Connection Layer ✅ COMPLETE (KEEP)
 
 **File**: `src/services/binanceFuturesWebSocket.ts` (385 lines)  
 **Tests**: `tests/services/binanceFuturesWebSocket.test.ts` (618 lines, 24/28 passing - 86%)
@@ -533,4 +622,19 @@ Goal: Real-time data with <1s latency, 24h natural warm-up phase.
 4. Monitor performance and memory usage
 5. Add server-side WebSocket proxy for production
 
-**Last Updated**: December 5, 2025 - Phase 5 Core Integration Complete! 🎉
+---
+
+## Files to Delete After Migration
+
+These 5m-specific files will be deleted as 1m equivalents are completed:
+- [ ] `src/utils/klineRingBuffer.ts` → Replaced by `candle1mRingBuffer.ts`
+- [ ] `src/services/ringBufferManager.ts` → Replaced by `stream1mManager.ts`
+- [ ] `src/services/changeCalculator.ts` → Replaced by `slidingWindowCalculator.ts`
+- [ ] `src/services/webSocketStreamManager.ts` → Replaced by `stream1mManager.ts`
+- [ ] Related test files for above
+
+**Note**: WebSocket client (`binanceFuturesWebSocket.ts`) will be KEPT and updated for 1m streams.
+
+---
+
+**Last Updated**: December 7, 2025 - Starting 1m Migration 🚀

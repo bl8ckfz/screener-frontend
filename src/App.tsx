@@ -29,6 +29,9 @@ function App() {
   // WebSocket streaming for futures data (real-time)
   const {
     isInitialized,
+    tickersReady: _tickersReady, // NEW: true when market data available (<2s) - available for future UI enhancements
+    backfillProgress: _backfillProgress, // NEW: 0-100% background loading progress - available for loading indicator
+    backfillComplete: _backfillComplete, // NEW: true when historical data loaded - available for feature gating
     error: wsError,
     warmupStatus,
     metricsMap,

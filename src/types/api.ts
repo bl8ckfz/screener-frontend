@@ -205,6 +205,62 @@ export interface FuturesTickerData {
 }
 
 /**
+ * Minimal 1m candle data for ring buffer storage
+ * Only essential fields to minimize memory footprint
+ * Memory: 4 fields × 8 bytes = 32 bytes per candle
+ */
+export interface Candle1m {
+  openTime: number       // Timestamp (ms)
+  close: number          // Close price
+  volume: number         // Base asset volume
+  quoteVolume: number    // Quote asset volume (USDT)
+}
+
+/**
+ * Running sums for O(1) sliding window calculations
+ * Tracks cumulative volumes across 5 time windows
+ * Memory: 10 fields × 8 bytes = 80 bytes per symbol
+ */
+export interface RunningSums {
+  // Base asset volume sums
+  sumBase5: number      // Last 5 minutes (5 candles)
+  sumBase15: number     // Last 15 minutes (15 candles)
+  sumBase60: number     // Last 1 hour (60 candles)
+  sumBase480: number    // Last 8 hours (480 candles)
+  sumBase1440: number   // Last 24 hours (1440 candles)
+  
+  // Quote asset volume sums (USDT)
+  sumQuote5: number
+  sumQuote15: number
+  sumQuote60: number
+  sumQuote480: number
+  sumQuote1440: number
+}
+
+/**
+ * Computed metrics for a specific timeframe window
+ * Output format from SlidingWindowCalculator
+ */
+export interface WindowMetrics {
+  symbol: string
+  windowMinutes: number          // Window size (5, 15, 60, 480, 1440)
+  
+  // Price changes
+  priceChange: number            // Absolute price change
+  priceChangePercent: number     // Percentage change
+  
+  // Volumes
+  baseVolume: number             // Base asset volume in window
+  quoteVolume: number            // Quote asset volume in window (USDT)
+  
+  // Window boundaries
+  windowStartTime: number        // Oldest candle openTime
+  windowEndTime: number          // Newest candle openTime
+  startPrice: number             // Oldest candle close
+  endPrice: number               // Newest candle close
+}
+
+/**
  * Futures metrics with all calculated values
  */
 export interface FuturesMetrics {

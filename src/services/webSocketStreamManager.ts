@@ -105,7 +105,49 @@ export class WebSocketStreamManager extends SimpleEventEmitter {
   }
 
   /**
+   * Get top N most liquid symbols based on 24h quote volume
+   * Must be called BEFORE start() to connect and fetch tickers first
+   * 
+   * @param limit - Number of top symbols to return (default: 200)
+   * @returns Array of symbols sorted by 24h volume (highest first)
+   */
+  async getTopLiquidSymbols(limit: number = 200): Promise<string[]> {
+    // Connect to WebSocket
+    console.log('📡 Connecting to Binance Futures WebSocket...')
+    await this.wsClient.connect()
+
+    // Subscribe to ticker stream
+    console.log('📡 Subscribing to ticker stream...')
+    await this.wsClient.subscribe(['!ticker@arr'])
+
+    // Wait for first ticker batch
+    console.log('⏳ Waiting for ticker data...')
+    await this.waitForFirstTickers()
+
+    // Sort by 24h quote volume (most liquid first)
+    const allTickers = Array.from(this.tickerData.values())
+    const sortedTickers = allTickers
+      .filter(t => t.symbol.endsWith('USDT')) // Only USDT pairs
+      .sort((a, b) => b.quoteVolume - a.quoteVolume) // Descending by volume
+      .slice(0, limit)
+
+    console.log(`📈 Selected ${sortedTickers.length} most liquid symbols`)
+    console.log(`🔝 Top volumes: ${sortedTickers.slice(0, 5).map(t => `${t.symbol}:$${(t.quoteVolume / 1e9).toFixed(1)}B`).join(', ')}`)
+
+    return sortedTickers.map(t => t.symbol)
+  }
+
+  /**
    * Initialize and start streaming
+   * 
+   * Flow:
+   * 1. Connect WebSocket (instant) - SKIPPED if already connected via getTopLiquidSymbols
+   * 2. Subscribe to ticker stream (market data in <1s) - SKIPPED if already subscribed
+   * 3. Emit 'tickersReady' - UI can display data immediately
+   * 4. Backfill historical data in background (for change calculations)
+   * 5. Subscribe to kline streams (for real-time updates)
+   * 
+   * This approach provides instant market data while historical metrics load gradually.
    */
   async start(symbols: string[]): Promise<void> {
     if (this.isRunning) {
@@ -124,44 +166,41 @@ export class WebSocketStreamManager extends SimpleEventEmitter {
     console.log(`🚀 Starting WebSocket stream for ${symbols.length} symbols...`)
 
     try {
-      // Step 1: Initialize ring buffers
+      // Step 1: Connect to Binance Futures WebSocket (skip if already connected)
+      const isAlreadyConnected = this.wsClient.getState() === 'connected'
+      if (!isAlreadyConnected) {
+        console.log('📡 Connecting to Binance Futures WebSocket...')
+        await this.wsClient.connect()
+
+        // Step 2: Subscribe to ticker stream IMMEDIATELY (get market data in <1s)
+        console.log('📡 Subscribing to ticker stream...')
+        await this.wsClient.subscribe(['!ticker@arr'])
+
+        // Wait for first ticker batch (typically arrives within 1 second)
+        console.log('⏳ Waiting for initial ticker data...')
+        await this.waitForFirstTickers()
+      } else {
+        console.log('✅ Already connected to WebSocket with ticker data')
+      }
+
+      // Step 3: Notify UI that tickers are ready (users see data now!)
+      console.log(`✅ Ticker data ready (${this.tickerData.size} symbols)`)
+      this.emit('tickersReady', {
+        symbols: this.tickerData.size,
+        timestamp: Date.now(),
+      })
+
+      // Step 4: Initialize ring buffers (non-blocking)
       console.log('📦 Initializing ring buffers...')
       await this.bufferManager.initialize(symbols)
 
-      // Step 2: Backfill historical data (if enabled)
+      // Step 5: Backfill historical data in background (if enabled)
       if (this.options.enableBackfill) {
-        console.log('📥 Backfilling historical data...')
-        const startTime = Date.now()
-        const result = await this.bufferManager.backfillAll(symbols, {
-          batchSize: 10,
-          batchDelay: 1000, // 1s delay = 10 req/s = 600 req/min (safe under limit)
-          onProgress: (completed, total) => {
-            const progress = Math.round((completed / total) * 100)
-            console.log(`📥 Backfill progress: ${completed}/${total} (${progress}%)`)
-            this.emit('backfillProgress', { completed, total })
-          },
-        })
-        const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-        console.log(`✅ Backfill complete: ${result.successful.length}/${symbols.length} symbols in ${duration}s`)
-        
-        if (result.failed.length > 0) {
-          console.warn(`⚠️  Failed to backfill ${result.failed.length} symbols:`, result.failed)
-        }
-
-        // Initialize ticker data from backfilled candles so we have all 200 symbols
-        console.log('📊 Initializing ticker data from backfill...')
-        this.initializeTickerDataFromBackfill(symbols)
+        // Don't await - let it run in background
+        this.backfillInBackground(symbols)
       }
 
-      // Step 3: Connect to Binance Futures WebSocket
-      console.log('📡 Connecting to Binance Futures WebSocket...')
-      await this.wsClient.connect()
-
-      // Step 4: Subscribe to ticker stream (for live market data)
-      console.log('📡 Subscribing to ticker stream...')
-      await this.wsClient.subscribe(['!ticker@arr'])
-
-      // Step 5: Subscribe to kline streams
+      // Step 6: Subscribe to kline streams (for real-time updates)
       console.log(`📡 Subscribing to ${symbols.length} kline streams...`)
       await this.subscribeKlineStreams(symbols)
 
@@ -181,43 +220,63 @@ export class WebSocketStreamManager extends SimpleEventEmitter {
   }
 
   /**
-   * Initialize ticker data from backfilled candles
-   * This ensures we have ticker data for all symbols, even if they haven't traded recently
+   * Wait for first ticker batch to arrive (typically <1 second)
    */
-  private initializeTickerDataFromBackfill(symbols: string[]): void {
-    let initialized = 0
-    
-    for (const symbol of symbols) {
-      const buffer = this.bufferManager.getBuffer(symbol)
-      const latestCandle = buffer?.getNewestCandle()
-      if (latestCandle) {
-        // Create initial ticker data from latest 5m candle
-        const tickerData: FuturesTickerData = {
-          symbol,
-          eventTime: latestCandle.closeTime,
-          close: latestCandle.close,
-          open: latestCandle.open,
-          high: latestCandle.high,
-          low: latestCandle.low,
-          volume: latestCandle.volume,
-          quoteVolume: latestCandle.quoteVolume,
-          priceChange: latestCandle.close - latestCandle.open,
-          priceChangePercent: ((latestCandle.close - latestCandle.open) / latestCandle.open) * 100,
-          lastQty: 0, // Not available from candle
-          weightedAvgPrice: (latestCandle.high + latestCandle.low + latestCandle.close) / 3, // Approximate
-          fundingRate: 0, // Will be updated from ticker stream
-          indexPrice: latestCandle.close, // Approximate
-          markPrice: latestCandle.close, // Approximate
-          openInterest: 0, // Will be updated from ticker stream
+  private async waitForFirstTickers(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('Timeout waiting for ticker data'))
+      }, 5000) // 5s timeout
+
+      const handler = () => {
+        if (this.tickerData.size > 0) {
+          clearTimeout(timeout)
+          this.wsClient.off('ticker', handler)
+          resolve()
         }
-        
-        this.tickerData.set(symbol, tickerData)
-        initialized++
       }
-    }
-    
-    console.log(`✅ Initialized ${initialized}/${symbols.length} tickers from backfill`)
+
+      this.wsClient.on('ticker', handler)
+    })
   }
+
+  /**
+   * Backfill historical data in background (non-blocking)
+   */
+  private async backfillInBackground(symbols: string[]): Promise<void> {
+    console.log('📥 Starting background backfill...')
+    const startTime = Date.now()
+    
+    try {
+      const result = await this.bufferManager.backfillAll(symbols, {
+        batchSize: 10,
+        batchDelay: 1000, // 1s delay = 10 req/s = 600 req/min (safe under limit)
+        onProgress: (completed, total) => {
+          const progress = Math.round((completed / total) * 100)
+          console.log(`📥 Backfill progress: ${completed}/${total} (${progress}%)`)
+          this.emit('backfillProgress', { completed, total, progress })
+        },
+      })
+      
+      const duration = ((Date.now() - startTime) / 1000).toFixed(1)
+      console.log(`✅ Backfill complete: ${result.successful.length}/${symbols.length} symbols in ${duration}s`)
+      
+      if (result.failed.length > 0) {
+        console.warn(`⚠️  Failed to backfill ${result.failed.length} symbols:`, result.failed)
+      }
+
+      this.emit('backfillComplete', {
+        successful: result.successful.length,
+        failed: result.failed.length,
+        duration,
+      })
+    } catch (error) {
+      console.error('❌ Background backfill failed:', error)
+      this.emit('backfillError', error)
+    }
+  }
+
+
 
   /**
    * Stop streaming and cleanup

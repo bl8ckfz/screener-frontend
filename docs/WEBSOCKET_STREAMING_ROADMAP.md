@@ -43,34 +43,51 @@ Every auto-refresh (Spot Market Data):
   Refresh Intervals: Manual or timed polling
 ```
 
-### Proposed: WebSocket Streaming with Natural Warm-up
+### Proposed: WebSocket Streaming with Instant Market Data + Background Backfill
 ```
-Initial Setup (instant):
+Initial Setup (instant - <2 seconds):
   ├─ Connect to wss://fstream.binance.com/stream (Futures)
-  ├─ Subscribe to 590×5m kline streams (price changes, volumes)
-  ├─ Subscribe to !ticker@arr (All market tickers - 24h stats, funding rates)
-  └─ Start receiving data immediately
+  ├─ Subscribe to !ticker@arr (All market tickers - ~500 symbols)
+  ├─ Receive first ticker batch (<1 second)
+  ├─ Sort by 24h quote volume (most liquid first)
+  ├─ Select top 200 most liquid USDT pairs
+  └─ UI displays market data immediately ✅ USERS SEE DATA NOW!
 
-Warm-up Phase (natural data accumulation for futures metrics):
-  ├─ 5 minutes:  Can calculate 5m changes ✅
-  ├─ 15 minutes: Can calculate 5m, 15m changes ✅
-  ├─ 1 hour:     Can calculate 5m, 15m, 1h changes ✅
-  ├─ 4 hours:    Can calculate 5m, 15m, 1h, 4h changes ✅
-  ├─ 8 hours:    Can calculate 5m, 15m, 1h, 4h, 8h changes ✅
-  ├─ 12 hours:   Can calculate 5m, 15m, 1h, 4h, 8h, 12h changes ✅
-  └─ 24 hours:   Can calculate ALL timeframes ✅ (fully warmed up)
+Symbol Selection (smart):
+  ├─ All tickers received: ~500 USDT-M futures symbols
+  ├─ Sort by 24h quote volume (descending)
+  ├─ Top 200 symbols selected (e.g., BTC, ETH, BNB, SOL, etc.)
+  ├─ Typical top symbol: $50B+ daily volume
+  └─ Ensures most active, liquid markets only
+
+Background Backfill (non-blocking):
+  ├─ Fetch 288 candles (24h) for top 200 symbols only
+  ├─ Progress updates shown to user (0-100%)
+  ├─ Subscribe to 200×5m kline streams (for real-time updates)
+  └─ Complete in ~60 seconds (users already engaged)
+
+Feature Availability (immediate):
+  ├─ Live prices ✅ (instant from ticker)
+  ├─ 24h stats ✅ (instant from ticker)
+  ├─ Funding rates ✅ (instant from ticker)
+  ├─ Top 200 liquid markets ✅ (instant from ticker sorting)
+  ├─ Price changes ✅ (available after backfill completes)
+  ├─ Volume metrics ✅ (available after backfill completes)
+  └─ Historical charts ✅ (available after backfill completes)
 
 Real-time Streaming (continuous):
   ├─ Kline updates (pushed every 5 minutes)
   └─ Ticker updates (pushed every ~1 second)
   ────────────────────────────────────────────────────
-  Total: 0 API requests ever (100% reduction from start)
+  Total: ~200 API requests at startup (backfill only, one-time)
+  Then: 0 API requests forever (100% reduction in ongoing requests)
   Latency: <1 second from market update
-  Rate Limit Pressure: None
+  Rate Limit Pressure: Minimal (startup only)
   Auto-refresh: Not needed - live data always flowing
-  Single WebSocket: Simpler infrastructure
+  First Paint: <2 seconds (instant market data)
+  Symbol Selection: Smart (top 200 by volume, no manual curation needed)
   
-Trade-off: Gradual feature availability vs zero API requests
+Benefits: Instant UI + Top Liquidity + Progressive Enhancement + Zero ongoing API requests
 ```
 
 ---

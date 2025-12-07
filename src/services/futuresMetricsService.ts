@@ -49,12 +49,28 @@ export class FuturesMetricsService {
    * Initialize WebSocket streaming
    * Call this once on app startup to begin streaming data
    * 
-   * @param symbols - Array of symbols to stream (optional, fetches all if not provided)
+   * Strategy:
+   * 1. Connect WebSocket and get all tickers (~500 symbols)
+   * 2. Sort by 24h quote volume (most liquid first)
+   * 3. Take top 200 symbols (Binance WebSocket limit)
+   * 4. Subscribe to kline streams for those symbols
+   * 
+   * @param symbols - Array of symbols to stream (optional, uses top 200 by volume if not provided)
    */
   async initialize(symbols?: string[]): Promise<void> {
     console.log('🚀 Initializing WebSocket streaming...')
     
-    const symbolsToStream = symbols || await this.futuresClient.fetchAllFuturesSymbols()
+    let symbolsToStream: string[]
+    
+    if (symbols) {
+      // Use provided symbols
+      symbolsToStream = symbols
+    } else {
+      // Get top 200 most liquid symbols from ticker stream
+      symbolsToStream = await this.wsStreamManager.getTopLiquidSymbols(200)
+      console.log(`📈 Selected top 200 symbols by 24h volume`)
+      console.log(`🔝 Top 10: ${symbolsToStream.slice(0, 10).join(', ')}`)
+    }
     
     await this.wsStreamManager.start(symbolsToStream)
     console.log('✅ WebSocket streaming initialized')
@@ -93,6 +109,45 @@ export class FuturesMetricsService {
     this.wsStreamManager.on('tickerUpdate', handler)
     return () => {
       // EventEmitter removeListener would go here
+    }
+  }
+
+  /**
+   * Subscribe to tickers ready event (fires when initial market data is available)
+   * 
+   * @param handler - Callback when tickers are ready
+   * @returns Unsubscribe function
+   */
+  onTickersReady(handler: () => void): () => void {
+    this.wsStreamManager.on('tickersReady', handler)
+    return () => {
+      this.wsStreamManager.off('tickersReady', handler)
+    }
+  }
+
+  /**
+   * Subscribe to backfill progress updates
+   * 
+   * @param handler - Callback for progress updates
+   * @returns Unsubscribe function
+   */
+  onBackfillProgress(handler: (data: { completed: number; total: number; progress: number }) => void): () => void {
+    this.wsStreamManager.on('backfillProgress', handler)
+    return () => {
+      this.wsStreamManager.off('backfillProgress', handler)
+    }
+  }
+
+  /**
+   * Subscribe to backfill complete event
+   * 
+   * @param handler - Callback when backfill is complete
+   * @returns Unsubscribe function
+   */
+  onBackfillComplete(handler: () => void): () => void {
+    this.wsStreamManager.on('backfillComplete', handler)
+    return () => {
+      this.wsStreamManager.off('backfillComplete', handler)
     }
   }
 

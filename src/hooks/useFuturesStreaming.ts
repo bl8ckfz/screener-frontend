@@ -59,24 +59,40 @@ const futuresMetricsService = new FuturesMetricsService()
 /**
  * Hook for WebSocket-based real-time futures streaming
  * 
- * NOTE: This hook is only active when USE_WEBSOCKET_STREAMING = true in futuresMetricsService
- * 
  * Features:
+ * - Instant market data (<2 seconds via ticker stream)
+ * - Smart symbol selection (top 200 by 24h volume)
+ * - Background backfill for historical metrics (non-blocking)
  * - Real-time price/volume updates via WebSocket
- * - Gradual warm-up over 24 hours (5m → 15m → 1h → 4h → 8h → 12h → 1d)
- * - Zero API requests after initialization
+ * - Zero ongoing API requests (only startup backfill)
  * - Auto-reconnection on disconnect
  * 
- * @example
- * const { metrics, warmupStatus, isInitialized } = useFuturesStreaming()
+ * Flow:
+ * 1. Connect WebSocket and fetch all tickers (~500 symbols)
+ * 2. Sort by 24h quote volume, select top 200 most liquid
+ * 3. Display market data immediately → tickersReady=true (~1s)
+ * 4. Background backfill of historical data → backfillProgress (0-100%)
+ * 5. All features available → backfillComplete=true (~60s)
  * 
- * // Check if symbol has enough data for 1h timeframe
- * if (warmupStatus.timeframes['1h'].ready === warmupStatus.totalSymbols) {
- *   console.log('All symbols ready for 1h metrics')
+ * @example
+ * const {
+ *   tickersReady,      // true when market data available
+ *   backfillProgress,  // 0-100% historical data loading
+ *   backfillComplete,  // true when all data loaded
+ *   metricsMap,        // real-time metrics
+ *   warmupStatus,      // detailed timeframe readiness
+ * } = useFuturesStreaming()
+ * 
+ * // Show loading indicator during backfill
+ * if (tickersReady && !backfillComplete) {
+ *   return <div>Loading historical data: {backfillProgress}%</div>
  * }
  */
 export function useFuturesStreaming() {
   const [isInitialized, setIsInitialized] = useState(false)
+  const [tickersReady, setTickersReady] = useState(false) // New: tickers available instantly
+  const [backfillProgress, setBackfillProgress] = useState(0) // Track background backfill
+  const [backfillComplete, setBackfillComplete] = useState(false)
   const [metricsMap, setMetricsMap] = useState<Map<string, PartialChangeMetrics>>(new Map())
   const [warmupStatus, setWarmupStatus] = useState<WarmupStatus | null>(null)
   const [lastUpdate, setLastUpdate] = useState(Date.now())
@@ -90,20 +106,33 @@ export function useFuturesStreaming() {
       try {
         console.log('🚀 Initializing futures streaming...')
         
-        // Fetch all USDT-M futures symbols
-        const allSymbols = await futuresMetricsService.getAllFuturesSymbols()
-        console.log(`📋 Found ${allSymbols.length} futures symbols`)
-        
-        // Use alphabetical order (major pairs like BTC, ETH naturally come first)
-        // This avoids REST API call for volume sorting
-        const symbols = [...allSymbols].sort()
-        console.log(`🔝 First 10 symbols: ${symbols.slice(0, 10).join(', ')}`)
-        
-        // Start streaming (connects, subscribes, starts receiving data)
-        // Will be automatically limited to 200 by webSocketStreamManager
-        await futuresMetricsService.initialize(symbols)
+        // Initialize streaming (connects to WebSocket and gets all tickers)
+        // Pass undefined to let it fetch ticker data first
+        await futuresMetricsService.initialize()
         
         if (!isSubscribed) return
+        
+        // Subscribe to tickers ready event (fires in <1s)
+        const unsubTickersReady = futuresMetricsService.onTickersReady(() => {
+          if (!isSubscribed) return
+          console.log('✅ Tickers ready - market data available!')
+          setTickersReady(true)
+          setLastUpdate(Date.now())
+        })
+        
+        // Subscribe to backfill progress updates
+        const unsubBackfillProgress = futuresMetricsService.onBackfillProgress(({ progress }: { progress: number }) => {
+          if (!isSubscribed) return
+          setBackfillProgress(progress)
+        })
+        
+        // Subscribe to backfill complete event
+        const unsubBackfillComplete = futuresMetricsService.onBackfillComplete(() => {
+          if (!isSubscribed) return
+          console.log('✅ Backfill complete - all historical data loaded!')
+          setBackfillComplete(true)
+          setBackfillProgress(100)
+        })
         
         setIsInitialized(true)
         setLastUpdate(Date.now()) // Mark connection time to prevent "stale" status
@@ -146,6 +175,9 @@ export function useFuturesStreaming() {
         // Cleanup on unmount
         return () => {
           isSubscribed = false
+          unsubTickersReady()
+          unsubBackfillProgress()
+          unsubBackfillComplete()
           unsubMetrics()
           unsubTicker()
           clearInterval(warmupInterval)
@@ -213,6 +245,9 @@ export function useFuturesStreaming() {
   return {
     // State
     isInitialized,
+    tickersReady, // New: true when market data available (~1s)
+    backfillProgress, // New: 0-100% background loading progress
+    backfillComplete, // New: true when all historical data loaded
     error,
     lastUpdate,
     
