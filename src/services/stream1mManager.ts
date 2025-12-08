@@ -147,6 +147,9 @@ export class Stream1mManager extends SimpleEventEmitter {
    */
   private setupWebSocketHandlers(): void {
     // Handle kline messages (1m closed candles)
+    let klinesReceived = 0
+    let closedCandles = 0
+    
     this.wsClient.on('kline', (data: any) => {
       try {
         // Validate data structure
@@ -155,10 +158,21 @@ export class Stream1mManager extends SimpleEventEmitter {
         }
 
         const kline = data.k
+        klinesReceived++
+        
+        // Debug: Log first few klines to verify data flow
+        if (klinesReceived <= 3) {
+          console.log(`📊 Kline #${klinesReceived} received for ${kline.s}: closed=${kline.x}`)
+        }
 
         // Only process closed candles
         if (!kline.x) {
           return
+        }
+
+        closedCandles++
+        if (closedCandles <= 3) {
+          console.log(`✅ Closed candle #${closedCandles} for ${kline.s} - processing metrics`)
         }
 
         const symbol = kline.s
