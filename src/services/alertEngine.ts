@@ -24,22 +24,29 @@ export function evaluateAlertRules(
   const enabledRules = rules.filter((rule) => rule.enabled)
 
   let coinsChecked = 0
+  let coinsWithoutMetrics = 0
   let conditionsEvaluated = 0
+  let conditionsTriggered = 0
   
   for (const coin of coins) {
-    if (!coin.futuresMetrics) continue
+    if (!coin.futuresMetrics) {
+      coinsWithoutMetrics++
+      continue
+    }
     coinsChecked++
     
     for (const rule of enabledRules) {
       conditionsEvaluated++
       const triggeredAlert = evaluateRule(coin, rule, marketMode)
       if (triggeredAlert) {
+        conditionsTriggered++
         alerts.push(triggeredAlert)
       }
     }
   }
 
-  console.log(`🔍 Alert engine: checked ${coinsChecked} coins × ${enabledRules.length} rules = ${conditionsEvaluated} evaluations`)
+  console.log(`🔍 Alert engine: ${coinsChecked}/${coins.length} coins with metrics, ${coinsWithoutMetrics} without metrics`)
+  console.log(`📋 Evaluated ${conditionsEvaluated} conditions (${enabledRules.length} rules), ${conditionsTriggered} triggered`)
 
   return alerts
 }
@@ -119,41 +126,65 @@ function evaluateCondition(
     return false
   }
 
+  let result = false
+  
   switch (type) {
     // Futures alert types
     case 'futures_big_bull_60':
-      return marketMode === 'bull' && evaluateFuturesBigBull60(metrics)
+      result = marketMode === 'bull' && evaluateFuturesBigBull60(metrics)
+      break
     
     case 'futures_big_bear_60':
-      return marketMode === 'bear' && evaluateFuturesBigBear60(metrics)
+      result = marketMode === 'bear' && evaluateFuturesBigBear60(metrics)
+      break
     
     case 'futures_pioneer_bull':
-      return marketMode === 'bull' && evaluateFuturesPioneerBull(metrics)
+      result = marketMode === 'bull' && evaluateFuturesPioneerBull(metrics)
+      break
     
     case 'futures_pioneer_bear':
-      return marketMode === 'bear' && evaluateFuturesPioneerBear(metrics)
+      result = marketMode === 'bear' && evaluateFuturesPioneerBear(metrics)
+      break
     
     case 'futures_5_big_bull':
-      return marketMode === 'bull' && evaluateFutures5BigBull(metrics)
+      result = marketMode === 'bull' && evaluateFutures5BigBull(metrics)
+      break
     
     case 'futures_5_big_bear':
-      return marketMode === 'bear' && evaluateFutures5BigBear(metrics)
+      result = marketMode === 'bear' && evaluateFutures5BigBear(metrics)
+      break
     
     case 'futures_15_big_bull':
-      return marketMode === 'bull' && evaluateFutures15BigBull(metrics)
+      result = marketMode === 'bull' && evaluateFutures15BigBull(metrics)
+      break
     
     case 'futures_15_big_bear':
-      return marketMode === 'bear' && evaluateFutures15BigBear(metrics)
+      result = marketMode === 'bear' && evaluateFutures15BigBear(metrics)
+      break
     
     case 'futures_bottom_hunter':
-      return evaluateFuturesBottomHunter(metrics)
+      result = evaluateFuturesBottomHunter(metrics)
+      break
     
     case 'futures_top_hunter':
-      return evaluateFuturesTopHunter(metrics)
+      result = evaluateFuturesTopHunter(metrics)
+      break
     
     default:
-      return false
+      result = false
   }
+
+  // Log when conditions are actually triggered (for debugging)
+  if (result) {
+    console.log(`✅ ${coin.symbol}: ${type} triggered (mode: ${marketMode})`, {
+      change_5m: metrics.change_5m?.toFixed(2),
+      change_15m: metrics.change_15m?.toFixed(2),
+      change_1h: metrics.change_1h?.toFixed(2),
+      volume_5m: metrics.volume_5m,
+    })
+  }
+
+  return result
 }
 
 // ============================================================================

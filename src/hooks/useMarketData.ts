@@ -96,10 +96,18 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
 
       // Attach WebSocket futures metrics (real-time)
       // Falls back to cached klines if WebSocket not available
+      const wsMetricsCount = wsMetricsMap?.size || 0
+      const cachedMetricsCount = cachedKlinesMetrics.size
+      
       coins = coins.map(coin => {
         const metrics = wsMetricsMap?.get(coin.fullSymbol) || cachedKlinesMetrics.get(coin.fullSymbol)
         return metrics ? { ...coin, futuresMetrics: metrics } : coin
       })
+      
+      const coinsWithMetrics = coins.filter(c => c.futuresMetrics).length
+      if (import.meta.env.DEV && coins.length > 0) {
+        console.log(`📊 Metrics status: ${coinsWithMetrics}/${coins.length} coins have metrics (WS: ${wsMetricsCount}, cached: ${cachedMetricsCount})`)
+      }
 
       // Filter by watchlist if one is selected
       if (currentWatchlistId) {
@@ -322,8 +330,18 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
     // Filter to enabled rules only
     const enabledRules = alertRules.filter((rule) => rule.enabled)
 
+    console.log(`🎯 Alert rules status: ${alertRules.length} total, ${enabledRules.length} enabled`)
+    
+    if (alertRules.length > 0) {
+      console.log('📋 Alert rules:', alertRules.map(r => `${r.name} (${r.enabled ? 'ON' : 'OFF'})`).join(', '))
+    }
+
     if (enabledRules.length === 0) {
-      console.log('ℹ️ No enabled alert rules')
+      if (alertRules.length === 0) {
+        console.log('⚠️ No alert rules configured! Please add rules in Alert Config.')
+      } else {
+        console.log('ℹ️ No enabled alert rules (all rules are disabled)')
+      }
       return
     }
 

@@ -229,7 +229,18 @@ export function useFuturesStreaming() {
     metricsMap.forEach((partial, symbol) => {
       converted.set(symbol, convertToFuturesMetrics(partial))
     })
-    console.log(`🔄 Converted ${converted.size} WebSocket metrics to FuturesMetrics format`)
+    if (converted.size > 0) {
+      console.log(`🔄 Converted ${converted.size} WebSocket metrics to FuturesMetrics format`)
+      // Sample one for debugging
+      const sample = Array.from(converted.values())[0]
+      console.log('📊 Sample futures metric:', sample?.symbol, {
+        change_5m: sample?.change_5m,
+        change_15m: sample?.change_15m,
+        volume_5m: sample?.volume_5m,
+      })
+    } else {
+      console.warn('⚠️ No metrics in metricsMap to convert!')
+    }
     return converted
   }, [metricsMap])
   
