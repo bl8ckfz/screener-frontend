@@ -30,6 +30,11 @@ import { BinanceFuturesApiClient } from './binanceFuturesApi'
  * - Market cap ranges
  */
 export class FuturesMetricsService {
+  // Configuration: Max symbols to stream (adjust based on needs)
+  // Lower values = faster backfill, less memory, lower API usage
+  // Higher values = more market coverage (Binance WebSocket limit: 200)
+  private static readonly MAX_SYMBOLS = 50
+
   private coinGeckoClient: CoinGeckoApiClient
   private stream1mManager: Stream1mManager
   private futuresClient: BinanceFuturesApiClient
@@ -40,7 +45,7 @@ export class FuturesMetricsService {
     this.coinGeckoClient = coinGeckoClient || new CoinGeckoApiClient()
     this.futuresClient = new BinanceFuturesApiClient()
     this.stream1mManager = new Stream1mManager()
-    console.log('🎯 Using 1m streaming (replaced 5m system)')
+    console.log(`🎯 Using 1m streaming (max ${FuturesMetricsService.MAX_SYMBOLS} symbols)`)
   }
 
   /**
@@ -52,7 +57,7 @@ export class FuturesMetricsService {
    * 2. Initialize ring buffers and running sums
    * 3. Subscribe to 1m kline WebSocket streams
    * 
-   * @param symbols - Array of symbols to stream (required - 200 symbols recommended)
+   * @param symbols - Array of symbols to stream (optional, uses top N by volume if not provided)
    */
   async initialize(symbols?: string[]): Promise<void> {
     console.log('🚀 Initializing 1m streaming...')
@@ -62,13 +67,13 @@ export class FuturesMetricsService {
     if (symbols && symbols.length > 0) {
       symbolsToStream = symbols
     } else {
-      // Get all futures symbols and take top 200 by volume
+      // Get all futures symbols and take top N by volume
       const allSymbols = await this.futuresClient.fetchAllFuturesSymbols()
       console.log(`📋 Found ${allSymbols.length} USDT-M perpetual futures`)
       
-      // TODO: Sort by volume and take top 200
-      // For now, just take first 200
-      symbolsToStream = allSymbols.slice(0, 200)
+      // TODO: Sort by volume and take top N
+      // For now, just take first N symbols
+      symbolsToStream = allSymbols.slice(0, FuturesMetricsService.MAX_SYMBOLS)
     }
     
     console.log(`📈 Starting 1m stream for ${symbolsToStream.length} symbols`)
