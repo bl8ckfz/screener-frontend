@@ -218,6 +218,7 @@ export class Stream1mManager extends SimpleEventEmitter {
         backfillResult.failed.forEach(f => {
           console.warn(`  - ${f.symbol}: ${f.error}`)
         })
+        console.warn(`📊 Success rate: ${backfillResult.successful.length}/${symbols.length} (${Math.round(backfillResult.successful.length / symbols.length * 100)}%)`)
       }
 
       // Step 2: Initialize buffers and running sums

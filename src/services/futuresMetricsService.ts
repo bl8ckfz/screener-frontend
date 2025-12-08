@@ -79,7 +79,12 @@ export class FuturesMetricsService {
     console.log(`📈 Starting 1m stream for ${symbolsToStream.length} symbols`)
     console.log(`🔝 Top 10: ${symbolsToStream.slice(0, 10).join(', ')}`)
     
-    await this.stream1mManager.start(symbolsToStream)
+    // Use conservative rate limiting to avoid 418 errors
+    // 5 symbols per batch, 2s delay between batches = ~150 symbols/minute
+    await this.stream1mManager.start(symbolsToStream, {
+      batchSize: 5,
+      batchDelay: 2000,
+    })
     console.log('✅ 1m streaming initialized')
   }
 

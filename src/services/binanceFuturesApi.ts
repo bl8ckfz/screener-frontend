@@ -202,8 +202,8 @@ export class BinanceFuturesApiClient {
     failed: Array<{ symbol: string; error: string }>
     data: Map<string, Candle1m[]>
   }> {
-    const batchSize = options.batchSize ?? 10
-    const batchDelay = options.batchDelay ?? 1000 // 1s delay between batches
+    const batchSize = options.batchSize ?? 5  // More conservative to avoid rate limiting
+    const batchDelay = options.batchDelay ?? 2000 // 2s delay between batches
     
     const results = {
       successful: [] as string[],

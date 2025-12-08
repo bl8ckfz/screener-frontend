@@ -1233,15 +1233,62 @@ Example:
 
 ---
 
-## Next Steps
+## Implementation Status
 
-1. **Create git tag**: `git tag -a v5m-stable -m "Stable 5m before 1m migration"`
-2. **Create feature branch**: `feature/1m-sliding-windows`
-3. **Start Phase 1**: Implement ring buffer and calculator
-4. **Delete old 5m files** as new 1m equivalents are completed
-5. **Test thoroughly** before merge to main
-6. **Single deployment**: Complete cutover on merge
+### ✅ Completed Phases
+
+#### Phase 1-3: Core Infrastructure (COMPLETE)
+- ✅ Candle1mRingBuffer with circular buffer (1440 capacity)
+- ✅ SlidingWindowCalculator with O(1) running sums
+- ✅ Stream1mManager orchestration layer
+- ✅ BinanceFuturesWebSocket with ticker + kline support
+- ✅ All unit tests passing (24/24 for stream1mManager)
+
+#### Phase 4: Integration & Migration (COMPLETE)
+- ✅ Migrated futuresMetricsService to Stream1mManager
+- ✅ Added WindowMetrics → PartialChangeMetrics conversion
+- ✅ Updated useFuturesStreaming hook for 1m metrics
+- ✅ TypeScript type checking passes
+- ✅ Made MAX_SYMBOLS configurable (set to 50)
+
+#### Phase 5: Alert Integration (COMPLETE)
+- ✅ Alert engine works through conversion layer
+- ✅ Legacy UI compatibility maintained
+
+#### Recent Improvements (December 8, 2025)
+- ✅ **Volume-based Symbol Selection**: `fetchAllFuturesSymbols()` now sorts 531 USDT perpetual futures by 24hr quote volume
+- ✅ **Ticker Stream Integration**: Added ticker stream subscription for live price updates
+- ✅ **Filtered Ticker Data**: `getAllTickerData()` only returns tracked symbols (not all 223)
+- ✅ **UI Status Updates**: Ticker events keep UI showing "Live" status
+- ✅ **Top 50 Tracking**: Now tracking the 50 most liquid pairs instead of first 50 alphabetically
+
+### 🚧 Remaining Work
+
+#### Delete Old 5m System
+- ⏳ Remove `webSocketStreamManager.ts`
+- ⏳ Remove `ringBufferManager.ts`
+- ⏳ Remove `changeCalculator.ts`
+- ⏳ Update imports and dependencies
+
+#### Integration Testing
+- ⏳ Fix integration tests expecting old 5m API
+- ⏳ End-to-end validation of 1m → alerts → UI flow
+
+#### Documentation
+- ⏳ Update main ROADMAP.md with 1m system status
+- ⏳ Document volume-based symbol selection approach
 
 ---
 
-*Last Updated: December 7, 2025*
+## Next Steps
+
+1. ✅ ~~Create git tag~~: Tag created before migration started
+2. ✅ ~~Create feature branch~~: Working directly on main with incremental commits
+3. ✅ ~~Start Phase 1~~: Core data structures complete
+4. 🚧 **Delete old 5m files**: Ready to remove after validation
+5. 🚧 **Test thoroughly**: Integration tests need updating
+6. ✅ ~~Single deployment~~: Incremental deployment via git push
+
+---
+
+*Last Updated: December 8, 2025*
