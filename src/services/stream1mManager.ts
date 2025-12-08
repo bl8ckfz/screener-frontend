@@ -106,14 +106,40 @@ export class Stream1mManager extends SimpleEventEmitter {
   }
 
   /**
+   * Parse REST API ticker data to match WebSocket format (convert strings to numbers)
+   */
+  private parseRestTicker(ticker: any): any {
+    return {
+      symbol: ticker.symbol,
+      priceChange: parseFloat(ticker.priceChange || '0'),
+      priceChangePercent: parseFloat(ticker.priceChangePercent || '0'),
+      weightedAvgPrice: parseFloat(ticker.weightedAvgPrice || '0'),
+      lastPrice: parseFloat(ticker.lastPrice || '0'),
+      lastQty: parseFloat(ticker.lastQty || '0'),
+      openPrice: parseFloat(ticker.openPrice || '0'),
+      highPrice: parseFloat(ticker.highPrice || '0'),
+      lowPrice: parseFloat(ticker.lowPrice || '0'),
+      volume: parseFloat(ticker.volume || '0'),
+      quoteVolume: parseFloat(ticker.quoteVolume || '0'),
+      openTime: ticker.openTime,
+      closeTime: ticker.closeTime,
+      firstId: ticker.firstId,
+      lastId: ticker.lastId,
+      count: ticker.count,
+    }
+  }
+
+  /**
    * Set initial ticker data for immediate display (before WebSocket connection)
+   * Parses string values to numbers to match WebSocket format
    */
   setInitialTickers(tickers: any[]): void {
-    this.initialTickers = tickers
-    console.log(`📊 Stored ${tickers.length} initial tickers for immediate display`)
+    // Parse all tickers to convert strings to numbers
+    this.initialTickers = tickers.map(t => this.parseRestTicker(t))
+    console.log(`📊 Stored ${this.initialTickers.length} initial tickers for immediate display`)
     
     // Emit event to trigger UI update
-    this.emit('tickersReady', { count: tickers.length })
+    this.emit('tickersReady', { count: this.initialTickers.length })
   }
 
   /**
