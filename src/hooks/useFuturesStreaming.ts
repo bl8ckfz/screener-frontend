@@ -106,13 +106,7 @@ export function useFuturesStreaming() {
       try {
         console.log('🚀 Initializing futures streaming...')
         
-        // Initialize streaming (connects to WebSocket and gets all tickers)
-        // Pass undefined to let it fetch ticker data first
-        await futuresMetricsService.initialize()
-        
-        if (!isSubscribed) return
-        
-        // Subscribe to initial tickers ready event
+        // Subscribe to events BEFORE initializing (so we don't miss the tickersReady event)
         const unsubTickersReady = futuresMetricsService.on('tickersReady', () => {
           if (!isSubscribed) return
           console.log('📊 Initial tickers ready - market data can be displayed')
@@ -131,6 +125,11 @@ export function useFuturesStreaming() {
             setBackfillProgress(100)
           }
         })
+        
+        // NOW initialize streaming (this will emit tickersReady event)
+        await futuresMetricsService.initialize()
+        
+        if (!isSubscribed) return
         
         setIsInitialized(true)
         setLastUpdate(Date.now()) // Mark connection time to prevent "stale" status
