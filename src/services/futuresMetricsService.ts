@@ -163,6 +163,20 @@ export class FuturesMetricsService {
   }
 
   /**
+   * Subscribe to initial tickers ready event
+   * 
+   * @param event - Event name ('tickersReady')
+   * @param handler - Callback when tickers are ready
+   * @returns Unsubscribe function
+   */
+  on(event: 'tickersReady', handler: () => void): () => void {
+    this.stream1mManager.on(event, handler)
+    return () => {
+      this.stream1mManager.off(event, handler)
+    }
+  }
+
+  /**
    * Subscribe to backfill progress updates
    * 
    * @param handler - Callback for progress updates

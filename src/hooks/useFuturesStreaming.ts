@@ -112,15 +112,21 @@ export function useFuturesStreaming() {
         
         if (!isSubscribed) return
         
+        // Subscribe to initial tickers ready event
+        const unsubTickersReady = futuresMetricsService.on('tickersReady', () => {
+          if (!isSubscribed) return
+          console.log('📊 Initial tickers ready - market data can be displayed')
+          setTickersReady(true)
+        })
+        
         // Subscribe to backfill progress updates
         const unsubBackfillProgress = futuresMetricsService.onBackfillProgress(({ progress }: { progress: number }) => {
           if (!isSubscribed) return
           setBackfillProgress(progress)
           
-          // Mark tickers ready and backfill complete when done
+          // Mark backfill complete when done
           if (progress >= 100) {
             console.log('✅ Backfill complete - all historical data loaded!')
-            setTickersReady(true)
             setBackfillComplete(true)
             setBackfillProgress(100)
           }
@@ -167,6 +173,7 @@ export function useFuturesStreaming() {
         // Cleanup on unmount
         return () => {
           isSubscribed = false
+          unsubTickersReady()
           unsubBackfillProgress()
           unsubMetrics()
           unsubTicker()

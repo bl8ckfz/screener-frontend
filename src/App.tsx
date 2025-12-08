@@ -29,7 +29,7 @@ function App() {
   // WebSocket streaming for futures data (real-time)
   const {
     isInitialized,
-    tickersReady: _tickersReady, // NEW: true when market data available (<2s) - available for future UI enhancements
+    tickersReady, // true when initial REST ticker data is loaded
     backfillProgress: _backfillProgress, // NEW: 0-100% background loading progress - available for loading indicator
     backfillComplete: _backfillComplete, // NEW: true when historical data loaded - available for feature gating
     error: wsError,
@@ -40,7 +40,7 @@ function App() {
   } = useFuturesStreaming()
   
   // Pass WebSocket metrics and ticker data to market data
-  const { data: coins, isLoading, error } = useMarketData(metricsMap, getTickerData)
+  const { data: coins, isLoading, error } = useMarketData(metricsMap, getTickerData, tickersReady)
   
   const currentList = useStore((state) => state.currentList)
   // setCurrentList unused after removing ListSelector

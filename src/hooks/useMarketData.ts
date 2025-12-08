@@ -28,9 +28,10 @@ const KLINES_CACHE_DURATION = 5 * 60 * 1000 // 5 minutes in milliseconds
  * Fetch and process market data for current currency pair with smart polling
  * @param wsMetricsMap - WebSocket streaming metrics from useFuturesStreaming
  * @param wsGetTickerData - Function to get live ticker data from WebSocket
+ * @param tickersReady - True when initial REST ticker data is available
  */
-export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?: () => any[]) {
-  console.log('🔧 useMarketData hook called, wsGetTickerData:', !!wsGetTickerData)
+export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?: () => any[], tickersReady?: boolean) {
+  console.log('🔧 useMarketData hook called, wsGetTickerData:', !!wsGetTickerData, 'tickersReady:', tickersReady)
   
   // Watchlist filtering
   const currentWatchlistId = useStore((state) => state.currentWatchlistId)
@@ -123,8 +124,8 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   })
 
-  // Refetch when WebSocket ticker data becomes available, and keep refetching
-  // until we have data for all symbols (ticker stream populates gradually)
+  // Refetch when initial tickers are ready OR when WebSocket ticker data becomes available
+  // Keep refetching until we have data for all symbols (ticker stream populates gradually)
   useEffect(() => {
     if (!wsGetTickerData) {
       console.log('⏳ Waiting for wsGetTickerData...')
@@ -132,15 +133,18 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
     }
 
     const tickers = wsGetTickerData()
-    console.log(`📊 Effect running: ${tickers?.length || 0} tickers available`)
+    console.log(`📊 Effect running: ${tickers?.length || 0} tickers available, tickersReady: ${tickersReady}`)
     
-    if (tickers && tickers.length > 0 && !hasRefetchedForWebSocket.current) {
-      console.log('🔄 WebSocket ticker data ready, loading market data...')
+    // Trigger refetch when:
+    // 1. tickersReady becomes true (initial REST data loaded)
+    // 2. tickers.length > 0 (WebSocket data available)
+    if ((tickersReady || (tickers && tickers.length > 0)) && !hasRefetchedForWebSocket.current) {
+      console.log('🔄 Ticker data ready (tickersReady:', tickersReady, ', tickers:', tickers?.length, '), loading market data...')
       hasRefetchedForWebSocket.current = true
       query.refetch()
       
       // Track last seen count to detect new symbols
-      let lastSeenCount = tickers.length
+      let lastSeenCount = tickers?.length || 0
       console.log(`🔍 Starting progressive polling with ${lastSeenCount} initial tickers...`)
       
       // If we don't have all symbols yet, refetch every 2 seconds until we do
@@ -169,7 +173,7 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wsGetTickerData]) // Only depend on wsGetTickerData, not query
+  }, [wsGetTickerData, tickersReady]) // Depend on both wsGetTickerData and tickersReady
 
   // DISABLED: Fetch klines data in background (non-blocking)
   // Reason: Binance rate limits are too strict for klines fetching

@@ -111,6 +111,9 @@ export class Stream1mManager extends SimpleEventEmitter {
   setInitialTickers(tickers: any[]): void {
     this.initialTickers = tickers
     console.log(`📊 Stored ${tickers.length} initial tickers for immediate display`)
+    
+    // Emit event to trigger UI update
+    this.emit('tickersReady', { count: tickers.length })
   }
 
   /**
