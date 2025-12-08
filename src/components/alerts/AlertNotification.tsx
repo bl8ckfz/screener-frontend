@@ -238,6 +238,11 @@ export function AlertNotificationContainer() {
   const { activeAlerts, alertSettings, dismissAlert } = useStore()
   const [hasPlayedSound, setHasPlayedSound] = useState<Set<string>>(new Set())
 
+  // Debug: Log active alerts changes
+  useEffect(() => {
+    console.log(`🔔 AlertNotificationContainer: ${activeAlerts.length} active alerts`, activeAlerts.map(a => a.symbol))
+  }, [activeAlerts])
+
   // Play sound for new alerts
   useEffect(() => {
     if (!alertSettings.soundEnabled) return

@@ -682,8 +682,18 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
           
           // Process each alert
           for (const alert of triggeredAlerts) {
-            // Add to history
+            // Debug: Log alert being added
+            console.log(`➕ Adding alert to store:`, alert.symbol, alert.type, alert.id)
+            
+            // Add to active alerts (for notifications)
             addAlert(alert)
+            
+            // Add to alert history (for history view)
+            const coin = coins.find(c => c.symbol === alert.symbol)
+            if (coin) {
+              const addAlertToHistory = useStore.getState().addAlertToHistory
+              addAlertToHistory(alert, coin)
+            }
             
             // Play sound notification
             if (alertSettings.soundEnabled) {
