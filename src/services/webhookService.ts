@@ -111,20 +111,28 @@ function getAlertEmoji(alert: Alert): string {
  * Get Discord embed color for alert type
  */
 function getAlertColor(alert: Alert): number {
-  const type = alert.type
+  const type = String(alert.type || '') // Ensure it's a string
+  
+  // Debug log
+  console.log(`🔍 getAlertColor called: type="${type}", severity="${alert.severity}"`)
+  
   // Bull alerts = Green
   if (type.includes('bull') || type === 'price_pump' || type === 'volume_spike') {
+    console.log('✅ Matched BULL → returning GREEN')
     return 0x10b981 // Green
   }
   // Bear alerts = Red
   if (type.includes('bear') || type === 'price_dump' || type === 'volume_drop') {
+    console.log('✅ Matched BEAR → returning RED')
     return 0xef4444 // Red
   }
   // Hunter alerts = Purple
   if (type.includes('hunter')) {
+    console.log('✅ Matched HUNTER → returning PURPLE')
     return 0xa855f7 // Purple
   }
   // Default: Use severity-based colors
+  console.log(`⚠️ No match, using severity color for "${alert.severity}"`)
   return SEVERITY_COLORS[alert.severity]
 }
 
