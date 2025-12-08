@@ -4,9 +4,9 @@
 
 ## Current Phase
 
-**Phase 2: API Integration** - COMPLETE ✅  
+**Phase 3: Stream Manager** - COMPLETE ✅  
 **Status**: Complete  
-**Progress**: 2/2 tasks (100%)
+**Progress**: 1/1 tasks (100%)
 
 ### Context
 Migrating from 5m candles (288 per day) to 1m candles (1440 per day) with efficient sliding window calculations.  
@@ -174,7 +174,92 @@ Goal: 5x faster updates (1min vs 5min), O(1) window updates using running sums, 
 - ✅ Comprehensive test coverage with proper mocking
 - ✅ CORS proxy URL handling in tests
 
-**Next**: Phase 3 - Integration (connect RingBufferManager with API/WebSocket)
+---
+
+### Phase 3: Stream Manager (Day 3-4)
+
+**Goal**: Create Stream1mManager to orchestrate ring buffers, calculator, API, and WebSocket
+
+#### Task 3.1: Stream1mManager Implementation ✅ COMPLETE
+**File**: `src/services/stream1mManager.ts` (420 lines)  
+**Tests**: `tests/services/stream1mManager.test.ts` (455 lines)  
+**Status**: ✅ Complete - All tests passing (24/24)
+
+**Requirements** (All Done):
+- ✅ Orchestrates Candle1mRingBuffer, SlidingWindowCalculator, API, WebSocket
+- ✅ `start()` - Backfills 1440 candles, initializes buffers, subscribes to streams
+- ✅ `handle1mKline()` - Processes closed candles, updates buffer + sums, emits metrics
+- ✅ `getMetrics(symbol, window)` - Returns metrics for specific window
+- ✅ `getAllMetrics(symbol)` - Returns all timeframe metrics (5m/15m/1h/8h/24h)
+- ✅ `stop()` - Disconnects WebSocket, clears buffers and running sums
+- ✅ Event emission: 'started', 'backfillProgress', 'metrics', 'candle', 'error', 'stopped'
+- ✅ WebSocket reconnection with automatic resubscription
+- ✅ Error handling with try-catch in kline handler
+
+**Tests** (24 tests, all passing):
+- ✅ Constructor (2 tests)
+  - Empty state initialization
+  - WebSocket handlers setup
+- ✅ start() (6 tests)
+  - Successful backfill and initialization
+  - Progress event emission
+  - onProgress callback invocation
+  - Partial backfill failure handling
+  - Duplicate start prevention
+  - Error event emission on failure
+- ✅ getMetrics() (3 tests)
+  - Returns metrics for tracked symbol
+  - Returns null for untracked symbol
+  - Supports all window sizes (5, 15, 60, 480, 1440)
+- ✅ getAllMetrics() (2 tests)
+  - Returns all timeframe metrics
+  - Returns null for untracked symbol
+- ✅ handle1mKline() (4 tests)
+  - Emits candle event
+  - Emits metrics event
+  - Ignores non-closed candles
+  - Warns for untracked symbols
+- ✅ stop() (2 tests)
+  - Successful stop operation
+  - No-op when not running
+- ✅ getBuffer() (2 tests)
+  - Returns buffer for tracked symbol
+  - Returns undefined for untracked symbol
+- ✅ Edge Cases (3 tests)
+  - Empty symbol list handling
+  - WebSocket reconnection
+  - WebSocket error handling
+
+---
+
+### Phase 3 Summary ✅
+
+**Duration**: ~2.5 hours  
+**Files Created**: 2 (1 implementation, 1 test suite)  
+**Lines of Code**: 875 (420 implementation + 455 tests)  
+**Test Coverage**: 24 tests, all passing ✅  
+**Test Execution**: ~980ms (with mocked dependencies, no real network calls)
+
+**Key Achievements**:
+- ✅ Complete orchestration layer for 1m candles
+- ✅ Integrates ring buffer, calculator, API, and WebSocket
+- ✅ Event-driven architecture with 6 event types (started, backfillProgress, metrics, candle, error, stopped)
+- ✅ Automatic WebSocket reconnection with resubscription
+- ✅ Robust error handling with try-catch wrappers
+- ✅ Comprehensive test coverage (24 tests, 11 test suites)
+- ✅ Test isolation with vi.mock() for BinanceFuturesApiClient and BinanceFuturesWebSocket
+- ✅ Fast test execution (~1 second vs 38+ seconds with real connections)
+
+**Bug Fixes Applied**:
+- ✅ Fixed import path: klineRingBuffer → candle1mRingBuffer
+- ✅ Fixed method call: calculator.clear() → clearAll()
+- ✅ Fixed parameter order in getMetrics/getAllMetrics calls
+- ✅ Fixed backfill result access: backfillResult.successful is string array
+- ✅ Fixed windowMap values: 'm5' → '5m', 'm15' → '15m', etc. (to match WindowSize type)
+- ✅ Fixed test expectations: 'price'/'volume' → 'priceChange'/'baseVolume' (matching WindowMetrics interface)
+- ✅ Added data validation in kline handler (check data && data.k before accessing)
+
+**Next**: Phase 4 - UI Integration or Phase 5 - Optimization (per roadmap)
 
 ---
 
