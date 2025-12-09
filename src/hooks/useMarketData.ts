@@ -29,8 +29,9 @@ const KLINES_CACHE_DURATION = 5 * 60 * 1000 // 5 minutes in milliseconds
  * @param wsMetricsMap - WebSocket streaming metrics from useFuturesStreaming
  * @param wsGetTickerData - Function to get live ticker data from WebSocket
  * @param tickersReady - True when initial REST ticker data is available
+ * @param lastUpdate - Timestamp of last WebSocket update (triggers refetch)
  */
-export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?: () => any[], tickersReady?: boolean) {
+export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?: () => any[], tickersReady?: boolean, lastUpdate?: number) {
   // Debug logging removed - hook called frequently during normal operation
   
   // Watchlist filtering
@@ -53,7 +54,7 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
 
   // Query for market data
   const query = useQuery({
-    queryKey: ['marketData', 'USDT', currentWatchlistId],
+    queryKey: ['marketData', 'USDT', currentWatchlistId, lastUpdate],
     queryFn: async (): Promise<Coin[]> => {
       // ALWAYS use WebSocket ticker data (no REST API calls!)
       let tickers
@@ -122,10 +123,9 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
 
       return coins
     },
-    staleTime: 5000, // Consider data stale after 5 seconds
-    // Refetch every 5 seconds to keep data fresh
-    // WebSocket provides ticker updates, but we still need to recalculate indicators
-    refetchInterval: 5000,
+    staleTime: Infinity, // Data freshness controlled by WebSocket lastUpdate in queryKey
+    // No polling needed - queryKey includes lastUpdate which triggers refetch on WebSocket updates
+    refetchInterval: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     retry: 3,

@@ -40,7 +40,7 @@ function App() {
   } = useFuturesStreaming()
   
   // Pass WebSocket metrics and ticker data to market data
-  const { data: coins, isLoading, error } = useMarketData(metricsMap, getTickerData, tickersReady)
+  const { data: coins, isLoading, error } = useMarketData(metricsMap, getTickerData, tickersReady, lastUpdate)
   
   const currentList = useStore((state) => state.currentList)
   // setCurrentList unused after removing ListSelector
