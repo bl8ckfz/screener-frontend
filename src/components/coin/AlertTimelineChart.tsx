@@ -152,12 +152,12 @@ export function AlertTimelineChart({ symbol, height: _unusedHeight }: AlertTimel
         </div>
 
         {/* Chart area with dots */}
-        <div className="absolute left-36 right-0 top-0 bottom-0 overflow-hidden">
+        <div className="absolute left-36 right-0 top-0 bottom-0 overflow-visible">
           {/* Grid lines */}
           {alertTypes.map((_, index) => (
             <div
               key={index}
-              className="absolute left-0 right-0 border-b border-gray-800"
+              className="absolute left-0 right-0 border-b border-gray-800 z-0"
               style={{ top: (index + 1) * rowHeight }}
             />
           ))}
@@ -176,7 +176,7 @@ export function AlertTimelineChart({ symbol, height: _unusedHeight }: AlertTimel
             return (
               <div
                 key={`${entry.id}-${index}`}
-                className="absolute group"
+                className="absolute group z-10"
                 style={{
                   left: `${xPos}%`,
                   top: yPos,
@@ -185,7 +185,7 @@ export function AlertTimelineChart({ symbol, height: _unusedHeight }: AlertTimel
               >
                 {/* Dot */}
                 <div
-                  className="w-3 h-3 rounded-full transition-all hover:scale-150 hover:ring-2 hover:ring-white/50 cursor-pointer shadow-lg"
+                  className="w-3 h-3 rounded-full transition-all hover:scale-150 hover:ring-2 hover:ring-white/50 cursor-pointer shadow-lg relative z-10"
                   style={{
                     backgroundColor: ALERT_TYPE_COLORS[entry.alertType] || ALERT_TYPE_COLORS.custom,
                   }}
@@ -193,13 +193,13 @@ export function AlertTimelineChart({ symbol, height: _unusedHeight }: AlertTimel
                 
                 {/* Tooltip - positioned dynamically to stay within bounds */}
                 <div 
-                  className={`absolute hidden group-hover:block z-10 pointer-events-none ${
+                  className={`absolute hidden group-hover:block z-50 pointer-events-none ${
                     isNearTop ? 'top-full mt-2' : 'bottom-full mb-2'
                   } ${
                     isNearLeft ? 'left-0' : isNearRight ? 'right-0' : 'left-1/2 -translate-x-1/2'
                   }`}
                 >
-                  <div className="bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-xs whitespace-nowrap shadow-lg">
+                  <div className="bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-xs whitespace-nowrap shadow-xl">
                     <div className="font-medium text-white">
                       {getAlertTypeName(entry.alertType)}
                     </div>
