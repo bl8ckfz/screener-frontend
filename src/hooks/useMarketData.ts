@@ -813,11 +813,9 @@ export function getKlinesCacheStats() {
 /**
  * Get market statistics
  */
-export function useMarketStats() {
-  const { data: coins, isLoading } = useMarketData()
-
-  if (isLoading || !coins) {
-    return { isLoading, stats: null }
+export function useMarketStats(coins?: Coin[], isLoading?: boolean) {
+  if (isLoading || !coins || coins.length === 0) {
+    return { isLoading: isLoading ?? false, stats: null }
   }
 
   const bullishCoins = coins.filter((c) => c.priceChangePercent > 0)

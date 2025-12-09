@@ -209,7 +209,6 @@ export function TradingChart({
         lastValueVisible: true,
         crosshairMarkerVisible: true,
         crosshairMarkerRadius: 4,
-        title: 'Weekly VWAP',
       })
 
       const weeklyVWAPData = calculateWeeklyVWAP(data)

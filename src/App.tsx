@@ -291,7 +291,7 @@ function App() {
             isCollapsed={leftSidebarCollapsed}
             onToggle={() => setLeftSidebarCollapsed(!leftSidebarCollapsed)}
           >
-            <MarketSummary />
+            <MarketSummary coins={coins} isLoading={isLoading} />
             {/* ListSelector removed per new plan (dropdown under Market Summary) */}
             <LiveStatusBadge
               connected={isInitialized}

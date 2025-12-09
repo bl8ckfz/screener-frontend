@@ -1,9 +1,15 @@
 import { useMarketStats } from '@/hooks/useMarketData'
 import { useStore } from '@/hooks/useStore'
 import { StatsCardSkeleton } from '@/components/ui'
+import type { Coin } from '@/types/coin'
 
-export function MarketSummary() {
-  const { isLoading, stats } = useMarketStats()
+interface MarketSummaryProps {
+  coins?: Coin[]
+  isLoading?: boolean
+}
+
+export function MarketSummary({ coins, isLoading: isLoadingProp }: MarketSummaryProps) {
+  const { isLoading, stats } = useMarketStats(coins, isLoadingProp)
   const setSentimentFilter = useStore((state) => state.setSentimentFilter)
   const currentFilter = useStore((state) => state.sentimentFilter)
 
