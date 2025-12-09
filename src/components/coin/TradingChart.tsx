@@ -10,6 +10,7 @@ import {
   type HistogramData,
 } from 'lightweight-charts'
 import type { Candlestick } from '@/services/chartData'
+import { calculateWeeklyVWAP } from '@/utils/indicators'
 
 export type ChartType = 'candlestick' | 'line' | 'area'
 
@@ -19,6 +20,7 @@ export interface TradingChartProps {
   type?: ChartType
   height?: number
   showVolume?: boolean
+  showWeeklyVWAP?: boolean
   className?: string
 }
 
@@ -33,12 +35,14 @@ export function TradingChart({
   type = 'candlestick',
   height = 400,
   showVolume = true,
+  showWeeklyVWAP = false,
   className = '',
 }: TradingChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const mainSeriesRef = useRef<ISeriesApi<'Candlestick' | 'Line' | 'Area'> | null>(null)
   const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null)
+  const weeklyVWAPRef = useRef<ISeriesApi<'Line'> | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -195,6 +199,30 @@ export function TradingChart({
       })
     }
 
+    // Add weekly VWAP series if enabled
+    if (showWeeklyVWAP && data.length > 0) {
+      const weeklyVWAPSeries = chart.addLineSeries({
+        color: '#f59e0b', // Amber-500 for weekly VWAP
+        lineWidth: 2,
+        lineStyle: LineStyle.Solid,
+        priceLineVisible: false,
+        lastValueVisible: true,
+        crosshairMarkerVisible: true,
+        crosshairMarkerRadius: 4,
+        title: 'Weekly VWAP',
+      })
+
+      const weeklyVWAPData = calculateWeeklyVWAP(data)
+      weeklyVWAPSeries.setData(
+        weeklyVWAPData.map((d) => ({
+          time: d.time as any,
+          value: d.vwap,
+        }))
+      )
+
+      weeklyVWAPRef.current = weeklyVWAPSeries
+    }
+
     // Fit content to chart
     chart.timeScale().fitContent()
 
@@ -219,7 +247,7 @@ export function TradingChart({
         chartRef.current = null
       }
     }
-  }, [data, type, height, showVolume])
+  }, [data, type, height, showVolume, showWeeklyVWAP])
 
   return (
     <div className={`relative ${className}`}>

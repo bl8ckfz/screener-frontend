@@ -17,6 +17,7 @@ export interface ChartContainerProps {
 export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
   const [interval, setInterval] = useState<KlineInterval>('5m')
   const [chartType, setChartType] = useState<ChartType>('candlestick')
+  const [showWeeklyVWAP, setShowWeeklyVWAP] = useState(false)
   const [chartData, setChartData] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -106,6 +107,23 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
             ))}
           </div>
         </div>
+
+        {/* Indicators */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-text-secondary">Indicators:</span>
+          <button
+            onClick={() => setShowWeeklyVWAP(!showWeeklyVWAP)}
+            className={`px-3 py-1 text-xs rounded transition-colors flex items-center gap-1.5 ${
+              showWeeklyVWAP
+                ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50'
+                : 'bg-surface-light text-text-secondary hover:bg-surface-lighter'
+            }`}
+            title="Weekly Volume Weighted Average Price"
+          >
+            <span className={showWeeklyVWAP ? 'text-amber-500' : 'text-gray-400'}>●</span>
+            Weekly VWAP
+          </button>
+        </div>
       </div>
 
       {/* Chart */}
@@ -129,6 +147,7 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
             type={chartType}
             height={400}
             showVolume={chartType === 'candlestick'}
+            showWeeklyVWAP={showWeeklyVWAP}
           />
         )}
       </div>

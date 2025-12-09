@@ -264,6 +264,94 @@ function roundTo3Decimals(value: number): number {
 }
 
 /**
+ * Round number to 6 decimal places (for VWAP precision)
+ */
+function roundTo6Decimals(value: number): number {
+  return Math.round(value * 1000000) / 1000000
+}
+
+/**
+ * VWAP data point
+ */
+export interface VWAPData {
+  time: number
+  vwap: number
+}
+
+/**
+ * Candlestick data structure (matches chartData.ts)
+ */
+export interface CandlestickForVWAP {
+  time: number
+  open: number
+  high: number
+  low: number
+  close: number
+  volume: number
+}
+
+/**
+ * Calculate weekly VWAP from candlestick data
+ * VWAP = Σ(Typical Price × Volume) / Σ(Volume)
+ * Resets every Monday (ISO week start)
+ */
+export function calculateWeeklyVWAP(candlesticks: CandlestickForVWAP[]): VWAPData[] {
+  if (candlesticks.length === 0) return []
+
+  const result: VWAPData[] = []
+  let cumulativeTPV = 0  // Typical Price × Volume
+  let cumulativeVolume = 0
+  let currentWeek = -1
+
+  candlesticks.forEach((candle) => {
+    const date = new Date(candle.time * 1000)
+    const week = getISOWeek(date)
+    const year = date.getFullYear()
+    const weekKey = year * 100 + week // Unique identifier for each week
+
+    // Reset accumulation on new week
+    if (currentWeek !== -1 && weekKey !== currentWeek) {
+      cumulativeTPV = 0
+      cumulativeVolume = 0
+    }
+    currentWeek = weekKey
+
+    // Calculate typical price (average of high, low, close)
+    const typicalPrice = (candle.high + candle.low + candle.close) / 3
+
+    // Accumulate
+    cumulativeTPV += typicalPrice * candle.volume
+    cumulativeVolume += candle.volume
+
+    // Calculate VWAP for this point
+    const vwap = cumulativeVolume > 0 ? cumulativeTPV / cumulativeVolume : typicalPrice
+
+    result.push({
+      time: candle.time,
+      vwap: roundTo6Decimals(vwap),
+    })
+  })
+
+  return result
+}
+
+/**
+ * Get ISO week number (1-53)
+ * Week starts on Monday
+ */
+function getISOWeek(date: Date): number {
+  const target = new Date(date.valueOf())
+  const dayNumber = (date.getDay() + 6) % 7 // Monday = 0, Sunday = 6
+  target.setDate(target.getDate() - dayNumber + 3) // Thursday of the week
+  const firstThursday = target.valueOf()
+  target.setMonth(0, 1)
+  if (target.getDay() !== 4) {
+    target.setMonth(0, 1 + ((4 - target.getDay() + 7) % 7))
+  }
+  return 1 + Math.ceil((firstThursday - target.valueOf()) / 604800000) // 604800000 = 7 * 24 * 60 * 60 * 1000
+}
+
+/**
  * Apply all technical indicators to an array of coins
  */
 export function applyTechnicalIndicators(coins: Coin[]): Coin[] {
