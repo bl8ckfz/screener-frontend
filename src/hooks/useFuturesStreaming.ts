@@ -146,8 +146,8 @@ export function useFuturesStreaming() {
             return next
           })
           
-          // Update last update timestamp
-          setLastUpdate(Date.now())
+          // Don't trigger lastUpdate here - let throttled ticker updates handle UI refresh
+          // Metrics updates still flow through metricsMap for alert evaluation
         })
         
         // Subscribe to ticker updates to keep lastUpdate fresh
