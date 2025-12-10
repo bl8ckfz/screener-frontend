@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { TradingChart, type ChartType } from './TradingChart'
 import { fetchKlines, type KlineInterval, COMMON_INTERVALS, INTERVAL_LABELS } from '@/services/chartData'
+import { alertHistoryService } from '@/services/alertHistoryService'
 import type { Coin } from '@/types/coin'
 import { ChartSkeleton, ErrorState } from '@/components/ui'
 
@@ -18,9 +19,16 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
   const [interval, setInterval] = useState<KlineInterval>('5m')
   const [chartType, setChartType] = useState<ChartType>('candlestick')
   const [showWeeklyVWAP, setShowWeeklyVWAP] = useState(false)
+  const [showAlerts, setShowAlerts] = useState(true)
   const [chartData, setChartData] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Get alerts for current coin from history
+  const coinAlerts = useMemo(() => {
+    const allAlerts = alertHistoryService.getHistory()
+    return allAlerts.filter(alert => alert.symbol === coin.symbol)
+  }, [coin.symbol])
 
   // Fetch chart data when coin or interval changes
   useEffect(() => {
@@ -149,6 +157,18 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
             <span className={showWeeklyVWAP ? 'text-amber-500' : 'text-gray-400'}>●</span>
             Weekly VWAP
           </button>
+          <button
+            onClick={() => setShowAlerts(!showAlerts)}
+            className={`px-3 py-1 text-xs rounded transition-colors flex items-center gap-1.5 ${
+              showAlerts
+                ? 'bg-accent/20 text-accent border border-accent/50'
+                : 'bg-surface-light text-text-secondary hover:bg-surface-lighter'
+            }`}
+            title="Show alert markers on chart"
+          >
+            <span className={showAlerts ? 'text-accent' : 'text-gray-400'}>▲</span>
+            Alerts {coinAlerts.length > 0 && `(${coinAlerts.length})`}
+          </button>
         </div>
       </div>
 
@@ -174,6 +194,8 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
             height={400}
             showVolume={chartType === 'candlestick'}
             showWeeklyVWAP={showWeeklyVWAP}
+            showAlerts={showAlerts}
+            alerts={coinAlerts}
           />
         )}
       </div>

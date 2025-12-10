@@ -8,8 +8,11 @@ import {
   type ISeriesApi,
   type CandlestickData,
   type HistogramData,
+  type SeriesMarker,
+  type Time,
 } from 'lightweight-charts'
 import type { Candlestick } from '@/services/chartData'
+import type { AlertHistoryEntry } from '@/types/alertHistory'
 import { calculateWeeklyVWAP } from '@/utils/indicators'
 
 export type ChartType = 'candlestick' | 'line' | 'area'
@@ -21,13 +24,73 @@ export interface TradingChartProps {
   height?: number
   showVolume?: boolean
   showWeeklyVWAP?: boolean
+  showAlerts?: boolean
+  alerts?: AlertHistoryEntry[]
   className?: string
+}
+
+/**
+ * Determine alert marker size based on alert type priority
+ */
+const getAlertMarkerSize = (alertType: string): 0 | 1 | 2 => {
+  // High priority alerts - large markers
+  if (alertType.includes('60') || alertType.includes('pioneer')) {
+    return 2
+  }
+  // Low priority alerts - small markers
+  if (alertType.includes('5_big')) {
+    return 0
+  }
+  // Medium priority - normal size
+  return 1
+}
+
+/**
+ * Get alert marker color and position based on alert type
+ */
+const getAlertMarkerStyle = (alertType: string): { color: string; position: 'aboveBar' | 'belowBar'; shape: 'circle' | 'arrowUp' | 'arrowDown' } => {
+  // Bullish alerts - green, below bar, arrow up
+  if (alertType.includes('bull') || alertType.includes('bottom_hunter')) {
+    return {
+      color: '#22c55e', // green-500
+      position: 'belowBar' as const,
+      shape: 'arrowUp' as const,
+    }
+  }
+  // Bearish alerts - red, above bar, arrow down
+  return {
+    color: '#ef4444', // red-500
+    position: 'aboveBar' as const,
+    shape: 'arrowDown' as const,
+  }
+}
+
+/**
+ * Get display name for alert type
+ */
+const getAlertDisplayName = (alertType: string): string => {
+  const cleanType = alertType.replace(/^futures_/, '')
+  const names: Record<string, string> = {
+    big_bull_60: '60 Big Bull',
+    big_bear_60: '60 Big Bear',
+    pioneer_bull: 'Pioneer Bull',
+    pioneer_bear: 'Pioneer Bear',
+    '5_big_bull': '5 Big Bull',
+    '5_big_bear': '5 Big Bear',
+    '15_big_bull': '15 Big Bull',
+    '15_big_bear': '15 Big Bear',
+    bottom_hunter: 'Bottom Hunter',
+    top_hunter: 'Top Hunter',
+  }
+  return names[cleanType] || cleanType.split('_').map(w => 
+    w.charAt(0).toUpperCase() + w.slice(1)
+  ).join(' ')
 }
 
 /**
  * TradingChart component using lightweight-charts library
  * 
- * Displays candlestick, line, or area charts with volume overlay
+ * Displays candlestick, line, or area charts with volume overlay and alert markers
  */
 export function TradingChart({
   data,
@@ -36,6 +99,8 @@ export function TradingChart({
   height = 400,
   showVolume = true,
   showWeeklyVWAP = false,
+  showAlerts = false,
+  alerts = [],
   className = '',
 }: TradingChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null)
@@ -222,6 +287,35 @@ export function TradingChart({
       weeklyVWAPRef.current = weeklyVWAPSeries
     }
 
+    // Add alert markers if enabled
+    if (showAlerts && alerts.length > 0 && mainSeries) {
+      const markers: SeriesMarker<Time>[] = alerts
+        .filter(alert => {
+          // Find matching candle for alert timestamp
+          const alertTime = Math.floor(alert.timestamp / 1000) as Time
+          return data.some(candle => candle.time === alertTime)
+        })
+        .map(alert => {
+          const style = getAlertMarkerStyle(alert.alertType)
+          const size = getAlertMarkerSize(alert.alertType)
+          const displayName = getAlertDisplayName(alert.alertType)
+          const time = Math.floor(alert.timestamp / 1000) as Time
+          
+          return {
+            time,
+            position: style.position,
+            color: style.color,
+            shape: style.shape,
+            size,
+            text: displayName,
+          }
+        })
+
+      if (markers.length > 0) {
+        mainSeries.setMarkers(markers)
+      }
+    }
+
     // Fit content to chart
     chart.timeScale().fitContent()
 
@@ -246,7 +340,7 @@ export function TradingChart({
         chartRef.current = null
       }
     }
-  }, [data, type, height, showVolume, showWeeklyVWAP])
+  }, [data, type, height, showVolume, showWeeklyVWAP, showAlerts, alerts, symbol])
 
   return (
     <div className={`relative ${className}`}>
