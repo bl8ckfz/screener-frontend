@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { FuturesMetricsService } from '@/services/futuresMetricsService'
 import type { WarmupStatus, PartialChangeMetrics } from '@/types/metrics'
 import type { FuturesMetrics } from '@/types/api'
@@ -96,6 +96,7 @@ export function useFuturesStreaming() {
   const [metricsMap, setMetricsMap] = useState<Map<string, PartialChangeMetrics>>(new Map())
   const [warmupStatus, setWarmupStatus] = useState<WarmupStatus | null>(null)
   const [lastUpdate, setLastUpdate] = useState(Date.now())
+  const lastUpdateTimeRef = useRef(Date.now()) // Track last update for throttling
   const [error, setError] = useState<Error | null>(null)
 
   // Initialize WebSocket streaming on mount
@@ -150,9 +151,16 @@ export function useFuturesStreaming() {
         })
         
         // Subscribe to ticker updates to keep lastUpdate fresh
+        // Throttle to max once per 3 seconds to prevent UI flashing
+        const THROTTLE_MS = 3000
         const unsubTicker = futuresMetricsService.onTickerUpdate(() => {
           if (!isSubscribed) return
-          setLastUpdate(Date.now())
+          
+          const now = Date.now()
+          if (now - lastUpdateTimeRef.current >= THROTTLE_MS) {
+            lastUpdateTimeRef.current = now
+            setLastUpdate(now)
+          }
         })
         
         // Track warm-up progress every 5 seconds

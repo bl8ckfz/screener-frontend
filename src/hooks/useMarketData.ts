@@ -130,6 +130,8 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
     refetchOnReconnect: false,
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    // Keep previous data while refetching to prevent UI flashing
+    placeholderData: (previousData) => previousData,
   })
 
   // Refetch when initial tickers are ready OR when WebSocket ticker data becomes available
