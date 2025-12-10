@@ -330,7 +330,6 @@ export function TradingChart({
             color: style.color,
             shape: style.shape,
             size,
-            text: displayName,
           } as SeriesMarker<Time>
         })
         .filter((marker): marker is SeriesMarker<Time> => marker !== null)
