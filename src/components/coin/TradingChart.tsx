@@ -37,11 +37,7 @@ const getAlertMarkerSize = (alertType: string): 0 | 1 | 2 => {
   if (alertType.includes('60') || alertType.includes('pioneer')) {
     return 2
   }
-  // Low priority alerts - small markers
-  if (alertType.includes('5_big')) {
-    return 0
-  }
-  // Medium priority - normal size
+  // Medium/low priority alerts - normal size (was 0, now 1 for visibility)
   return 1
 }
 
@@ -290,6 +286,7 @@ export function TradingChart({
     // Add alert markers if enabled
     if (showAlerts && alerts.length > 0 && mainSeries) {
       console.log(`🎯 Processing ${alerts.length} alerts for markers`)
+      console.log('Alert types:', alerts.map(a => a.alertType))
       
       const markers: SeriesMarker<Time>[] = alerts
         .map(alert => {
@@ -322,7 +319,7 @@ export function TradingChart({
           const size = getAlertMarkerSize(alert.alertType)
           const displayName = getAlertDisplayName(alert.alertType)
           
-          console.log(`✅ Creating marker for ${displayName} at ${new Date(alert.timestamp).toISOString()}`)
+          console.log(`✅ Creating marker for ${alert.alertType} (${displayName}) - size: ${size}, color: ${style.color}, shape: ${style.shape}`)
           
           return {
             time: closestCandle.time,
