@@ -23,12 +23,20 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
   const [chartData, setChartData] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [alertRefresh, setAlertRefresh] = useState(0)
 
-  // Get alerts for current coin from history
+  // Get alerts for current coin from history - refresh every 3 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setAlertRefresh(prev => prev + 1)
+    }, 3000)
+    return () => clearInterval(timer)
+  }, [])
+
   const coinAlerts = useMemo(() => {
     const allAlerts = alertHistoryService.getHistory()
     return allAlerts.filter(alert => alert.symbol === coin.symbol)
-  }, [coin.symbol])
+  }, [coin.symbol, alertRefresh])
 
   // Fetch chart data when coin or interval changes
   useEffect(() => {
