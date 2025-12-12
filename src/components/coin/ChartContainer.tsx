@@ -27,13 +27,13 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
   const [error, setError] = useState<string | null>(null)
   const [alertRefresh, setAlertRefresh] = useState(0)
 
-  // Get bubbles for current coin
-  const { bubbles } = useBubbleStream({ symbolFilter: coin.symbol })
+  // Get bubbles for current coin (use fullSymbol to match futures symbol like PIEVERSEUSDT)
+  const { bubbles } = useBubbleStream({ symbolFilter: coin.fullSymbol })
   
   // Debug: Log bubbles when they change
   useEffect(() => {
-    console.log(`🫧 ChartContainer: ${coin.symbol} has ${bubbles.length} bubbles`, bubbles.slice(0, 3))
-  }, [bubbles.length, coin.symbol])
+    console.log(`🫧 ChartContainer: ${coin.fullSymbol} has ${bubbles.length} bubbles`, bubbles.slice(0, 3))
+  }, [bubbles.length, coin.fullSymbol])
 
   // Get alerts for current coin from history - refresh every 3 seconds
   useEffect(() => {

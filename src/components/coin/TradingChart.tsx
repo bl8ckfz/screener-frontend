@@ -249,17 +249,32 @@ export function TradingChart({
 
     const chart = chartRef.current
 
-    // Remove existing series
-    if (mainSeriesRef.current) {
-      chart.removeSeries(mainSeriesRef.current)
+    // Remove existing series (with null checks to prevent errors)
+    try {
+      if (mainSeriesRef.current) {
+        chart.removeSeries(mainSeriesRef.current)
+        mainSeriesRef.current = null
+      }
+    } catch (e) {
+      // Series may already be removed, ignore
       mainSeriesRef.current = null
     }
-    if (volumeSeriesRef.current) {
-      chart.removeSeries(volumeSeriesRef.current)
+    
+    try {
+      if (volumeSeriesRef.current) {
+        chart.removeSeries(volumeSeriesRef.current)
+        volumeSeriesRef.current = null
+      }
+    } catch (e) {
       volumeSeriesRef.current = null
     }
-    if (weeklyVWAPRef.current) {
-      chart.removeSeries(weeklyVWAPRef.current)
+    
+    try {
+      if (weeklyVWAPRef.current) {
+        chart.removeSeries(weeklyVWAPRef.current)
+        weeklyVWAPRef.current = null
+      }
+    } catch (e) {
       weeklyVWAPRef.current = null
     }
 
