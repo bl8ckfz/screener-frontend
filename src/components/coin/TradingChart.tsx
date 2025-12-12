@@ -13,6 +13,7 @@ import {
 } from 'lightweight-charts'
 import type { Candlestick } from '@/services/chartData'
 import type { AlertHistoryEntry } from '@/types/alertHistory'
+import type { Bubble } from '@/types/bubble'
 import { calculateWeeklyVWAP } from '@/utils/indicators'
 
 export type ChartType = 'candlestick' | 'line' | 'area'
@@ -26,6 +27,8 @@ export interface TradingChartProps {
   showWeeklyVWAP?: boolean
   showAlerts?: boolean
   alerts?: AlertHistoryEntry[]
+  showBubbles?: boolean
+  bubbles?: Bubble[]
   className?: string
 }
 
@@ -84,6 +87,55 @@ const getAlertDisplayName = (alertType: string): string => {
 }
 
 /**
+ * Get bubble marker size based on bubble size classification
+ */
+const getBubbleMarkerSize = (size: 'small' | 'medium' | 'large'): 0 | 1 | 2 => {
+  switch (size) {
+    case 'large': return 2
+    case 'medium': return 1
+    case 'small': return 0
+  }
+}
+
+/**
+ * Get bubble marker color and style based on side and timeframe
+ */
+const getBubbleMarkerStyle = (bubble: Bubble): { 
+  color: string
+  position: 'aboveBar' | 'belowBar'
+  shape: 'circle' | 'arrowUp' | 'arrowDown'
+} => {
+  // Buy pressure - green, below bar
+  // Sell pressure - red, above bar
+  // Differentiate 5m vs 15m with solid vs outlined (via color opacity)
+  
+  if (bubble.side === 'buy') {
+    return {
+      color: bubble.timeframe === '5m' ? '#10b981' : '#34d399', // green-500 vs green-400
+      position: 'belowBar' as const,
+      shape: 'circle' as const,
+    }
+  } else {
+    return {
+      color: bubble.timeframe === '5m' ? '#ef4444' : '#f87171', // red-500 vs red-400
+      position: 'aboveBar' as const,
+      shape: 'circle' as const,
+    }
+  }
+}
+
+/**
+ * Get display text for bubble marker
+ */
+const getBubbleDisplayText = (bubble: Bubble): string => {
+  const sizeSymbol = bubble.size === 'large' ? 'L' : bubble.size === 'medium' ? 'M' : 'S'
+  const timeframe = bubble.timeframe
+  const zScore = bubble.zScore.toFixed(1)
+  return `${sizeSymbol}${timeframe} (z=${zScore})`
+}
+
+
+/**
  * TradingChart component using lightweight-charts library
  * 
  * Displays candlestick, line, or area charts with volume overlay and alert markers
@@ -97,6 +149,8 @@ export function TradingChart({
   showWeeklyVWAP = false,
   showAlerts = false,
   alerts = [],
+  showBubbles = false,
+  bubbles = [],
   className = '',
 }: TradingChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null)
@@ -408,12 +462,108 @@ export function TradingChart({
         })
         .filter((marker): marker is SeriesMarker<Time> => marker !== null)
 
-      console.log(`📍 Setting ${markers.length} markers on chart`)
+      console.log(`📍 Setting ${markers.length} alert markers on chart`)
       
       if (markers.length > 0) {
         mainSeries.setMarkers(markers)
       } else {
-        console.warn('⚠️  No valid markers to display')
+        console.warn('⚠️  No valid alert markers to display')
+      }
+    }
+
+    // Add bubble markers if enabled (combined with alert markers)
+    if (showBubbles && bubbles.length > 0 && mainSeries) {
+      console.log(`🫧 Processing ${bubbles.length} bubbles for markers`)
+      
+      const bubbleMarkers: SeriesMarker<Time>[] = bubbles
+        .map(bubble => {
+          // Convert bubble timestamp (ms) to candle time (seconds)
+          const bubbleTime = Math.floor(bubble.time / 1000)
+          
+          // Find closest candle within reasonable range (5 minutes = 300 seconds)
+          const closestCandle = data.reduce((closest, candle) => {
+            const candleTime = typeof candle.time === 'number' ? candle.time : Number(candle.time)
+            const currentDiff = Math.abs(candleTime - bubbleTime)
+            const closestDiff = Math.abs(
+              (typeof closest.time === 'number' ? closest.time : Number(closest.time)) - bubbleTime
+            )
+            return currentDiff < closestDiff ? candle : closest
+          }, data[0])
+          
+          if (!closestCandle) {
+            console.warn(`⚠️  No candle found for bubble at ${new Date(bubble.time).toLocaleTimeString()}`)
+            return null
+          }
+          
+          const candleTime = typeof closestCandle.time === 'number' ? closestCandle.time : Number(closestCandle.time)
+          const timeDiff = Math.abs(candleTime - bubbleTime)
+          
+          // Skip if bubble is too far from any candle (>5 minutes)
+          if (timeDiff > 300) {
+            console.warn(`⚠️  Bubble too far from candles (${Math.floor(timeDiff / 60)}m away)`)
+            return null
+          }
+          
+          const style = getBubbleMarkerStyle(bubble)
+          const size = getBubbleMarkerSize(bubble.size)
+          const displayText = getBubbleDisplayText(bubble)
+          
+          console.log(`🫧 Creating bubble marker: ${displayText} - size: ${size}, color: ${style.color}`)
+          
+          return {
+            time: closestCandle.time,
+            position: style.position,
+            color: style.color,
+            shape: style.shape,
+            size,
+            text: displayText,
+          } as SeriesMarker<Time>
+        })
+        .filter((marker): marker is SeriesMarker<Time> => marker !== null)
+
+      console.log(`🫧 Setting ${bubbleMarkers.length} bubble markers on chart`)
+      
+      // Combine alert and bubble markers
+      if (showAlerts && alerts.length > 0) {
+        // Get existing alert markers
+        const alertMarkers: SeriesMarker<Time>[] = alerts
+          .map(alert => {
+            const alertTime = Math.floor(alert.timestamp / 1000)
+            const closestCandle = data.reduce((closest, candle) => {
+              const candleTime = typeof candle.time === 'number' ? candle.time : Number(candle.time)
+              const currentDiff = Math.abs(candleTime - alertTime)
+              const closestDiff = Math.abs(
+                (typeof closest.time === 'number' ? closest.time : Number(closest.time)) - alertTime
+              )
+              return currentDiff < closestDiff ? candle : closest
+            }, data[0])
+            
+            if (!closestCandle) return null
+            
+            const candleTime = typeof closestCandle.time === 'number' ? closestCandle.time : Number(closestCandle.time)
+            const timeDiff = Math.abs(candleTime - alertTime)
+            
+            if (timeDiff > 300) return null
+            
+            const style = getAlertMarkerStyle(alert.alertType)
+            const size = getAlertMarkerSize(alert.alertType)
+            
+            return {
+              time: closestCandle.time,
+              position: style.position,
+              color: style.color,
+              shape: style.shape,
+              size,
+            } as SeriesMarker<Time>
+          })
+          .filter((marker): marker is SeriesMarker<Time> => marker !== null)
+        
+        // Combine both types of markers
+        const combinedMarkers = [...alertMarkers, ...bubbleMarkers]
+        mainSeries.setMarkers(combinedMarkers)
+        console.log(`📍 Set ${combinedMarkers.length} total markers (${alertMarkers.length} alerts + ${bubbleMarkers.length} bubbles)`)
+      } else if (bubbleMarkers.length > 0) {
+        mainSeries.setMarkers(bubbleMarkers)
       }
     }
 
@@ -423,7 +573,7 @@ export function TradingChart({
     }
 
     setIsLoading(false)
-  }, [data, type, showVolume, showWeeklyVWAP, showAlerts, alerts, symbol])
+  }, [data, type, showVolume, showWeeklyVWAP, showAlerts, alerts, showBubbles, bubbles, symbol])
 
   return (
     <div className={`relative ${className}`}>

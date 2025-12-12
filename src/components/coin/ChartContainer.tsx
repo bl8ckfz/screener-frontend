@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { TradingChart, type ChartType } from './TradingChart'
 import { fetchKlines, type KlineInterval, COMMON_INTERVALS, INTERVAL_LABELS } from '@/services/chartData'
 import { alertHistoryService } from '@/services/alertHistoryService'
+import { useBubbleStream } from '@/hooks/useBubbleStream'
 import type { Coin } from '@/types/coin'
 import { ChartSkeleton, ErrorState } from '@/components/ui'
 
@@ -20,10 +21,14 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
   const [chartType, setChartType] = useState<ChartType>('candlestick')
   const [showWeeklyVWAP, setShowWeeklyVWAP] = useState(false)
   const [showAlerts, setShowAlerts] = useState(true)
+  const [showBubbles, setShowBubbles] = useState(true)
   const [chartData, setChartData] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [alertRefresh, setAlertRefresh] = useState(0)
+
+  // Get bubbles for current coin
+  const { bubbles } = useBubbleStream({ symbolFilter: coin.symbol })
 
   // Get alerts for current coin from history - refresh every 3 seconds
   useEffect(() => {
@@ -177,6 +182,18 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
             <span className={showAlerts ? 'text-accent' : 'text-gray-400'}>▲</span>
             Alerts {coinAlerts.length > 0 && `(${coinAlerts.length})`}
           </button>
+          <button
+            onClick={() => setShowBubbles(!showBubbles)}
+            className={`px-3 py-1 text-xs rounded transition-colors flex items-center gap-1.5 ${
+              showBubbles
+                ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50'
+                : 'bg-surface-light text-text-secondary hover:bg-surface-lighter'
+            }`}
+            title="Show volume bubble markers on chart"
+          >
+            <span className={showBubbles ? 'text-purple-500' : 'text-gray-400'}>🫧</span>
+            Bubbles {bubbles.length > 0 && `(${bubbles.length})`}
+          </button>
         </div>
       </div>
 
@@ -204,6 +221,8 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
             showWeeklyVWAP={showWeeklyVWAP}
             showAlerts={showAlerts}
             alerts={coinAlerts}
+            showBubbles={showBubbles}
+            bubbles={bubbles}
           />
         )}
       </div>
