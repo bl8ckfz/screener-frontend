@@ -124,16 +124,6 @@ const getBubbleMarkerStyle = (bubble: Bubble): {
   }
 }
 
-/**
- * Get display text for bubble marker
- */
-const getBubbleDisplayText = (bubble: Bubble): string => {
-  const sizeSymbol = bubble.size === 'large' ? 'L' : bubble.size === 'medium' ? 'M' : 'S'
-  const timeframe = bubble.timeframe
-  const zScore = bubble.zScore.toFixed(1)
-  return `${sizeSymbol}${timeframe} (z=${zScore})`
-}
-
 
 /**
  * TradingChart component using lightweight-charts library
