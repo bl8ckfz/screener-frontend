@@ -13,3 +13,4 @@ export {
 } from './useKeyboardShortcuts'
 export { useAlertStats } from './useAlertStats'
 export { useFuturesStreaming } from './useFuturesStreaming'
+export { useBubbleStream } from './useBubbleStream'

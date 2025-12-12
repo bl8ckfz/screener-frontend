@@ -18,6 +18,7 @@ import { Candle1mRingBuffer } from '@/utils/candle1mRingBuffer'
 import { SlidingWindowCalculator } from '@/utils/slidingWindowCalculator'
 import { BinanceFuturesApiClient } from './binanceFuturesApi'
 import { BinanceFuturesWebSocket } from './binanceFuturesWebSocket'
+import { BubbleDetectionService } from './bubbleDetectionService'
 import type { Candle1m, WindowMetrics } from '@/types/api'
 
 /**
@@ -66,6 +67,7 @@ class SimpleEventEmitter {
  * - 'backfillProgress' → { completed: number, total: number, progress: number }
  * - 'metrics' → { symbol: string, metrics: AllTimeframeMetrics, timestamp: number }
  * - 'candle' → { symbol: string, candle: Candle1m, timestamp: number }
+ * - 'bubble' → Bubble object - Volume anomaly detected
  * - 'error' → Error object
  * - 'stopped' → void
  */
@@ -90,6 +92,7 @@ export interface StartOptions {
 export class Stream1mManager extends SimpleEventEmitter {
   private buffers: Map<string, Candle1mRingBuffer> = new Map()
   private calculator: SlidingWindowCalculator
+  private bubbleService: BubbleDetectionService
   private wsClient: BinanceFuturesWebSocket
   private apiClient: BinanceFuturesApiClient
   private symbols: string[] = []
@@ -99,6 +102,7 @@ export class Stream1mManager extends SimpleEventEmitter {
   constructor() {
     super()
     this.calculator = new SlidingWindowCalculator()
+    this.bubbleService = new BubbleDetectionService()
     this.wsClient = new BinanceFuturesWebSocket()
     this.apiClient = new BinanceFuturesApiClient()
 
@@ -361,6 +365,8 @@ export class Stream1mManager extends SimpleEventEmitter {
     // Calculate and emit metrics for all timeframes
     const metrics = this.getAllMetrics(symbol)
     if (metrics) {
+      const timestamp = Date.now()
+      
       // Debug: Log first few metric emissions to verify data flow
       if (import.meta.env.DEV && Math.random() < 0.01) { // 1% sample rate
         console.log(`📊 Emitting metrics for ${symbol}:`, {
@@ -369,7 +375,32 @@ export class Stream1mManager extends SimpleEventEmitter {
           volume_5m: '$' + (metrics.m5.quoteVolume / 1000).toFixed(0) + 'K',
         })
       }
-      this.emit('metrics', { symbol, metrics, timestamp: Date.now() })
+      
+      // Emit metrics event
+      this.emit('metrics', { symbol, metrics, timestamp })
+      
+      // Detect bubbles using volume analysis
+      const bubbles = this.bubbleService.detectBubbles({
+        symbol,
+        m5: metrics.m5,
+        m15: metrics.m15,
+        timestamp,
+      })
+      
+      // Emit bubble events
+      bubbles.forEach(bubble => {
+        // Debug: Log bubble detection
+        if (import.meta.env.DEV) {
+          console.log(`🫧 Bubble detected for ${bubble.symbol}:`, {
+            timeframe: bubble.timeframe,
+            size: bubble.size,
+            side: bubble.side,
+            zScore: bubble.zScore.toFixed(2),
+            priceChange: bubble.priceChangePct.toFixed(2) + '%',
+          })
+        }
+        this.emit('bubble', bubble)
+      })
     }
   }
 
@@ -506,6 +537,13 @@ export class Stream1mManager extends SimpleEventEmitter {
   }
 
   /**
+   * Get bubble detection service (for configuration/monitoring)
+   */
+  getBubbleService(): BubbleDetectionService {
+    return this.bubbleService
+  }
+
+  /**
    * Stop 1m streaming
    * 
    * Steps:
@@ -528,6 +566,7 @@ export class Stream1mManager extends SimpleEventEmitter {
       // Clear buffers and running sums
       this.buffers.clear()
       this.calculator.clearAll()
+      this.bubbleService.clear()
       this.symbols = []
       this.isRunning = false
 
