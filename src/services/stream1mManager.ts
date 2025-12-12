@@ -378,12 +378,19 @@ export class Stream1mManager extends SimpleEventEmitter {
       
       // Emit metrics event
       this.emit('metrics', { symbol, metrics, timestamp })
+    }
+    
+    // Detect bubbles independently (only needs 5m/15m metrics)
+    // Don't wait for h1/h8/h24 - bubble detection should work immediately
+    const partialMetrics = this.getPartialMetrics(symbol)
+    if (partialMetrics) {
+      const timestamp = Date.now()
       
       // Detect bubbles using volume analysis
       const bubbles = this.bubbleService.detectBubbles({
         symbol,
-        m5: metrics.m5,
-        m15: metrics.m15,
+        m5: partialMetrics.m5,
+        m15: partialMetrics.m15,
         timestamp,
       })
       
@@ -459,7 +466,7 @@ export class Stream1mManager extends SimpleEventEmitter {
           h1: !!h1,
           h8: !!h8,
           h24: !!h24,
-          bufferSize: buffer.size,
+          candleCount: buffer.getCount(),
         })
       }
       return null
@@ -472,6 +479,31 @@ export class Stream1mManager extends SimpleEventEmitter {
       h8,
       h24,
     }
+  }
+
+  /**
+   * Get partial metrics (5m and 15m only) for bubble detection
+   * Works immediately after backfill, doesn't wait for h1/h8/h24
+   * 
+   * @param symbol - Binance futures symbol
+   * @returns Partial metrics with m5 and m15, or null if not available
+   */
+  getPartialMetrics(symbol: string): { m5: WindowMetrics; m15: WindowMetrics } | null {
+    const buffer = this.buffers.get(symbol)
+    if (!buffer) {
+      return null
+    }
+
+    const metricsMap = this.calculator.getAllMetrics(symbol, buffer)
+    
+    const m5 = metricsMap.get('5m')
+    const m15 = metricsMap.get('15m')
+    
+    if (!m5 || !m15) {
+      return null
+    }
+
+    return { m5, m15 }
   }
 
   /**
