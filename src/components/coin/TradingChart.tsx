@@ -521,9 +521,8 @@ export function TradingChart({
           
           const style = getBubbleMarkerStyle(bubble)
           const size = getBubbleMarkerSize(bubble.size)
-          const displayText = getBubbleDisplayText(bubble)
           
-          console.log(`🫧 Creating bubble marker: ${displayText} - size: ${size}, color: ${style.color}`)
+          console.log(`🫧 Creating bubble marker: ${bubble.size} ${bubble.side} - size: ${size}, color: ${style.color}`)
           
           return {
             time: closestCandle.time,
@@ -531,7 +530,7 @@ export function TradingChart({
             color: style.color,
             shape: style.shape,
             size,
-            text: displayText,
+            text: '', // Remove text label
           } as SeriesMarker<Time>
         })
         .filter((marker): marker is SeriesMarker<Time> => marker !== null)
