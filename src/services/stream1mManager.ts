@@ -451,6 +451,17 @@ export class Stream1mManager extends SimpleEventEmitter {
     const h24 = metricsMap.get('1d')
     
     if (!m5 || !m15 || !h1 || !h8 || !h24) {
+      // Debug: Log missing metrics
+      if (import.meta.env.DEV && Math.random() < 0.005) { // 0.5% sample rate
+        console.log(`⚠️  Missing metrics for ${symbol}:`, {
+          m5: !!m5,
+          m15: !!m15,
+          h1: !!h1,
+          h8: !!h8,
+          h24: !!h24,
+          bufferSize: buffer.size,
+        })
+      }
       return null
     }
 
