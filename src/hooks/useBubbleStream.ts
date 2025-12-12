@@ -31,6 +31,18 @@ export function useBubbleStream(options: UseBubbleStreamOptions = {}) {
       return
     }
 
+    // Initialize with existing bubbles (if stream manager tracks them)
+    if (streamManager.getBubbles && typeof streamManager.getBubbles === 'function') {
+      const existingBubbles = streamManager.getBubbles()
+      if (existingBubbles && existingBubbles.length > 0) {
+        const filtered = symbolFilter 
+          ? existingBubbles.filter((b: Bubble) => b.symbol === symbolFilter)
+          : existingBubbles
+        console.log(`🫧 useBubbleStream: Initialized with ${filtered.length} existing bubbles for ${symbolFilter || 'all'}`)
+        setBubbles(filtered.slice(-maxHistory))
+      }
+    }
+
     const handleBubble = (bubble: Bubble) => {
       // Filter by symbol if specified
       if (symbolFilter && bubble.symbol !== symbolFilter) {

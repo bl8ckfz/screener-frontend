@@ -20,6 +20,7 @@ import { BinanceFuturesApiClient } from './binanceFuturesApi'
 import { BinanceFuturesWebSocket } from './binanceFuturesWebSocket'
 import { BubbleDetectionService } from './bubbleDetectionService'
 import type { Candle1m, WindowMetrics } from '@/types/api'
+import type { Bubble } from '@/types/bubble'
 
 /**
  * Browser-compatible EventEmitter
@@ -98,6 +99,8 @@ export class Stream1mManager extends SimpleEventEmitter {
   private symbols: string[] = []
   private isRunning: boolean = false
   private initialTickers: any[] = [] // Store initial ticker data for immediate display
+  private bubbleHistory: Bubble[] = [] // Store recent bubbles (last 1000)
+  private readonly MAX_BUBBLE_HISTORY = 1000
 
   constructor() {
     super()
@@ -422,10 +425,17 @@ export class Stream1mManager extends SimpleEventEmitter {
         timestamp,
       })
       
-      // Emit bubble events
+      // Emit bubble events and store in history
       bubbles.forEach(bubble => {
         // Always log bubble detections (not sampled)
         console.log(`🫧 BUBBLE DETECTED: ${bubble.symbol} ${bubble.size} ${bubble.side} on ${bubble.timeframe} (z=${bubble.zScore.toFixed(2)}σ, price=${bubble.priceChangePct >= 0 ? '+' : ''}${bubble.priceChangePct.toFixed(2)}%)`)
+        
+        // Store in history for late-subscribing components
+        this.bubbleHistory.push(bubble)
+        if (this.bubbleHistory.length > this.MAX_BUBBLE_HISTORY) {
+          this.bubbleHistory.shift()
+        }
+        
         this.emit('bubble', bubble)
       })
     } else {
@@ -552,6 +562,15 @@ export class Stream1mManager extends SimpleEventEmitter {
    */
   getSymbols(): string[] {
     return [...this.symbols]
+  }
+
+  /**
+   * Get bubble history for late-subscribing components
+   * 
+   * @returns Copy of bubble history array (newest last)
+   */
+  getBubbles(): Bubble[] {
+    return [...this.bubbleHistory]
   }
 
   /**
