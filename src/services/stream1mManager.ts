@@ -424,18 +424,21 @@ export class Stream1mManager extends SimpleEventEmitter {
       
       // Emit bubble events
       bubbles.forEach(bubble => {
-        // Debug: Log bubble detection
-        if (import.meta.env.DEV) {
-          console.log(`🫧 Bubble detected for ${bubble.symbol}:`, {
-            timeframe: bubble.timeframe,
-            size: bubble.size,
-            side: bubble.side,
-            zScore: bubble.zScore.toFixed(2),
-            priceChange: bubble.priceChangePct.toFixed(2) + '%',
-          })
-        }
+        // Always log bubble detections (not sampled)
+        console.log(`🫧 BUBBLE DETECTED: ${bubble.symbol} ${bubble.size} ${bubble.side} on ${bubble.timeframe} (z=${bubble.zScore.toFixed(2)}σ, price=${bubble.priceChangePct >= 0 ? '+' : ''}${bubble.priceChangePct.toFixed(2)}%)`)
         this.emit('bubble', bubble)
       })
+    } else {
+      // Debug: Why no partial metrics?
+      if (import.meta.env.DEV && Math.random() < 0.01) { // 1% sample
+        const buffer = this.buffers.get(symbol)
+        console.log(`🫧 No partial metrics for ${symbol}:`, {
+          hasBuffer: !!buffer,
+          bufferCount: buffer?.getCount() || 0,
+          needs5m: 5,
+          needs15m: 15,
+        })
+      }
     }
   }
 

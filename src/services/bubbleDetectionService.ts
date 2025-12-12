@@ -164,10 +164,15 @@ export class BubbleDetectionService {
       this.initializeSymbol(metrics.symbol)
       state = this.volumeHistory.get(metrics.symbol)!
       
-      // Debug: Log initialization
+      // Log initialization (10% sample)
       if (import.meta.env.DEV && Math.random() < 0.1) {
         console.log(`🫧 Initialized bubble tracking for ${metrics.symbol}`)
       }
+    }
+
+    // Debug: Log detection calls more frequently
+    if (import.meta.env.DEV && Math.random() < 0.02) { // 2% sample
+      console.log(`🫧 Checking ${metrics.symbol}: 5m=${(metrics.m5.quoteVolume/1e6).toFixed(1)}M 15m=${(metrics.m15.quoteVolume/1e6).toFixed(1)}M history=[${state.vol5mHistory.length},${state.vol15mHistory.length}]`)
     }
 
     // Process 5m window
@@ -254,16 +259,9 @@ export class BubbleDetectionService {
     // Calculate z-score
     const zScore = std > 0 ? (volume - ema) / std : 0
 
-    // Debug: Log z-scores periodically to see how close we are to thresholds
-    if (import.meta.env.DEV && Math.random() < 0.002) { // 0.2% sample rate
-      console.log(`🫧 Z-score for ${state.symbol} (${timeframe}):`, {
-        volume: (volume / 1e6).toFixed(2) + 'M',
-        ema: (ema / 1e6).toFixed(2) + 'M',
-        std: (std / 1e6).toFixed(2) + 'M',
-        zScore: zScore.toFixed(2),
-        threshold: is5m ? config.largeZScore : config.largeZScore,
-        historyLength: history.length,
-      })
+    // Debug: Log z-scores more frequently to see what's happening
+    if (import.meta.env.DEV && Math.random() < 0.02) { // 2% sample rate (10x more)
+      console.log(`🫧 Z-score ${state.symbol} ${timeframe}: vol=${(volume/1e6).toFixed(1)}M ema=${(ema/1e6).toFixed(1)}M std=${(std/1e6).toFixed(1)}M z=${zScore.toFixed(2)}σ (need ${config.smallZScore.toFixed(1)}σ+)`)
     }
 
     // Determine bubble size
