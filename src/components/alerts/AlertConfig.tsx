@@ -43,7 +43,6 @@ export function AlertConfig({
   onRuleCreate,
   onRuleDelete,
 }: AlertConfigProps) {
-  const [isCreating, setIsCreating] = useState(false)
   const [showCustomBuilder, setShowCustomBuilder] = useState(false)
 
   const alertSettings = useStore((state) => state.alertSettings)
@@ -68,31 +67,43 @@ export function AlertConfig({
     // If denied, do nothing (user needs to enable in browser settings)
   }
 
-  const handlePresetSelect = (presetName: string) => {
-    const preset = FUTURES_ALERT_PRESETS.find(p => p.name === presetName)
-    if (!preset) return
+  const handlePresetToggle = (presetType: FuturesAlertType, enabled: boolean) => {
+    const existingRule = rules.find(r => r.conditions[0]?.type === presetType)
+    
+    if (existingRule) {
+      // Toggle existing rule
+      onRuleToggle(existingRule.id, enabled)
+    } else if (enabled) {
+      // Create new rule from preset
+      const preset = FUTURES_ALERT_PRESETS.find(p => p.type === presetType)
+      if (!preset) return
 
-    const newRule: AlertRule = {
-      id: `rule_${Date.now()}`,
-      name: presetName,
-      enabled: true, // All rules enabled by default
-      conditions: [
-        {
-          type: preset.type,
-          threshold: 0, // Preset alerts use hardcoded logic
-          comparison: 'greater_than',
-          timeframe: undefined,
-        },
-      ],
-      symbols: [], // Empty = all symbols
-      severity: preset.severity,
-      notificationEnabled: true,
-      soundEnabled: true,
-      createdAt: Date.now(),
+      const newRule: AlertRule = {
+        id: `rule_${Date.now()}`,
+        name: preset.name,
+        enabled: true,
+        conditions: [
+          {
+            type: preset.type,
+            threshold: 0,
+            comparison: 'greater_than',
+            timeframe: undefined,
+          },
+        ],
+        symbols: [],
+        severity: preset.severity,
+        notificationEnabled: true,
+        soundEnabled: true,
+        createdAt: Date.now(),
+      }
+
+      onRuleCreate(newRule)
     }
+  }
 
-    onRuleCreate(newRule)
-    setIsCreating(false)
+  const isPresetEnabled = (presetType: FuturesAlertType): boolean => {
+    const rule = rules.find(r => r.conditions[0]?.type === presetType)
+    return rule?.enabled ?? false
   }
 
   const getAlertTypeBadgeColor = (type: CombinedAlertType): string => {
@@ -146,13 +157,152 @@ export function AlertConfig({
           </p>
         </div>
         <Button
-          onClick={() => setIsCreating(!isCreating)}
-          variant="secondary"
+          onClick={() => setShowCustomBuilder(!showCustomBuilder)}
+          variant={showCustomBuilder ? 'secondary' : 'primary'}
           size="sm"
         >
-          {isCreating ? 'Cancel' : '+ Add Rule'}
+          {showCustomBuilder ? 'Cancel' : '+ Custom Rule'}
         </Button>
       </div>
+
+      {/* Custom Alert Builder */}
+      {showCustomBuilder && (
+        <CustomAlertBuilder
+          onSave={(rule) => {
+            onRuleCreate(rule)
+            setShowCustomBuilder(false)
+          }}
+          onCancel={() => {
+            setShowCustomBuilder(false)
+          }}
+        />
+      )}
+
+      {/* Futures Alert Presets - Always Visible */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 mb-3">
+          <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clipRule="evenodd" />
+          </svg>
+          <h4 className="text-sm font-semibold text-white">Futures Alerts</h4>
+          <Badge className="bg-green-500/20 text-green-400 text-xs">Recommended</Badge>
+        </div>
+        <p className="text-xs text-gray-400 mb-3">
+          Multi-timeframe analysis with progressive validation. Toggle to enable/disable.
+        </p>
+        
+        <div className="space-y-2">
+          {FUTURES_ALERT_PRESETS.map((preset) => (
+            <div
+              key={preset.type}
+              className={`rounded-lg border p-3 transition-colors ${
+                isPresetEnabled(preset.type)
+                  ? 'border-green-500/50 bg-green-900/10'
+                  : 'border-gray-700 bg-gray-800/30'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-white">{preset.name}</span>
+                    <Badge className={`text-xs ${
+                      preset.severity === 'critical' ? 'bg-red-500/20 text-red-400' :
+                      preset.severity === 'high' ? 'bg-orange-500/20 text-orange-400' :
+                      preset.severity === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                      'bg-blue-500/20 text-blue-400'
+                    }`}>
+                      {preset.severity}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-400">{preset.description}</p>
+                </div>
+                <label className="relative inline-flex cursor-pointer items-center ml-3">
+                  <input
+                    type="checkbox"
+                    checked={isPresetEnabled(preset.type)}
+                    onChange={(e) => handlePresetToggle(preset.type, e.target.checked)}
+                    className="peer sr-only"
+                  />
+                  <div className="peer h-5 w-9 rounded-full bg-gray-700 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-gray-600 after:bg-white after:transition-all after:content-[''] peer-checked:bg-green-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-green-800"></div>
+                </label>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Custom Rules List */}
+      {rules.some(r => !r.conditions[0]?.type.startsWith('futures_')) && (
+        <div className="space-y-2">
+          <h4 className="text-sm font-semibold text-white mb-2">Custom Rules</h4>
+          {rules
+            .filter(r => !r.conditions[0]?.type.startsWith('futures_'))
+            .map((rule) => (
+              <div
+                key={rule.id}
+                className={`rounded-lg border p-4 transition-colors ${
+                  rule.enabled
+                    ? 'border-blue-500/50 bg-gray-800'
+                    : 'border-gray-700 bg-gray-800/50'
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h5 className="font-medium text-white">{rule.name}</h5>
+                      {rule.conditions.map((condition, idx) => (
+                        <Badge
+                          key={idx}
+                          className={getAlertTypeBadgeColor(condition.type)}
+                        >
+                          {getAlertTypeLabel(condition.type)}
+                        </Badge>
+                      ))}
+                    </div>
+                    
+                    <div className="mt-2 space-y-1 text-xs text-gray-400">
+                      <div>
+                        Symbols: {rule.symbols.length === 0 ? 'All' : rule.symbols.join(', ')}
+                      </div>
+                      {rule.conditions.length > 0 && (
+                        <div>
+                          Conditions: {rule.conditions.length} condition(s)
+                          {rule.conditions[0].threshold !== undefined && 
+                            ` (threshold: ${rule.conditions[0].threshold})`}
+                          {rule.conditions[0].timeframe && 
+                            ` [${rule.conditions[0].timeframe}]`}
+                        </div>
+                      )}
+                      <div className="text-gray-500">
+                        Created: {new Date(rule.createdAt).toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <label className="relative inline-flex cursor-pointer items-center">
+                      <input
+                        type="checkbox"
+                        checked={rule.enabled}
+                        onChange={(e) => onRuleToggle(rule.id, e.target.checked)}
+                        className="peer sr-only"
+                      />
+                      <div className="peer h-5 w-9 rounded-full bg-gray-700 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-gray-600 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-800"></div>
+                    </label>
+                    <Button
+                      onClick={() => onRuleDelete(rule.id)}
+                      variant="secondary"
+                      size="sm"
+                      className="text-red-400 hover:text-red-300"
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+        </div>
+      )}
 
       {/* Sound Notification Controls */}
       <div className="rounded-lg border border-gray-700 bg-gray-800/50 p-4">
@@ -269,172 +419,6 @@ export function AlertConfig({
           </div>
         </div>
       )}
-
-      {/* Custom Alert Builder */}
-      {showCustomBuilder && (
-        <CustomAlertBuilder
-          onSave={(rule) => {
-            onRuleCreate(rule)
-            setShowCustomBuilder(false)
-            setIsCreating(false)
-          }}
-          onCancel={() => {
-            setShowCustomBuilder(false)
-            setIsCreating(false)
-          }}
-        />
-      )}
-
-      {/* Preset Selector */}
-      {isCreating && !showCustomBuilder && (
-        <div className="rounded-lg border border-gray-700 bg-gray-800/50 p-4">
-          <h4 className="mb-3 text-sm font-medium text-white">Choose Alert Type</h4>
-          <div className="grid grid-cols-1 gap-2">
-            {/* Custom Rule Button */}
-            <button
-              onClick={() => setShowCustomBuilder(true)}
-              className="flex items-center justify-between rounded-lg border-2 border-blue-500/50 bg-blue-500/10 p-3 text-left transition-colors hover:border-blue-500 hover:bg-blue-500/20"
-            >
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-blue-400">
-                    ⚙️ Custom Rule
-                  </span>
-                  <Badge className="bg-blue-500/20 text-blue-400">
-                    Advanced
-                  </Badge>
-                </div>
-                <p className="mt-1 text-xs text-blue-300">
-                  Build your own alert with custom conditions and thresholds
-                </p>
-              </div>
-            </button>
-
-            {/* Divider */}
-            <div className="flex items-center gap-3 my-2">
-              <div className="flex-1 border-t border-gray-700"></div>
-              <span className="text-xs text-gray-500">OR CHOOSE PRESET</span>
-              <div className="flex-1 border-t border-gray-700"></div>
-            </div>
-
-            {/* Futures Presets */}
-            <div className="mb-3">
-              <h5 className="text-xs font-medium text-green-400 mb-2 flex items-center gap-2">
-                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clipRule="evenodd" />
-                </svg>
-                Futures API Alerts (Recommended)
-              </h5>
-              <p className="text-xs text-gray-500 mb-2">
-                Multi-timeframe analysis with progressive validation
-              </p>
-            </div>
-            {FUTURES_ALERT_PRESETS.map((preset) => (
-              <button
-                key={preset.name}
-                onClick={() => handlePresetSelect(preset.name)}
-                className="flex items-center justify-between rounded-lg border border-green-700/50 bg-green-900/10 p-3 text-left transition-colors hover:border-green-500 hover:bg-green-900/20 mb-2"
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-white">
-                      {preset.name}
-                    </span>
-                    <Badge className={getAlertTypeBadgeColor(preset.type)}>
-                      Futures
-                    </Badge>
-                  </div>
-                  <p className="mt-1 text-xs text-gray-400">{preset.description}</p>
-                </div>
-              </button>
-            ))}
-
-
-          </div>
-        </div>
-      )}
-
-      {/* Active Rules List */}
-      <div className="space-y-2">
-        {rules.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-gray-700 bg-gray-800/30 p-8 text-center">
-            <p className="text-sm text-gray-400">
-              No alert rules configured yet.
-              <br />
-              Click "Add Rule" to create your first alert.
-            </p>
-          </div>
-        ) : (
-          rules.map((rule) => (
-            <div
-              key={rule.id}
-              className={`rounded-lg border p-4 transition-colors ${
-                rule.enabled
-                  ? 'border-blue-500/50 bg-gray-800'
-                  : 'border-gray-700 bg-gray-800/50'
-              }`}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-medium text-white">{rule.name}</h4>
-                    {rule.conditions.map((condition, idx) => (
-                      <Badge
-                        key={idx}
-                        className={getAlertTypeBadgeColor(condition.type)}
-                      >
-                        {getAlertTypeLabel(condition.type)}
-                      </Badge>
-                    ))}
-                  </div>
-                  
-                  {/* Rule Details */}
-                  <div className="mt-2 space-y-1 text-xs text-gray-400">
-                    <div>
-                      Symbols: {rule.symbols.length === 0 ? 'All' : rule.symbols.join(', ')}
-                    </div>
-                    {rule.conditions.length > 0 && (
-                      <div>
-                        Conditions: {rule.conditions.length} condition(s)
-                        {rule.conditions[0].threshold !== undefined && 
-                          ` (threshold: ${rule.conditions[0].threshold})`}
-                        {rule.conditions[0].timeframe && 
-                          ` [${rule.conditions[0].timeframe}]`}
-                      </div>
-                    )}
-                    <div className="text-gray-500">
-                      Created: {new Date(rule.createdAt).toLocaleString()}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex items-center gap-2">
-                  <label className="relative inline-flex cursor-pointer items-center">
-                    <input
-                      type="checkbox"
-                      checked={rule.enabled}
-                      onChange={(e) => onRuleToggle(rule.id, e.target.checked)}
-                      className="peer sr-only"
-                    />
-                    <div className="peer h-5 w-9 rounded-full bg-gray-700 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-gray-600 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-800"></div>
-                  </label>
-                  <Button
-                    onClick={() => onRuleDelete(rule.id)}
-                    variant="secondary"
-                    size="sm"
-                    className="text-red-400 hover:text-red-300"
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* Legacy alerts disclaimer removed per UI cleanup request */}
     </div>
   )
 }
