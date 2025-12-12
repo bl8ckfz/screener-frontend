@@ -45,6 +45,12 @@ export class FuturesMetricsService {
     this.coinGeckoClient = coinGeckoClient || new CoinGeckoApiClient()
     this.futuresClient = new BinanceFuturesApiClient()
     this.stream1mManager = new Stream1mManager()
+    
+    // Expose stream manager globally for bubble detection hook
+    if (typeof window !== 'undefined') {
+      (window as any).__streamManager = this.stream1mManager
+    }
+    
     console.log(`🎯 Using 1m streaming (max ${FuturesMetricsService.MAX_SYMBOLS} symbols)`)
   }
 
