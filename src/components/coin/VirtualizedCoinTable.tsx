@@ -74,11 +74,24 @@ export function VirtualizedCoinTable({
   // Memoize total size to avoid recalculations
   const totalSize = useMemo(() => virtualizer.getTotalSize(), [virtualizer])
 
+  // Column group definition for consistent widths
+  const ColGroup = () => (
+    <colgroup>
+      <col style={{ width: '64px' }} /> {/* Star - w-16 = 64px */}
+      <col style={{ width: '112px' }} /> {/* Symbol - w-28 = 112px */}
+      <col style={{ width: '144px' }} /> {/* Price - w-36 = 144px */}
+      <col style={{ width: '128px' }} /> {/* Change % - w-32 = 128px */}
+      <col style={{ width: '128px' }} /> {/* P/WA - w-32 = 128px */}
+      <col style={{ width: '144px' }} /> {/* 24h Vol - w-36 = 144px */}
+    </colgroup>
+  )
+
   return (
     <div className="overflow-hidden rounded-lg border border-gray-800 bg-gray-900">
       {/* Table Header - Fixed */}
       <div className="sticky top-0 z-10 bg-gray-900 border-b border-gray-800">
         <table className="w-full table-fixed">
+          <ColGroup />
           <thead>
             <tr className="text-left text-sm bg-gray-800/50">
               <th className="px-3 py-3 font-semibold text-gray-400 text-center w-16">
@@ -181,6 +194,7 @@ export function VirtualizedCoinTable({
                 className={isSelected ? 'ring-2 ring-blue-500' : ''}
               >
                 <table className="w-full table-fixed">
+                  <ColGroup />
                   <tbody>
                     <CoinTableRow
                       coin={coin}
