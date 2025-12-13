@@ -9,9 +9,22 @@ export function WatchlistBadge({ symbol }: WatchlistBadgeProps) {
   const { watchlists, addToWatchlist, removeFromWatchlist } = useStore()
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 })
 
   // Get watchlists containing this symbol
   const watchlistsWithSymbol = watchlists.filter((wl) => wl.symbols.includes(symbol))
+
+  // Calculate dropdown position when opened
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect()
+      setDropdownPosition({
+        top: rect.bottom + 4, // 4px gap
+        left: rect.left,
+      })
+    }
+  }, [isOpen])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -41,6 +54,7 @@ export function WatchlistBadge({ symbol }: WatchlistBadgeProps) {
     <div className="relative" ref={dropdownRef}>
       {/* Badge Button */}
       <button
+        ref={buttonRef}
         onClick={(e) => {
           e.stopPropagation()
           setIsOpen(!isOpen)
@@ -62,9 +76,15 @@ export function WatchlistBadge({ symbol }: WatchlistBadgeProps) {
         )}
       </button>
 
-      {/* Dropdown Menu */}
+      {/* Dropdown Menu - Fixed positioning to escape table stacking context */}
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 w-56 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-[9999] max-h-64 overflow-y-auto">
+        <div 
+          className="fixed w-56 bg-gray-900 border border-gray-700 rounded-lg shadow-2xl z-[10000] max-h-64 overflow-y-auto"
+          style={{
+            top: `${dropdownPosition.top}px`,
+            left: `${dropdownPosition.left}px`,
+          }}
+        >
           <div className="px-3 py-2 border-b border-gray-700 bg-gray-900">
             <div className="text-xs font-medium text-gray-400">
               Add {symbol} to watchlist
