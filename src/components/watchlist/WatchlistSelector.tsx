@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useStore } from '@/hooks/useStore'
 import { WatchlistManager } from './WatchlistManager'
 
@@ -6,6 +7,9 @@ export function WatchlistSelector() {
   const { watchlists, currentWatchlistId, setCurrentWatchlist } = useStore()
   const [showManager, setShowManager] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 })
 
   const selectedWatchlist = watchlists.find((wl) => wl.id === currentWatchlistId)
 
@@ -13,6 +17,37 @@ export function WatchlistSelector() {
     setCurrentWatchlist(watchlistId)
     setIsOpen(false)
   }
+
+  // Update dropdown position when opened
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect()
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      })
+    }
+  }, [isOpen])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isOpen])
 
   if (showManager) {
     return (
@@ -38,8 +73,9 @@ export function WatchlistSelector() {
       </div>
 
       {/* Dropdown */}
-      <div className="relative">
+      <div>
         <button
+          ref={buttonRef}
           onClick={() => setIsOpen(!isOpen)}
           className="w-full flex items-center justify-between gap-2 px-3 py-2 bg-surface border border-border rounded-lg hover:border-border-hover transition-colors"
         >
@@ -74,8 +110,17 @@ export function WatchlistSelector() {
         </button>
 
         {/* Dropdown Menu */}
-        {isOpen && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-surface-dark border border-border rounded-lg shadow-lg z-[1000] max-h-64 overflow-y-auto">
+        {isOpen && createPortal(
+          <div 
+            ref={dropdownRef}
+            className="bg-surface-dark border border-border rounded-lg shadow-lg z-[10000] max-h-64 overflow-y-auto"
+            style={{
+              position: 'fixed',
+              top: `${dropdownPosition.top}px`,
+              left: `${dropdownPosition.left}px`,
+              width: `${dropdownPosition.width}px`,
+            }}
+          >
               {/* All Coins Option */}
               <button
                 onClick={() => handleSelect(null)}
@@ -132,7 +177,8 @@ export function WatchlistSelector() {
                   </button>
                 ))
               )}
-          </div>
+          </div>,
+          document.body
         )}
       </div>
 

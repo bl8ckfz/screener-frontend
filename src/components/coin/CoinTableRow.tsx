@@ -34,19 +34,19 @@ function CoinTableRowComponent({ coin, index, onClick }: CoinTableRowProps) {
           <WatchlistBadge symbol={coin.symbol} />
         </div>
       </td>
-      <td className="px-3 py-2.5 font-medium whitespace-nowrap text-base">{coin.symbol}</td>
-      <td className="px-3 py-2.5 text-right mono-number whitespace-nowrap text-base">
+      <td className="px-4 py-2.5 font-medium whitespace-nowrap text-base w-28">{coin.symbol}</td>
+      <td className="px-4 py-2.5 text-right mono-number whitespace-nowrap text-base w-36">
         {formatPrice(coin.lastPrice)}
       </td>
       <td
-        className={`px-3 py-2.5 text-right mono-number font-medium whitespace-nowrap text-base ${getChangeColor(coin.priceChangePercent)}`}
+        className={`px-4 py-2.5 text-right mono-number font-medium whitespace-nowrap text-base w-32 ${getChangeColor(coin.priceChangePercent)}`}
       >
         {formatPercent(coin.priceChangePercent)}
       </td>
-      <td className="px-3 py-2.5 text-right mono-number whitespace-nowrap text-base">
+      <td className="px-4 py-2.5 text-right mono-number whitespace-nowrap text-base w-32">
         {coin.indicators.priceToWeightedAvg.toFixed(4)}
       </td>
-      <td className="px-3 py-2.5 text-right mono-number text-gray-400 whitespace-nowrap text-base">
+      <td className="px-4 py-2.5 text-right mono-number text-gray-400 whitespace-nowrap text-base w-36">
         {formatVolume(coin.quoteVolume)}
       </td>
     </tr>
