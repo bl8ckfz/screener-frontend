@@ -57,6 +57,16 @@ function App() {
   const clearAlertHistory = useStore((state) => state.clearAlertHistory)
   const alertStats = useAlertStats(coins || [])
   
+  // Filter alert stats by watchlist
+  const filteredAlertStats = useMemo(() => {
+    if (!currentWatchlistId) return alertStats
+    
+    const watchlist = watchlists.find((wl) => wl.id === currentWatchlistId)
+    if (!watchlist) return alertStats
+    
+    return alertStats.filter((stat) => watchlist.symbols.includes(stat.symbol))
+  }, [alertStats, currentWatchlistId, watchlists])
+  
   // Auth state
   const setUser = useStore((state) => state.setUser)
   const setSession = useStore((state) => state.setSession)
@@ -334,7 +344,7 @@ function App() {
           <ViewToggle
             activeView={activeView}
             onViewChange={setActiveView}
-            alertCount={alertStats.length}
+            alertCount={filteredAlertStats.length}
           />
 
           {activeView === 'coins' ? (
@@ -399,7 +409,7 @@ function App() {
             /* Alert History View */
             <div className="bg-gray-900 rounded-lg overflow-hidden p-6">
               <AlertHistoryTable
-                stats={alertStats}
+                stats={filteredAlertStats}
                 onCoinClick={(symbol) => {
                   const coin = coins?.find((c) => c.symbol === symbol)
                   if (coin) setSelectedCoin(coin)
