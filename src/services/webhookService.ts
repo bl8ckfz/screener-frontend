@@ -480,13 +480,22 @@ export async function sendWebhookWithRetry(
 
 /**
  * Send to multiple webhooks in parallel
+ * Supports separate webhook lists for main and watchlist alerts
  */
 export async function sendToWebhooks(
   webhooks: WebhookConfig[],
-  alert: Alert
+  alert: Alert,
+  source: 'main' | 'watchlist' = 'main'
 ): Promise<Map<string, { success: boolean; attempts: number; error?: string }>> {
   const results = new Map()
   const enabledWebhooks = webhooks.filter(w => w.enabled)
+
+  if (enabledWebhooks.length === 0) {
+    console.log(`No enabled webhooks for ${source} alerts`)
+    return results
+  }
+
+  console.log(`📤 Sending ${source} alert to ${enabledWebhooks.length} webhooks: ${alert.symbol}`)
 
   await Promise.all(
     enabledWebhooks.map(async (webhook) => {

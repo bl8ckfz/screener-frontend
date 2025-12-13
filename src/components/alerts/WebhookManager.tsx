@@ -5,10 +5,13 @@ import { useStore } from '@/hooks/useStore'
 import { testDiscordWebhook, testTelegramWebhook, isValidDiscordWebhookUrl } from '@/services/webhookService'
 import type { WebhookConfig } from '@/types/alert'
 
+type WebhookSource = 'main' | 'watchlist'
+
 export function WebhookManager() {
   const alertSettings = useStore((state) => state.alertSettings)
   const updateAlertSettings = useStore((state) => state.updateAlertSettings)
   
+  const [activeTab, setActiveTab] = useState<WebhookSource>('main')
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState({
@@ -20,6 +23,10 @@ export function WebhookManager() {
   })
   const [isTesting, setIsTesting] = useState<string | null>(null)
   const [error, setError] = useState<string>('')
+
+  const currentWebhooks = activeTab === 'main' 
+    ? (alertSettings.webhooks || [])
+    : (alertSettings.watchlistWebhooks || [])
 
   const handleAdd = () => {
     setIsAdding(true)
@@ -62,7 +69,11 @@ export function WebhookManager() {
       }
     }
 
-    const webhooks = [...(alertSettings.webhooks || [])]
+    const webhookKey = activeTab === 'main' ? 'webhooks' : 'watchlistWebhooks'
+    const webhooks = [...(activeTab === 'main' 
+      ? (alertSettings.webhooks || [])
+      : (alertSettings.watchlistWebhooks || [])
+    )]
     
     if (editingId) {
       const index = webhooks.findIndex(w => w.id === editingId)
@@ -90,22 +101,24 @@ export function WebhookManager() {
       webhooks.push(newWebhook)
     }
 
-    updateAlertSettings({ webhooks })
+    updateAlertSettings({ [webhookKey]: webhooks })
     setIsAdding(false)
     setEditingId(null)
     setError('')
   }
 
   const handleDelete = (id: string) => {
-    const webhooks = (alertSettings.webhooks || []).filter(w => w.id !== id)
-    updateAlertSettings({ webhooks })
+    const webhookKey = activeTab === 'main' ? 'webhooks' : 'watchlistWebhooks'
+    const webhooks = currentWebhooks.filter(w => w.id !== id)
+    updateAlertSettings({ [webhookKey]: webhooks })
   }
 
   const handleToggle = (id: string) => {
-    const webhooks = (alertSettings.webhooks || []).map(w =>
+    const webhookKey = activeTab === 'main' ? 'webhooks' : 'watchlistWebhooks'
+    const webhooks = currentWebhooks.map(w =>
       w.id === id ? { ...w, enabled: !w.enabled } : w
     )
-    updateAlertSettings({ webhooks })
+    updateAlertSettings({ [webhookKey]: webhooks })
   }
 
   const handleTest = async (webhook: WebhookConfig) => {
@@ -131,8 +144,6 @@ export function WebhookManager() {
     }
   }
 
-  const webhooks = alertSettings.webhooks || []
-
   return (
     <div className="space-y-4">
       {/* Global Webhook Toggle */}
@@ -156,11 +167,37 @@ export function WebhookManager() {
         </div>
       </div>
 
+      {/* Webhook Source Tabs */}
+      <div className="flex gap-2 border-b border-gray-700">
+        <button
+          onClick={() => setActiveTab('main')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'main'
+              ? 'border-b-2 border-blue-500 text-blue-400'
+              : 'text-gray-400 hover:text-gray-300'
+          }`}
+        >
+          Main Alerts
+        </button>
+        <button
+          onClick={() => setActiveTab('watchlist')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'watchlist'
+              ? 'border-b-2 border-blue-500 text-blue-400'
+              : 'text-gray-400 hover:text-gray-300'
+          }`}
+        >
+          Watchlist Alerts
+        </button>
+      </div>
+
       <div className="flex items-center justify-between">
         <div>
-          <h4 className="text-sm font-medium text-white">Webhook Configurations</h4>
+          <h4 className="text-sm font-medium text-white">
+            {activeTab === 'main' ? 'Main' : 'Watchlist'} Webhook Configurations
+          </h4>
           <p className="text-xs text-gray-400">
-            {webhooks.filter(w => w.enabled).length} of {webhooks.length} webhooks active
+            {currentWebhooks.filter(w => w.enabled).length} of {currentWebhooks.length} webhooks active
           </p>
         </div>
         <Button onClick={handleAdd} variant="secondary" size="sm">
@@ -250,13 +287,13 @@ export function WebhookManager() {
       )}
 
       {/* Webhook List */}
-      {webhooks.length === 0 ? (
+      {currentWebhooks.length === 0 ? (
         <div className="text-center py-8 text-gray-400 text-sm">
-          No webhooks configured. Add one to get started.
+          No {activeTab} webhooks configured. Add one to get started.
         </div>
       ) : (
         <div className="space-y-2">
-          {webhooks.map((webhook) => (
+          {currentWebhooks.map((webhook) => (
             <div
               key={webhook.id}
               className="rounded-lg border border-gray-700 bg-gray-800/50 p-3"

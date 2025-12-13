@@ -88,6 +88,8 @@ export interface Alert {
   timestamp: number
   read: boolean
   dismissed: boolean
+  source?: 'main' | 'watchlist' // Track alert source for separate history/webhooks
+  watchlistId?: string // ID of the watchlist that triggered this alert (if source is watchlist)
   // Futures-specific data (optional)
   futuresData?: {
     change_5m?: number
@@ -156,7 +158,8 @@ export interface AlertSettings {
   discordWebhookUrl: string // Legacy: Primary Discord webhook (backwards compatibility)
   telegramBotToken: string // Telegram bot token
   telegramChatId: string // Telegram chat/channel ID
-  webhooks: WebhookConfig[] // Multiple webhook configurations
+  webhooks: WebhookConfig[] // Multiple webhook configurations for main alerts
+  watchlistWebhooks: WebhookConfig[] // Separate webhook configurations for watchlist alerts
   maxAlertsPerSymbol: number // Prevent spam
   alertCooldown: number // Seconds between alerts for same symbol
   autoDismissAfter: number // Auto-dismiss alerts after N seconds (0 = never)

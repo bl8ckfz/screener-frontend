@@ -453,9 +453,14 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
 
         // Send webhooks if enabled
         if (alertSettings.webhookEnabled) {
+          // Determine which webhooks to use based on alert source
+          const webhooksToUse = alert.source === 'watchlist' 
+            ? alertSettings.watchlistWebhooks 
+            : alertSettings.webhooks
+
           // Use new multi-webhook system if webhooks configured
-          if (alertSettings.webhooks && alertSettings.webhooks.length > 0) {
-            sendToWebhooks(alertSettings.webhooks, alert).then((results) => {
+          if (webhooksToUse && webhooksToUse.length > 0) {
+            sendToWebhooks(webhooksToUse, alert, alert.source || 'main').then((results) => {
               results.forEach((result, webhookId) => {
                 if (result.success) {
                   console.log(`✅ Webhook ${webhookId} delivered (${result.attempts} attempts)`)
@@ -467,8 +472,8 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
               console.error('Webhook delivery error:', error)
             })
           }
-          // Backwards compatibility: Legacy Discord webhook
-          else if (alertSettings.discordWebhookUrl) {
+          // Backwards compatibility: Legacy Discord webhook (only for main alerts)
+          else if (alertSettings.discordWebhookUrl && alert.source !== 'watchlist') {
             sendDiscordWebhook(alertSettings.discordWebhookUrl, alert).catch((error) => {
               console.error('Discord webhook delivery failed:', error)
             })
@@ -608,15 +613,21 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
         }
         
         if (alertSettings.webhookEnabled && alertSettings.webhooks && alertSettings.webhooks.length > 0) {
-          sendToWebhooks(alertSettings.webhooks, alert).then((results) => {
-            results.forEach((result, webhookId) => {
-              if (result.success) {
-                console.log(`✅ Webhook ${webhookId} delivered (${result.attempts} attempts)`)
-              } else {
-                console.error(`❌ Webhook ${webhookId} failed: ${result.error}`)
-              }
-            })
-          }).catch(console.error)
+          const webhooksToUse = alert.source === 'watchlist' 
+            ? alertSettings.watchlistWebhooks 
+            : alertSettings.webhooks
+
+          if (webhooksToUse && webhooksToUse.length > 0) {
+            sendToWebhooks(webhooksToUse, alert, alert.source || 'main').then((results) => {
+              results.forEach((result, webhookId) => {
+                if (result.success) {
+                  console.log(`✅ Webhook ${webhookId} delivered (${result.attempts} attempts)`)
+                } else {
+                  console.error(`❌ Webhook ${webhookId} failed: ${result.error}`)
+                }
+              })
+            }).catch(console.error)
+          }
         }
       }
     } catch (error) {
@@ -732,24 +743,30 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
               }
             }
             
-            // Discord webhook
-            if (alertSettings.discordWebhookUrl) {
+            // Discord webhook (legacy, only for main alerts)
+            if (alertSettings.discordWebhookUrl && alert.source !== 'watchlist') {
               sendDiscordWebhook(alertSettings.discordWebhookUrl, alert).catch((error) => {
                 console.error('Discord webhook delivery failed:', error)
               })
             }
             
-            // Custom webhooks
-            if (alertSettings.webhookEnabled && alertSettings.webhooks && alertSettings.webhooks.length > 0) {
-              sendToWebhooks(alertSettings.webhooks, alert).then((results) => {
-                results.forEach((result, webhookId) => {
-                  if (result.success) {
-                    console.log(`✅ Webhook ${webhookId} delivered (${result.attempts} attempts)`)
-                  } else {
-                    console.error(`❌ Webhook ${webhookId} failed: ${result.error}`)
-                  }
-                })
-              }).catch(console.error)
+            // Custom webhooks (route based on alert source)
+            if (alertSettings.webhookEnabled) {
+              const webhooksToUse = alert.source === 'watchlist' 
+                ? alertSettings.watchlistWebhooks 
+                : alertSettings.webhooks
+
+              if (webhooksToUse && webhooksToUse.length > 0) {
+                sendToWebhooks(webhooksToUse, alert, alert.source || 'main').then((results) => {
+                  results.forEach((result, webhookId) => {
+                    if (result.success) {
+                      console.log(`✅ Webhook ${webhookId} delivered (${result.attempts} attempts)`)
+                    } else {
+                      console.error(`❌ Webhook ${webhookId} failed: ${result.error}`)
+                    }
+                  })
+                }).catch(console.error)
+              }
             }
           }
         }

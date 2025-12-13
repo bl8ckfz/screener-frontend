@@ -153,6 +153,7 @@ const initialState = {
     telegramBotToken: '',
     telegramChatId: '',
     webhooks: [],
+    watchlistWebhooks: [], // Separate webhooks for watchlist alerts
     maxAlertsPerSymbol: 5,
     alertCooldown: 60, // 1 minute between alerts for same symbol
     autoDismissAfter: 30, // Auto-dismiss after 30 seconds

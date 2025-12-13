@@ -10,12 +10,14 @@ import { formatNumber } from '@/utils/format'
 type TimeFilter = '1h' | '24h' | '7d' | '30d' | 'all'
 type SortField = 'timestamp' | 'symbol' | 'type' | 'severity'
 type SortDirection = 'asc' | 'desc'
+type SourceTab = 'all' | 'main' | 'watchlist'
 
 /**
  * AlertHistory - Browse and manage alert history
  * 
  * Features:
  * - Display all past alerts with details
+ * - Separate tabs for main and watchlist alerts
  * - Filter by time range, symbol, type, severity
  * - Sort by timestamp, symbol, type, severity
  * - Search by symbol or message
@@ -28,6 +30,7 @@ export function AlertHistory() {
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('24h')
+  const [sourceTab, setSourceTab] = useState<SourceTab>('all')
   const [typeFilter, setTypeFilter] = useState<CombinedAlertType | 'all'>('all')
   const [severityFilter, setSeverityFilter] = useState<AlertSeverity | 'all'>('all')
   const [sortField, setSortField] = useState<SortField>('timestamp')
@@ -64,6 +67,16 @@ export function AlertHistory() {
   // Filter and sort history
   const filteredHistory = useMemo(() => {
     let filtered = [...history]
+
+    // Source tab filter
+    if (sourceTab !== 'all') {
+      filtered = filtered.filter((item) => {
+        if (sourceTab === 'main') {
+          return !item.source || item.source === 'main'
+        }
+        return item.source === 'watchlist'
+      })
+    }
 
     // Time filter
     if (timeFilter !== 'all') {
@@ -116,7 +129,7 @@ export function AlertHistory() {
     })
 
     return filtered
-  }, [history, timeFilter, typeFilter, severityFilter, searchQuery, sortField, sortDirection])
+  }, [history, timeFilter, sourceTab, typeFilter, severityFilter, searchQuery, sortField, sortDirection])
 
   const handleExportCSV = async () => {
     try {
@@ -243,7 +256,43 @@ export function AlertHistory() {
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 gap-3 rounded-lg border border-gray-700 bg-gray-800/50 p-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="space-y-3">
+        {/* Source Tabs */}
+        <div className="flex gap-2 border-b border-gray-700">
+          <button
+            onClick={() => setSourceTab('all')}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              sourceTab === 'all'
+                ? 'border-b-2 border-blue-500 text-blue-400'
+                : 'text-gray-400 hover:text-gray-300'
+            }`}
+          >
+            All Alerts
+          </button>
+          <button
+            onClick={() => setSourceTab('main')}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              sourceTab === 'main'
+                ? 'border-b-2 border-blue-500 text-blue-400'
+                : 'text-gray-400 hover:text-gray-300'
+            }`}
+          >
+            Main Alerts
+          </button>
+          <button
+            onClick={() => setSourceTab('watchlist')}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              sourceTab === 'watchlist'
+                ? 'border-b-2 border-blue-500 text-blue-400'
+                : 'text-gray-400 hover:text-gray-300'
+            }`}
+          >
+            Watchlist Alerts
+          </button>
+        </div>
+
+        {/* Filter Grid */}
+        <div className="grid grid-cols-1 gap-3 rounded-lg border border-gray-700 bg-gray-800/50 p-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Search */}
         <div>
           <label className="mb-1 block text-xs text-gray-400">Search</label>
@@ -324,6 +373,7 @@ export function AlertHistory() {
             <option value="high">High</option>
             <option value="critical">Critical</option>
           </select>
+        </div>
         </div>
       </div>
 

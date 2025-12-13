@@ -14,11 +14,16 @@ import type { FuturesMetrics } from '@/types/api'
 /**
  * Evaluate all alert rules against all coins
  * Returns array of triggered alerts
+ * @param coins - Coins to evaluate
+ * @param rules - Alert rules to check
+ * @param marketMode - Current market mode (bull/bear)
+ * @param watchlistId - Optional watchlist ID if evaluating watchlist coins
  */
 export function evaluateAlertRules(
   coins: Coin[],
   rules: AlertRule[],
-  marketMode: 'bull' | 'bear' = 'bull'
+  marketMode: 'bull' | 'bear' = 'bull',
+  watchlistId?: string
 ): Alert[] {
   const alerts: Alert[] = []
   const enabledRules = rules.filter((rule) => rule.enabled)
@@ -27,6 +32,8 @@ export function evaluateAlertRules(
   let coinsWithoutMetrics = 0
   let conditionsEvaluated = 0
   let conditionsTriggered = 0
+  
+  const source: 'main' | 'watchlist' = watchlistId ? 'watchlist' : 'main'
   
   for (const coin of coins) {
     if (!coin.futuresMetrics) {
@@ -37,7 +44,7 @@ export function evaluateAlertRules(
     
     for (const rule of enabledRules) {
       conditionsEvaluated++
-      const triggeredAlert = evaluateRule(coin, rule, marketMode)
+      const triggeredAlert = evaluateRule(coin, rule, marketMode, source, watchlistId)
       if (triggeredAlert) {
         conditionsTriggered++
         alerts.push(triggeredAlert)
@@ -45,7 +52,7 @@ export function evaluateAlertRules(
     }
   }
 
-  console.log(`🔍 Alert engine: ${coinsChecked}/${coins.length} coins with metrics, ${coinsWithoutMetrics} without metrics`)
+  console.log(`🔍 Alert engine [${source}]: ${coinsChecked}/${coins.length} coins with metrics, ${coinsWithoutMetrics} without metrics`)
   console.log(`📋 Evaluated ${conditionsEvaluated} conditions (${enabledRules.length} rules), ${conditionsTriggered} triggered`)
 
   return alerts
@@ -57,7 +64,9 @@ export function evaluateAlertRules(
 function evaluateRule(
   coin: Coin,
   rule: AlertRule,
-  marketMode: 'bull' | 'bear'
+  marketMode: 'bull' | 'bear',
+  source: 'main' | 'watchlist' = 'main',
+  watchlistId?: string
 ): Alert | null {
   // Check if rule applies to this symbol
   if (rule.symbols.length > 0 && !rule.symbols.includes(coin.symbol)) {
@@ -92,7 +101,7 @@ function evaluateRule(
   ]
   const usePercentage = momentumAlerts.includes(alertType)
 
-  // Create alert
+  // Create alert with source tracking
   return {
     id: `${coin.symbol}-${rule.id}-${Date.now()}`,
     symbol: coin.symbol,
@@ -106,6 +115,8 @@ function evaluateRule(
     timestamp: Date.now(),
     read: false,
     dismissed: false,
+    source, // Tag with 'main' or 'watchlist'
+    watchlistId, // Include watchlist ID if from watchlist
   }
 }
 
