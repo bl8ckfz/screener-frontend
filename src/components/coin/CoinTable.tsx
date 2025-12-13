@@ -29,13 +29,13 @@ export function CoinTable({ coins, onCoinClick, isLoading = false }: CoinTablePr
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full text-sm">
-        <thead className="bg-gray-900 sticky top-0">
+        <thead className="bg-gray-900 sticky top-0 z-10">
           <tr className="border-b border-gray-700">
-            <th className="px-3 py-3 text-center text-sm font-semibold text-gray-400 whitespace-nowrap w-16">
+            <th className="px-3 py-3 text-center text-sm font-semibold text-gray-400 whitespace-nowrap w-16 bg-gray-900">
               ⭐
             </th>
             <th
-              className="px-3 py-3 text-left text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none whitespace-nowrap"
+              className="px-3 py-3 text-left text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none whitespace-nowrap bg-gray-900"
               onClick={() => handleSort('symbol')}
             >
               <div className="flex items-center gap-1">
@@ -46,7 +46,7 @@ export function CoinTable({ coins, onCoinClick, isLoading = false }: CoinTablePr
               </div>
             </th>
             <th
-              className="px-3 py-3 text-right text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none whitespace-nowrap"
+              className="px-3 py-3 text-right text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none whitespace-nowrap bg-gray-900"
               onClick={() => handleSort('lastPrice')}
             >
               <div className="flex items-center justify-end gap-1">
@@ -57,7 +57,7 @@ export function CoinTable({ coins, onCoinClick, isLoading = false }: CoinTablePr
               </div>
             </th>
             <th
-              className="px-3 py-3 text-right text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none whitespace-nowrap"
+              className="px-3 py-3 text-right text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none whitespace-nowrap bg-gray-900"
               onClick={() => handleSort('priceChangePercent')}
             >
               <div className="flex items-center justify-end gap-1">
@@ -68,7 +68,7 @@ export function CoinTable({ coins, onCoinClick, isLoading = false }: CoinTablePr
               </div>
             </th>
             <th
-              className="px-3 py-3 text-right text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none whitespace-nowrap"
+              className="px-3 py-3 text-right text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none whitespace-nowrap bg-gray-900"
               onClick={() => handleSort('priceToWeightedAvg')}
             >
               <div className="flex items-center justify-end gap-1">
@@ -79,7 +79,7 @@ export function CoinTable({ coins, onCoinClick, isLoading = false }: CoinTablePr
               </div>
             </th>
             <th
-              className="px-3 py-3 text-right text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none whitespace-nowrap"
+              className="px-3 py-3 text-right text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none whitespace-nowrap bg-gray-900"
               onClick={() => handleSort('quoteVolume')}
             >
               <div className="flex items-center justify-end gap-1">
