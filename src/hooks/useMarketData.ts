@@ -348,7 +348,8 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
     }
 
     const marketMode = useStore.getState().marketMode
-    console.log(`📋 Evaluating ${enabledRules.length} enabled alert rules (market mode: ${marketMode})...`)
+    const activeWatchlistId = useStore.getState().currentWatchlistId
+    console.log(`📋 Evaluating ${enabledRules.length} enabled alert rules (market mode: ${marketMode}, watchlist: ${activeWatchlistId || 'none'})...`)
     
     // Debug: Log sample of metrics
     const sampleCoin = coinsWithMetrics[0]
@@ -363,8 +364,8 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
     }
 
     try {
-      // Evaluate all rules against current coins
-      const triggeredAlerts = evaluateAlertRules(coins, enabledRules, marketMode)
+      // Evaluate all rules against current coins (pass watchlistId if viewing watchlist)
+      const triggeredAlerts = evaluateAlertRules(coins, enabledRules, marketMode, activeWatchlistId || undefined)
       
       console.log(`✅ Alert evaluation complete: ${triggeredAlerts.length} alert(s) triggered`)
       

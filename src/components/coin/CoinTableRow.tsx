@@ -8,7 +8,7 @@
 import { memo } from 'react'
 import type { Coin } from '@/types/coin'
 import { formatPrice, formatPercent, formatVolume } from '@/utils/format'
-// Watchlist stars removed from table per new plan
+import { WatchlistBadge } from '@/components/watchlist/WatchlistBadge'
 
 interface CoinTableRowProps {
   coin: Coin
@@ -30,6 +30,9 @@ function CoinTableRowComponent({ coin, index, onClick }: CoinTableRowProps) {
       style={{ animationDelay: `${index * 20}ms` }}
     >
       <td className="px-3 py-2.5 font-medium whitespace-nowrap text-base">{coin.symbol}</td>
+      <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
+        <WatchlistBadge symbol={coin.symbol} />
+      </td>
       <td className="px-3 py-2.5 text-right mono-number whitespace-nowrap text-base">
         {formatPrice(coin.lastPrice)}
       </td>

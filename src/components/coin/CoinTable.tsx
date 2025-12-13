@@ -42,6 +42,9 @@ export function CoinTable({ coins, onCoinClick, isLoading = false }: CoinTablePr
                 )}
               </div>
             </th>
+            <th className="px-3 py-3 text-left text-sm font-semibold text-gray-400 whitespace-nowrap">
+              Watchlist
+            </th>
             <th
               className="px-3 py-3 text-right text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none whitespace-nowrap"
               onClick={() => handleSort('lastPrice')}
