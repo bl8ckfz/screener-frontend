@@ -81,6 +81,9 @@ export function VirtualizedCoinTable({
         <table className="w-full table-fixed">
           <thead>
             <tr className="text-left text-sm bg-gray-800/50">
+              <th className="px-3 py-3 font-semibold text-gray-400 text-center w-16">
+                ⭐
+              </th>
               <th 
                 className="px-4 py-3 font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none w-28"
                 onClick={() => handleSort('symbol')}
