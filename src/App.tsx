@@ -14,7 +14,7 @@ import {
   ExportButton,
   ViewToggle,
 } from '@/components/controls'
-// Watchlists removed from UI per new plan
+import { WatchlistSelector } from '@/components/watchlist'
 import { ErrorStates, EmptyStates, ShortcutHelp, LiveStatusBadge } from '@/components/ui'
 import { StorageMigration } from '@/components/StorageMigration'
 import { AlertNotificationContainer, AlertConfig, AlertHistoryTable } from '@/components/alerts'
@@ -43,6 +43,8 @@ function App() {
   const { data: coins, isLoading, error } = useMarketData(metricsMap, getTickerData, tickersReady, lastUpdate)
   
   const currentList = useStore((state) => state.currentList)
+  const currentWatchlistId = useStore((state) => state.currentWatchlistId)
+  const watchlists = useStore((state) => state.watchlists)
   // setCurrentList unused after removing ListSelector
   const leftSidebarCollapsed = useStore((state) => state.leftSidebarCollapsed)
   const rightSidebarCollapsed = useStore((state) => state.rightSidebarCollapsed)
@@ -168,15 +170,23 @@ function App() {
   // Sentiment filter
   const sentimentFilter = useStore((state) => state.sentimentFilter)
 
-  // Filter and sort coins based on search query, sentiment, and selected list
+  // Filter and sort coins based on search query, sentiment, watchlist, and selected list
   const filteredCoins = useMemo(() => {
     if (!coins) return []
 
-    // Apply search filter
+    // Apply watchlist filter first
     let filtered = coins
+    if (currentWatchlistId) {
+      const watchlist = watchlists.find((wl) => wl.id === currentWatchlistId)
+      if (watchlist) {
+        filtered = coins.filter((coin) => watchlist.symbols.includes(coin.symbol))
+      }
+    }
+
+    // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim()
-      filtered = coins.filter(
+      filtered = filtered.filter(
         (coin) =>
           coin.symbol.toLowerCase().includes(query) ||
           coin.fullSymbol.toLowerCase().includes(query)
@@ -208,7 +218,7 @@ function App() {
     }
 
     return filtered
-  }, [coins, searchQuery, currentList, sentimentFilter])
+  }, [coins, searchQuery, currentList, sentimentFilter, currentWatchlistId, watchlists])
 
   // Keyboard shortcuts
   useKeyboardShortcuts([
@@ -292,6 +302,10 @@ function App() {
             onToggle={() => setLeftSidebarCollapsed(!leftSidebarCollapsed)}
           >
             <MarketSummary coins={coins} isLoading={isLoading} />
+            
+            {/* Watchlist Selector */}
+            <WatchlistSelector />
+            
             {/* ListSelector removed per new plan (dropdown under Market Summary) */}
             <LiveStatusBadge
               connected={isInitialized}
