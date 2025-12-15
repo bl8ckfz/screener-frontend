@@ -33,7 +33,9 @@ export { AlertHistoryService, alertHistory } from './alertHistory'
 export { alertHistoryService } from './alertHistoryService'
 export { audioNotificationService } from './audioNotification'
 export type { AlertSeverity } from './audioNotification'
-export { sendDiscordWebhook, testDiscordWebhook, isValidDiscordWebhookUrl } from './webhookService'
+export { sendDiscordWebhook, testDiscordWebhook, isValidDiscordWebhookUrl, sendBatchToWebhooks } from './webhookService'
+export { alertBatcher } from './alertBatcher'
+export type { AlertSummary, SymbolStats } from './alertBatcher'
 
 // Bubble Detection
 export { BubbleDetectionService, DEFAULT_BUBBLE_CONFIG } from './bubbleDetectionService'

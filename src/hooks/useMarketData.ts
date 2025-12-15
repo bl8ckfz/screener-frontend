@@ -8,7 +8,8 @@ import { USE_MOCK_DATA, getMockDataWithVariations } from '@/services/mockData'
 import { evaluateAlertRules } from '@/services/alertEngine'
 import { showCryptoAlertNotification, getNotificationPermission } from '@/services/notification'
 import { audioNotificationService } from '@/services/audioNotification'
-import { sendDiscordWebhook, sendToWebhooks } from '@/services/webhookService'
+import { sendBatchToWebhooks } from '@/services/webhookService'
+import { alertBatcher } from '@/services/alertBatcher'
 import type { Coin } from '@/types/coin'
 import type { Alert } from '@/types/alert'
 import type { FuturesMetrics } from '@/types/api'
@@ -23,6 +24,43 @@ let isEvaluatingAlerts = false
 let lastKlinesUpdate = 0
 const cachedKlinesMetrics = new Map<string, FuturesMetrics>()
 const KLINES_CACHE_DURATION = 5 * 60 * 1000 // 5 minutes in milliseconds
+
+// Set up alert batcher callback (only once)
+let batchCallbackInitialized = false
+if (!batchCallbackInitialized) {
+  alertBatcher.onBatchReady((summary, alerts) => {
+    console.log(`📦 Batch ready: ${summary.totalAlerts} alerts from ${summary.symbolStats.length} symbols`)
+    
+    // Get webhooks from store
+    const state = useStore.getState()
+    const { alertSettings } = state
+    
+    if (!alertSettings.webhookEnabled) {
+      console.log('⏭️ Webhooks disabled, skipping batch send')
+      return
+    }
+
+    // Send to main webhooks (futures alerts are always "main" source)
+    const webhooks = alertSettings.webhooks
+    if (webhooks && webhooks.length > 0) {
+      sendBatchToWebhooks(webhooks, summary, alerts).then((results) => {
+        results.forEach((result, webhookId) => {
+          if (result.success) {
+            console.log(`✅ Batch webhook ${webhookId} delivered`)
+          } else {
+            console.error(`❌ Batch webhook ${webhookId} failed: ${result.error}`)
+          }
+        })
+      }).catch((error) => {
+        console.error('Batch webhook delivery error:', error)
+      })
+    } else {
+      console.log('⚠️ No webhooks configured for batch delivery')
+    }
+  })
+  batchCallbackInitialized = true
+  console.log('✅ Alert batcher callback initialized')
+}
 
 /**
  * Fetch and process market data for current currency pair with smart polling
@@ -461,33 +499,11 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
           }
         }
 
-        // Send webhooks if enabled
+        // Add alert to batch instead of sending webhooks immediately
+        // Batcher will send summary when batch window completes (30s)
         if (alertSettings.webhookEnabled) {
-          // Determine which webhooks to use based on alert source
-          const webhooksToUse = alert.source === 'watchlist' 
-            ? alertSettings.watchlistWebhooks 
-            : alertSettings.webhooks
-
-          // Use new multi-webhook system if webhooks configured
-          if (webhooksToUse && webhooksToUse.length > 0) {
-            sendToWebhooks(webhooksToUse, alert, alert.source || 'main').then((results) => {
-              results.forEach((result, webhookId) => {
-                if (result.success) {
-                  console.log(`✅ Webhook ${webhookId} delivered (${result.attempts} attempts)`)
-                } else {
-                  console.error(`❌ Webhook ${webhookId} failed: ${result.error}`)
-                }
-              })
-            }).catch((error) => {
-              console.error('Webhook delivery error:', error)
-            })
-          }
-          // Backwards compatibility: Legacy Discord webhook (only for main alerts)
-          else if (alertSettings.discordWebhookUrl && alert.source !== 'watchlist') {
-            sendDiscordWebhook(alertSettings.discordWebhookUrl, alert).catch((error) => {
-              console.error('Discord webhook delivery failed:', error)
-            })
-          }
+          alertBatcher.addAlert(alert)
+          console.log(`📦 Alert added to batch: ${alert.symbol} (${alert.type})`)
         }
 
         // Cooldown already updated above after initial check
@@ -630,22 +646,10 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
           }
         }
         
-        if (alertSettings.webhookEnabled && alertSettings.webhooks && alertSettings.webhooks.length > 0) {
-          const webhooksToUse = alert.source === 'watchlist' 
-            ? alertSettings.watchlistWebhooks 
-            : alertSettings.webhooks
-
-          if (webhooksToUse && webhooksToUse.length > 0) {
-            sendToWebhooks(webhooksToUse, alert, alert.source || 'main').then((results) => {
-              results.forEach((result, webhookId) => {
-                if (result.success) {
-                  console.log(`✅ Webhook ${webhookId} delivered (${result.attempts} attempts)`)
-                } else {
-                  console.error(`❌ Webhook ${webhookId} failed: ${result.error}`)
-                }
-              })
-            }).catch(console.error)
-          }
+        // Add alert to batch for webhook delivery
+        if (alertSettings.webhookEnabled) {
+          alertBatcher.addAlert(alert)
+          console.log(`📦 Alert added to batch (WebSocket): ${alert.symbol} (${alert.type})`)
         }
       }
     } catch (error) {
@@ -761,30 +765,10 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
               }
             }
             
-            // Discord webhook (legacy, only for main alerts)
-            if (alertSettings.discordWebhookUrl && alert.source !== 'watchlist') {
-              sendDiscordWebhook(alertSettings.discordWebhookUrl, alert).catch((error) => {
-                console.error('Discord webhook delivery failed:', error)
-              })
-            }
-            
-            // Custom webhooks (route based on alert source)
+            // Add alert to batch for webhook delivery
             if (alertSettings.webhookEnabled) {
-              const webhooksToUse = alert.source === 'watchlist' 
-                ? alertSettings.watchlistWebhooks 
-                : alertSettings.webhooks
-
-              if (webhooksToUse && webhooksToUse.length > 0) {
-                sendToWebhooks(webhooksToUse, alert, alert.source || 'main').then((results) => {
-                  results.forEach((result, webhookId) => {
-                    if (result.success) {
-                      console.log(`✅ Webhook ${webhookId} delivered (${result.attempts} attempts)`)
-                    } else {
-                      console.error(`❌ Webhook ${webhookId} failed: ${result.error}`)
-                    }
-                  })
-                }).catch(console.error)
-              }
+              alertBatcher.addAlert(alert)
+              console.log(`📦 Alert added to batch (periodic): ${alert.symbol} (${alert.type})`)
             }
           }
         }

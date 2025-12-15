@@ -1,9 +1,10 @@
 /**
  * Webhook service for sending alerts to external services (Discord, Telegram, etc.)
- * Features: Rate limiting, retry logic, multiple webhook support
+ * Features: Rate limiting, retry logic, multiple webhook support, batch summaries
  */
 
 import type { Alert, AlertSeverity, WebhookConfig } from '@/types/alert'
+import type { AlertSummary } from './alertBatcher'
 
 /**
  * Discord embed color based on alert severity
@@ -147,6 +148,110 @@ function formatAlertValue(alert: Alert): string {
     return `${(alert.value / 1000000).toFixed(2)}M`
   }
   return alert.value.toFixed(4)
+}
+
+/**
+ * Send alert batch summary to Discord webhook
+ * Formats multiple alerts into a single comprehensive message
+ */
+export async function sendDiscordBatchSummary(
+  webhookUrl: string,
+  summary: AlertSummary,
+  _alerts: Alert[] // Reserved for future use (individual alert details)
+): Promise<boolean> {
+  console.log(`📤 Sending batch summary to Discord: ${summary.totalAlerts} alerts`)
+  
+  if (!webhookUrl || !webhookUrl.startsWith('https://discord.com/api/webhooks/')) {
+    console.error('Invalid Discord webhook URL:', webhookUrl)
+    return false
+  }
+
+  try {
+    const startTime = new Date(summary.batchStartTime).toLocaleTimeString('en-US', { hour12: false })
+    const endTime = new Date(summary.batchEndTime).toLocaleTimeString('en-US', { hour12: false })
+
+    // Build top symbols section (limit to top 5)
+    const topSymbols = summary.symbolStats.slice(0, 5)
+    const symbolLines = topSymbols.map(stat => {
+      const typesList = Array.from(stat.types).join(', ')
+      return `• **${stat.symbol}**: ${stat.count} alert${stat.count > 1 ? 's' : ''} (${typesList})\n  └─ ${stat.recentCount} in last hour`
+    })
+
+    // Build severity breakdown
+    const severityLines = Object.entries(summary.severityBreakdown)
+      .sort((a, b) => {
+        const order = { critical: 0, high: 1, medium: 2, low: 3 }
+        return (order[a[0] as keyof typeof order] || 99) - (order[b[0] as keyof typeof order] || 99)
+      })
+      .map(([severity, count]) => {
+        const emoji = severity === 'critical' ? '🔴' : severity === 'high' ? '🟠' : severity === 'medium' ? '🟡' : '🟢'
+        return `${emoji} ${severity.charAt(0).toUpperCase() + severity.slice(1)}: ${count}`
+      })
+      .join(' | ')
+
+    // Build timeframe breakdown (if available)
+    let timeframeSection = ''
+    if (Object.keys(summary.timeframeBreakdown).length > 0) {
+      const timeframeLines = Object.entries(summary.timeframeBreakdown)
+        .sort((a, b) => b[1] - a[1])
+        .map(([tf, count]) => `${tf}: ${count}`)
+        .join(', ')
+      timeframeSection = `\n\n**⏱️ Timeframes**: ${timeframeLines}`
+    }
+
+    // Determine overall color based on max severity
+    let embedColor = 0x3b82f6 // Blue default
+    if (summary.severityBreakdown.critical) {
+      embedColor = 0x991b1b // Dark red
+    } else if (summary.severityBreakdown.high) {
+      embedColor = 0xef4444 // Red
+    } else if (summary.severityBreakdown.medium) {
+      embedColor = 0xf59e0b // Orange
+    }
+
+    const description = `
+**📊 Total Alerts**: ${summary.totalAlerts}
+
+**🔥 Most Active**:
+${symbolLines.join('\n')}
+
+**⚡ Severity**: ${severityLines}${timeframeSection}
+
+**🕐 Period**: ${startTime} - ${endTime} (${summary.batchDuration}s)
+    `.trim()
+
+    const embed = {
+      title: '🚨 Futures Alert Summary',
+      description: description,
+      color: embedColor,
+      timestamp: new Date(summary.batchEndTime).toISOString(),
+      footer: {
+        text: `Crypto Screener | ${summary.symbolStats.length} symbols monitored`,
+      },
+    }
+
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        embeds: [embed],
+      }),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Discord batch summary failed:', response.status, errorText)
+      return false
+    }
+
+    console.log(`✅ Discord batch summary sent: ${summary.totalAlerts} alerts`)
+    return true
+  } catch (error) {
+    console.error('Failed to send Discord batch summary:', error)
+    return false
+  }
 }
 
 /**
@@ -501,6 +606,55 @@ export async function sendToWebhooks(
     enabledWebhooks.map(async (webhook) => {
       const result = await sendWebhookWithRetry(webhook, alert)
       results.set(webhook.id, result)
+    })
+  )
+
+  return results
+}
+
+/**
+ * Send batch summary to multiple webhooks
+ * Used by alert batcher to send consolidated summaries
+ */
+export async function sendBatchToWebhooks(
+  webhooks: WebhookConfig[],
+  summary: AlertSummary,
+  alerts: Alert[]
+): Promise<Map<string, { success: boolean; error?: string }>> {
+  const results = new Map()
+  const enabledWebhooks = webhooks.filter(w => w.enabled)
+
+  if (enabledWebhooks.length === 0) {
+    console.log('No enabled webhooks for batch summary')
+    return results
+  }
+
+  console.log(`📤 Sending batch summary to ${enabledWebhooks.length} webhooks`)
+
+  await Promise.all(
+    enabledWebhooks.map(async (webhook) => {
+      try {
+        let success = false
+
+        if (webhook.type === 'discord') {
+          success = await sendDiscordBatchSummary(webhook.url, summary, alerts)
+        } else if (webhook.type === 'telegram') {
+          // TODO: Implement Telegram batch summary format
+          console.warn('Telegram batch summaries not yet implemented')
+          success = false
+        }
+
+        results.set(webhook.id, {
+          success,
+          error: success ? undefined : 'Webhook delivery failed',
+        })
+      } catch (error) {
+        console.error(`Failed to send batch to webhook ${webhook.name}:`, error)
+        results.set(webhook.id, {
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        })
+      }
     })
   )
 
