@@ -411,6 +411,8 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
           timestamp: now,
           read: false,
           dismissed: false,
+          source: triggeredAlert.source, // Preserve source from alert engine
+          watchlistId: triggeredAlert.watchlistId, // Preserve watchlist ID
         }
 
         // Find coin data for history
@@ -581,6 +583,8 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
           timestamp: now,
           read: false,
           dismissed: false,
+          source: triggeredAlert.source, // Preserve source from alert engine
+          watchlistId: triggeredAlert.watchlistId, // Preserve watchlist ID
         }
         
         const coin = coins.find(c => c.symbol === symbol)

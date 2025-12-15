@@ -4,6 +4,7 @@ import { AlertBadges } from './AlertBadges'
 import { EmptyAlertHistory } from './EmptyAlertHistory'
 import { formatNumber } from '@/utils/format'
 import { Button } from '@/components/ui'
+import { WatchlistBadge } from '@/components/watchlist/WatchlistBadge'
 
 interface AlertHistoryTableProps {
   stats: CoinAlertStats[]
@@ -98,6 +99,9 @@ export function AlertHistoryTable({ stats, onCoinClick, onClearHistory }: AlertH
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-700">
+              <th className="text-center py-3 px-3 text-sm font-semibold text-gray-400 w-16">
+                ⭐
+              </th>
               <th 
                 onClick={() => handleSort('symbol')}
                 className="text-left py-3 px-4 text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none"
@@ -162,11 +166,20 @@ export function AlertHistoryTable({ stats, onCoinClick, onClearHistory }: AlertH
             {sortedStats.map((stat) => (
               <tr
                 key={stat.symbol}
-                onClick={() => onCoinClick(stat.symbol)}
-                className="border-b border-gray-800 hover:bg-gray-800/50 cursor-pointer transition-colors"
+                className="border-b border-gray-800 hover:bg-gray-800/50 transition-colors"
               >
+                {/* Watchlist Star */}
+                <td className="py-3 px-3 w-16" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-center">
+                    <WatchlistBadge symbol={stat.symbol} />
+                  </div>
+                </td>
+
                 {/* Symbol */}
-                <td className="py-3 px-4">
+                <td 
+                  className="py-3 px-4 cursor-pointer"
+                  onClick={() => onCoinClick(stat.symbol)}
+                >
                   <div className="flex items-center gap-2">
                     <span className="font-mono font-semibold text-white">
                       {stat.symbol}
@@ -176,7 +189,10 @@ export function AlertHistoryTable({ stats, onCoinClick, onClearHistory }: AlertH
                 </td>
 
                 {/* Current Price */}
-                <td className="py-3 px-4 text-right font-mono text-sm text-gray-200">
+                <td 
+                  className="py-3 px-4 text-right font-mono text-sm text-gray-200 cursor-pointer"
+                  onClick={() => onCoinClick(stat.symbol)}
+                >
                   {stat.currentPrice < 0.0001
                     ? stat.currentPrice.toFixed(8)
                     : stat.currentPrice < 1
@@ -185,7 +201,10 @@ export function AlertHistoryTable({ stats, onCoinClick, onClearHistory }: AlertH
                 </td>
 
                 {/* 24h Change */}
-                <td className="py-3 px-4 text-right font-mono text-sm font-semibold">
+                <td 
+                  className="py-3 px-4 text-right font-mono text-sm font-semibold cursor-pointer"
+                  onClick={() => onCoinClick(stat.symbol)}
+                >
                   <span
                     className={
                       stat.priceChange >= 0
@@ -199,14 +218,20 @@ export function AlertHistoryTable({ stats, onCoinClick, onClearHistory }: AlertH
                 </td>
 
                 {/* Total Alerts */}
-                <td className="py-3 px-4 text-center">
+                <td 
+                  className="py-3 px-4 text-center cursor-pointer"
+                  onClick={() => onCoinClick(stat.symbol)}
+                >
                   <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-accent/20 text-accent font-bold text-sm">
                     {stat.totalAlerts}
                   </span>
                 </td>
 
                 {/* Alert Type Badges */}
-                <td className="py-3 px-4">
+                <td 
+                  className="py-3 px-4 cursor-pointer"
+                  onClick={() => onCoinClick(stat.symbol)}
+                >
                   <AlertBadges 
                     alertTypes={stat.alertTypes} 
                     maxVisible={3}
@@ -215,7 +240,10 @@ export function AlertHistoryTable({ stats, onCoinClick, onClearHistory }: AlertH
                 </td>
 
                 {/* Last Alert Time */}
-                <td className="py-3 px-4 text-right text-xs text-gray-400">
+                <td 
+                  className="py-3 px-4 text-right text-xs text-gray-400 cursor-pointer"
+                  onClick={() => onCoinClick(stat.symbol)}
+                >
                   {formatTimeAgo(stat.lastAlertTimestamp)}
                 </td>
               </tr>
