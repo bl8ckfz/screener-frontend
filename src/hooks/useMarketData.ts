@@ -349,7 +349,7 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
 
     const marketMode = useStore.getState().marketMode
     const activeWatchlistId = useStore.getState().currentWatchlistId
-    console.log(`📋 Evaluating ${enabledRules.length} enabled alert rules (market mode: ${marketMode}, watchlist: ${activeWatchlistId || 'none'})...`)
+    console.log(`📋 Evaluating ${enabledRules.length} enabled alert rules (market mode: ${marketMode}, UI watchlist: ${activeWatchlistId || 'none'})...`)
     
     // Debug: Log sample of metrics
     const sampleCoin = coinsWithMetrics[0]
@@ -364,8 +364,9 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
     }
 
     try {
-      // Evaluate all rules against current coins (pass watchlistId if viewing watchlist)
-      const triggeredAlerts = evaluateAlertRules(coins, enabledRules, marketMode, activeWatchlistId || undefined)
+      // Evaluate all rules against ALL coins (don't pass UI watchlistId - that's for display only)
+      // Alerts are always 'main' alerts unless specifically configured for watchlists
+      const triggeredAlerts = evaluateAlertRules(coins, enabledRules, marketMode)
       
       console.log(`✅ Alert evaluation complete: ${triggeredAlerts.length} alert(s) triggered`)
       
@@ -397,6 +398,12 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
           continue // Skip if reached max alerts for this symbol
         }
 
+        // Check if this coin is in any watchlist (for webhook routing)
+        const watchlists = useStore.getState().watchlists
+        const coinWatchlist = watchlists.find(wl => wl.symbols.includes(symbol))
+        const isInWatchlist = !!coinWatchlist
+        const alertSource: 'main' | 'watchlist' = isInWatchlist ? 'watchlist' : 'main'
+        
         // Create alert object
         const alert: Alert = {
           id: `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -411,8 +418,8 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
           timestamp: now,
           read: false,
           dismissed: false,
-          source: triggeredAlert.source, // Preserve source from alert engine
-          watchlistId: triggeredAlert.watchlistId, // Preserve watchlist ID
+          source: alertSource, // 'watchlist' if coin is in a watchlist, 'main' otherwise
+          watchlistId: coinWatchlist?.id, // Include watchlist ID if in watchlist
         }
 
         // Find coin data for history
@@ -569,6 +576,12 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
         
         recentAlerts.current.set(symbol, now)
         
+        // Check if this coin is in any watchlist (for webhook routing)
+        const watchlists = useStore.getState().watchlists
+        const coinWatchlist = watchlists.find(wl => wl.symbols.includes(symbol))
+        const isInWatchlist = !!coinWatchlist
+        const alertSource: 'main' | 'watchlist' = isInWatchlist ? 'watchlist' : 'main'
+        
         // Create and add alert
         const alert: Alert = {
           id: `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -583,8 +596,8 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
           timestamp: now,
           read: false,
           dismissed: false,
-          source: triggeredAlert.source, // Preserve source from alert engine
-          watchlistId: triggeredAlert.watchlistId, // Preserve watchlist ID
+          source: alertSource, // 'watchlist' if coin is in a watchlist, 'main' otherwise
+          watchlistId: coinWatchlist?.id, // Include watchlist ID if in watchlist
         }
         
         const coin = coins.find(c => c.symbol === symbol)
