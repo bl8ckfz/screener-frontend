@@ -48,8 +48,16 @@ if (!batchCallbackInitialized) {
 
     // Send main alerts to main webhooks
     if (mainAlerts.length > 0 && alertSettings.webhooks && alertSettings.webhooks.length > 0) {
-      // Create summary for main alerts only
-      const mainSummary = { ...summary, totalAlerts: mainAlerts.length }
+      // Get symbols from main alerts
+      const mainSymbols = new Set(mainAlerts.map(a => a.symbol))
+      
+      // Create summary with only main alert symbols
+      const mainSummary = {
+        ...summary,
+        totalAlerts: mainAlerts.length,
+        symbolStats: summary.symbolStats.filter(s => mainSymbols.has(s.symbol))
+      }
+      
       sendBatchToWebhooks(alertSettings.webhooks, mainSummary, mainAlerts).then((results) => {
         results.forEach((result, webhookId) => {
           if (result.success) {
@@ -65,8 +73,16 @@ if (!batchCallbackInitialized) {
 
     // Send watchlist alerts to watchlist webhooks
     if (watchlistAlerts.length > 0 && alertSettings.watchlistWebhooks && alertSettings.watchlistWebhooks.length > 0) {
-      // Create summary for watchlist alerts only
-      const watchlistSummary = { ...summary, totalAlerts: watchlistAlerts.length }
+      // Get symbols from watchlist alerts
+      const watchlistSymbols = new Set(watchlistAlerts.map(a => a.symbol))
+      
+      // Create summary with only watchlist alert symbols
+      const watchlistSummary = {
+        ...summary,
+        totalAlerts: watchlistAlerts.length,
+        symbolStats: summary.symbolStats.filter(s => watchlistSymbols.has(s.symbol))
+      }
+      
       sendBatchToWebhooks(alertSettings.watchlistWebhooks, watchlistSummary, watchlistAlerts).then((results) => {
         results.forEach((result, webhookId) => {
           if (result.success) {
