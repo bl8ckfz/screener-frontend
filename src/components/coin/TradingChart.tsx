@@ -15,6 +15,7 @@ import type { Candlestick } from '@/services/chartData'
 import type { AlertHistoryEntry } from '@/types/alertHistory'
 import type { Bubble } from '@/types/bubble'
 import { calculateWeeklyVWAP } from '@/utils/indicators'
+import { debug } from '@/utils/debug'
 
 export interface TradingChartProps {
   data: Candlestick[]
@@ -427,8 +428,8 @@ export function TradingChart({
 
     // Add alert markers if enabled
     if (showAlerts && alerts.length > 0 && mainSeries) {
-      console.log(`🎯 Processing ${alerts.length} alerts for markers`)
-      console.log('Alert types:', alerts.map(a => a.alertType))
+      debug.log(`🎯 Processing ${alerts.length} alerts for markers`)
+      debug.log('Alert types:', alerts.map(a => a.alertType))
       
       const markers: SeriesMarker<Time>[] = alerts
         .map(alert => {
@@ -437,7 +438,7 @@ export function TradingChart({
           const closestCandle = findClosestCandle(alertTime, data)
           
           if (!closestCandle) {
-            console.warn(`⚠️  No candle found for alert at ${new Date(alert.timestamp).toISOString()}`)
+            debug.warn(`⚠️  No candle found for alert at ${new Date(alert.timestamp).toISOString()}`)
             return null
           }
           
@@ -446,7 +447,7 @@ export function TradingChart({
           
           // Skip if alert is more than 5 minutes away from any candle
           if (timeDiff > 300) {
-            console.warn(`⚠️  Alert too far from candles (${Math.floor(timeDiff / 60)}m away)`)
+            debug.warn(`⚠️  Alert too far from candles (${Math.floor(timeDiff / 60)}m away)`)
             return null
           }
           
@@ -454,7 +455,7 @@ export function TradingChart({
           const size = getAlertMarkerSize(alert.alertType)
           const displayName = getAlertDisplayName(alert.alertType)
           
-          console.log(`✅ Creating marker for ${alert.alertType} (${displayName}) - size: ${size}, color: ${style.color}, shape: ${style.shape}`)
+          debug.log(`✅ Creating marker for ${alert.alertType} (${displayName}) - size: ${size}, color: ${style.color}, shape: ${style.shape}`)
           
           return {
             time: closestCandle.time,
@@ -466,7 +467,7 @@ export function TradingChart({
         })
         .filter((marker): marker is SeriesMarker<Time> => marker !== null)
 
-      console.log(`📍 Setting ${markers.length} alert markers on chart`)
+      debug.log(`📍 Setting ${markers.length} alert markers on chart`)
       
       // Store markers in ref for re-application on zoom
       markersRef.current = markers
@@ -474,13 +475,13 @@ export function TradingChart({
       if (markers.length > 0) {
         mainSeries.setMarkers(markers)
       } else {
-        console.warn('⚠️  No valid alert markers to display')
+        debug.warn('⚠️  No valid alert markers to display')
       }
     }
 
     // Add bubble markers if enabled (combined with alert markers)
     if (showBubbles && bubbles.length > 0 && mainSeries) {
-      console.log(`🫧 Processing ${bubbles.length} bubbles for markers`)
+      debug.log(`🫧 Processing ${bubbles.length} bubbles for markers`)
       
       const bubbleMarkers: SeriesMarker<Time>[] = bubbles
         .map(bubble => {
@@ -489,7 +490,7 @@ export function TradingChart({
           const closestCandle = findClosestCandle(bubbleTime, data)
           
           if (!closestCandle) {
-            console.warn(`⚠️  No candle found for bubble at ${new Date(bubble.time).toLocaleTimeString()}`)
+            debug.warn(`⚠️  No candle found for bubble at ${new Date(bubble.time).toLocaleTimeString()}`)
             return null
           }
           
@@ -498,14 +499,14 @@ export function TradingChart({
           
           // Skip if bubble is too far from any candle (>5 minutes)
           if (timeDiff > 300) {
-            console.warn(`⚠️  Bubble too far from candles (${Math.floor(timeDiff / 60)}m away)`)
+            debug.warn(`⚠️  Bubble too far from candles (${Math.floor(timeDiff / 60)}m away)`)
             return null
           }
           
           const style = getBubbleMarkerStyle(bubble)
           const size = getBubbleMarkerSize(bubble.size)
           
-          console.log(`🫧 Creating bubble marker: ${bubble.size} ${bubble.side} - size: ${size}, color: ${style.color}`)
+          debug.log(`🫧 Creating bubble marker: ${bubble.size} ${bubble.side} - size: ${size}, color: ${style.color}`)
           
           return {
             time: closestCandle.time,
@@ -518,7 +519,7 @@ export function TradingChart({
         })
         .filter((marker): marker is SeriesMarker<Time> => marker !== null)
 
-      console.log(`🫧 Setting ${bubbleMarkers.length} bubble markers on chart`)
+      debug.log(`🫧 Setting ${bubbleMarkers.length} bubble markers on chart`)
       
       // Combine alert and bubble markers
       if (showAlerts && alerts.length > 0) {
@@ -552,7 +553,7 @@ export function TradingChart({
         const combinedMarkers = [...alertMarkers, ...bubbleMarkers]
         markersRef.current = combinedMarkers // Store for re-application
         mainSeries.setMarkers(combinedMarkers)
-        console.log(`📍 Set ${combinedMarkers.length} total markers (${alertMarkers.length} alerts + ${bubbleMarkers.length} bubbles)`)
+        debug.log(`📍 Set ${combinedMarkers.length} total markers (${alertMarkers.length} alerts + ${bubbleMarkers.length} bubbles)`)
       } else if (bubbleMarkers.length > 0) {
         markersRef.current = bubbleMarkers // Store for re-application
         mainSeries.setMarkers(bubbleMarkers)

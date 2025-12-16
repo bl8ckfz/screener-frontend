@@ -5,6 +5,7 @@ import { alertHistoryService } from '@/services/alertHistoryService'
 import { useBubbleStream } from '@/hooks/useBubbleStream'
 import type { Coin } from '@/types/coin'
 import { ChartSkeleton, ErrorState } from '@/components/ui'
+import { debug } from '@/utils/debug'
 
 export interface ChartContainerProps {
   coin: Coin
@@ -56,7 +57,7 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
   
   // Debug: Log bubbles when they change
   useEffect(() => {
-    console.log(`🫧 ChartContainer: ${coin.fullSymbol} has ${filteredBubbles.length}/${allBubbles.length} bubbles (timeframe=${bubbleTimeframe}, size=${bubbleSize})`, filteredBubbles.slice(0, 3))
+    debug.log(`🫧 ChartContainer: ${coin.fullSymbol} has ${filteredBubbles.length}/${allBubbles.length} bubbles (timeframe=${bubbleTimeframe}, size=${bubbleSize})`, filteredBubbles.slice(0, 3))
   }, [filteredBubbles.length, allBubbles.length, coin.fullSymbol, bubbleTimeframe, bubbleSize])
 
   // Get alerts for current coin from history - refresh every 3 seconds
@@ -89,7 +90,7 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
       } catch (err) {
         if (!isCancelled) {
           setError(err instanceof Error ? err.message : 'Failed to load chart data')
-          console.error('Chart data error:', err)
+          debug.error('Chart data error:', err)
         }
       } finally {
         if (!isCancelled) {
@@ -118,7 +119,7 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
         }
       } catch (err) {
         // Silent fail on refresh - don't show error for background updates
-        console.warn('Chart refresh failed:', err)
+        debug.warn('Chart refresh failed:', err)
       }
     }
 
@@ -152,7 +153,7 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
           setVwapData(data.candlesticks)
         }
       } catch (err) {
-        console.warn('VWAP data fetch failed:', err)
+        debug.warn('VWAP data fetch failed:', err)
         // Don't block chart display on VWAP failure
       }
     }
