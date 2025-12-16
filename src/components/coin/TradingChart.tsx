@@ -405,6 +405,20 @@ export function TradingChart({
     }
   }, [showWeeklyVWAP, weeklyVWAPData]) // Only VWAP toggle and data trigger VWAP update
 
+  // Helper function to find closest candle to a timestamp
+  const findClosestCandle = (targetTime: number, candles: Candlestick[]): Candlestick | null => {
+    if (candles.length === 0) return null
+    
+    return candles.reduce((closest, candle) => {
+      const candleTime = typeof candle.time === 'number' ? candle.time : Number(candle.time)
+      const currentDiff = Math.abs(candleTime - targetTime)
+      const closestDiff = closest 
+        ? Math.abs((typeof closest.time === 'number' ? closest.time : Number(closest.time)) - targetTime)
+        : Infinity
+      return currentDiff < closestDiff ? candle : closest
+    }, null as Candlestick | null)
+  }
+
   // Update markers when alerts or bubbles change
   useEffect(() => {
     if (!chartRef.current || !mainSeriesRef.current || data.length === 0) return
@@ -420,14 +434,7 @@ export function TradingChart({
         .map(alert => {
           // Convert alert timestamp (ms) to candle time (seconds)
           const alertTime = Math.floor(alert.timestamp / 1000)
-          
-          // Find closest candle within reasonable range (5 minutes = 300 seconds)
-          const closestCandle = data.reduce((closest, candle) => {
-            const candleTime = typeof candle.time === 'number' ? candle.time : Number(candle.time)
-            const currentDiff = Math.abs(candleTime - alertTime)
-            const closestDiff = closest ? Math.abs((typeof closest.time === 'number' ? closest.time : Number(closest.time)) - alertTime) : Infinity
-            return currentDiff < closestDiff ? candle : closest
-          }, null as typeof data[0] | null)
+          const closestCandle = findClosestCandle(alertTime, data)
           
           if (!closestCandle) {
             console.warn(`⚠️  No candle found for alert at ${new Date(alert.timestamp).toISOString()}`)
@@ -479,16 +486,7 @@ export function TradingChart({
         .map(bubble => {
           // Convert bubble timestamp (ms) to candle time (seconds)
           const bubbleTime = Math.floor(bubble.time / 1000)
-          
-          // Find closest candle within reasonable range (5 minutes = 300 seconds)
-          const closestCandle = data.reduce((closest, candle) => {
-            const candleTime = typeof candle.time === 'number' ? candle.time : Number(candle.time)
-            const currentDiff = Math.abs(candleTime - bubbleTime)
-            const closestDiff = Math.abs(
-              (typeof closest.time === 'number' ? closest.time : Number(closest.time)) - bubbleTime
-            )
-            return currentDiff < closestDiff ? candle : closest
-          }, data[0])
+          const closestCandle = findClosestCandle(bubbleTime, data)
           
           if (!closestCandle) {
             console.warn(`⚠️  No candle found for bubble at ${new Date(bubble.time).toLocaleTimeString()}`)
@@ -528,14 +526,7 @@ export function TradingChart({
         const alertMarkers: SeriesMarker<Time>[] = alerts
           .map(alert => {
             const alertTime = Math.floor(alert.timestamp / 1000)
-            const closestCandle = data.reduce((closest, candle) => {
-              const candleTime = typeof candle.time === 'number' ? candle.time : Number(candle.time)
-              const currentDiff = Math.abs(candleTime - alertTime)
-              const closestDiff = Math.abs(
-                (typeof closest.time === 'number' ? closest.time : Number(closest.time)) - alertTime
-              )
-              return currentDiff < closestDiff ? candle : closest
-            }, data[0])
+            const closestCandle = findClosestCandle(alertTime, data)
             
             if (!closestCandle) return null
             
