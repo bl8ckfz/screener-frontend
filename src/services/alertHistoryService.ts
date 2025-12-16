@@ -10,6 +10,7 @@ import { ALERT_HISTORY_CONFIG } from '@/types/alertHistory'
 class AlertHistoryService {
   private readonly storageKey = ALERT_HISTORY_CONFIG.STORAGE_KEY
   private readonly retentionMs = ALERT_HISTORY_CONFIG.RETENTION_HOURS * 60 * 60 * 1000
+  private readonly maxItems = ALERT_HISTORY_CONFIG.MAX_HISTORY_ITEMS
 
   /**
    * Add new alert to history
@@ -32,6 +33,14 @@ class AlertHistoryService {
 
     const history = this.loadFromStorage()
     history.push(entry)
+    
+    // Enforce size limit: keep newest entries if over limit
+    if (history.length > this.maxItems) {
+      // Sort by timestamp (newest first) and keep only maxItems
+      history.sort((a, b) => b.timestamp - a.timestamp)
+      history.length = this.maxItems
+    }
+    
     this.saveToStorage(history)
   }
 

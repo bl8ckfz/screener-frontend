@@ -38,4 +38,5 @@ export const ALERT_HISTORY_CONFIG = {
   STORAGE_KEY: 'crypto-screener-alert-history',
   RETENTION_HOURS: 24,
   CLEANUP_INTERVAL_MS: 60000, // Cleanup every 60 seconds
+  MAX_HISTORY_ITEMS: 1000, // Maximum alerts to keep in storage (prevent overflow)
 } as const
