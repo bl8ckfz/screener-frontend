@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, lazy, Suspense, useEffect } from 'react'
 import { debug } from '@/utils/debug'
+import { memoryProfiler } from '@/utils/memoryProfiler'
 import { useMarketData } from '@/hooks/useMarketData'
 import { useFuturesStreaming } from '@/hooks/useFuturesStreaming'
 import { useStore } from '@/hooks/useStore'
@@ -475,8 +476,43 @@ function App() {
       
       {/* Alert Notifications (renders outside layout in top-right) */}
       <AlertNotificationContainer />
+      
+      {/* Memory Stats (dev only) */}
+      {import.meta.env.DEV && <MemoryStats />}
     </Layout>
     </>
+  )
+}
+
+// Development-only memory stats display
+function MemoryStats() {
+  const [stats, setStats] = useState<ReturnType<typeof memoryProfiler.getStats>>(null)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setStats(memoryProfiler.getStats())
+    }, 10000) // Update every 10 seconds
+
+    return () => clearInterval(interval)
+  }, [])
+
+  if (!stats) return null
+
+  const isHighGrowth = stats.growthMB > 30
+  const isHighUtilization = stats.utilizationPct > 80
+
+  return (
+    <div className="fixed bottom-2 left-2 bg-gray-900 border border-gray-700 rounded px-2 py-1 text-xs font-mono z-50 opacity-75 hover:opacity-100 transition-opacity">
+      <div className="flex gap-3 text-gray-400">
+        <span>Memory: {stats.currentMB.toFixed(1)}MB</span>
+        <span className={isHighGrowth ? 'text-yellow-400' : ''}>
+          {stats.growthMB > 0 ? '+' : ''}{stats.growthMB.toFixed(1)}MB
+        </span>
+        <span className={isHighUtilization ? 'text-orange-400' : ''}>
+          {stats.utilizationPct.toFixed(0)}%
+        </span>
+      </div>
+    </div>
   )
 }
 
