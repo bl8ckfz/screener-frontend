@@ -56,7 +56,8 @@ export interface Candlestick {
   high: number
   low: number
   close: number
-  volume: number        // Quote asset volume (for VWAP: dollar value, not coin count)
+  volume: number        // Base asset volume (coin/token count)
+  quoteVolume: number   // Quote asset volume (USDT value = Σ(price × qty))
   trades: number
 }
 
@@ -114,7 +115,8 @@ export async function fetchKlines(
       high: parseFloat(kline[2]),
       low: parseFloat(kline[3]),
       close: parseFloat(kline[4]),
-      volume: parseFloat(kline[7]), // Quote asset volume (USDT value for VWAP)
+      volume: parseFloat(kline[5]), // Base asset volume (coin count)
+      quoteVolume: parseFloat(kline[7]), // Quote asset volume (USDT value)
       trades: kline[8],
     }))
     
@@ -164,6 +166,7 @@ function generateMockChartData(
     const high = Math.max(open, close) + Math.random() * volatility * 0.5
     const low = Math.min(open, close) - Math.random() * volatility * 0.5
     const volume = 100 + Math.random() * 900
+    const quoteVolume = volume * ((high + low + close) / 3) // Approximate quote volume
     const trades = Math.floor(50 + Math.random() * 200)
     
     candlesticks.push({
@@ -173,6 +176,7 @@ function generateMockChartData(
       low,
       close,
       volume,
+      quoteVolume,
       trades,
     })
     

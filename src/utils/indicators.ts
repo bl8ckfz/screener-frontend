@@ -280,7 +280,7 @@ export interface VWAPData {
 
 /**
  * Candlestick data structure (matches chartData.ts)
- * Volume must be quote asset volume (dollar value) for correct VWAP
+ * Binance Standard VWAP uses: quoteVolume / volume
  */
 export interface CandlestickForVWAP {
   time: number
@@ -288,21 +288,22 @@ export interface CandlestickForVWAP {
   high: number
   low: number
   close: number
-  volume: number // Quote asset volume (USDT/USD value, not base coin count)
+  volume: number       // Base asset volume (coin/token count)
+  quoteVolume: number  // Quote asset volume (USDT = Σ(price × qty))
 }
 
 /**
- * Calculate weekly VWAP from candlestick data
- * VWAP = Σ(Typical Price × Volume) / Σ(Volume)
- * Uses quote asset volume (dollar value) for proper liquidity weighting
+ * Calculate weekly VWAP from candlestick data (Binance Standard)
+ * VWAP = Σ(Quote Volume) / Σ(Base Volume)
+ * Quote volume already contains Σ(price × qty) from actual trades
  * Resets every Monday (ISO week start)
  */
 export function calculateWeeklyVWAP(candlesticks: CandlestickForVWAP[]): VWAPData[] {
   if (candlesticks.length === 0) return []
 
   const result: VWAPData[] = []
-  let cumulativeTPV = 0  // Typical Price × Volume
-  let cumulativeVolume = 0
+  let cumulativeQuoteVolume = 0  // Σ(price × qty) in USDT
+  let cumulativeBaseVolume = 0   // Σ(qty) in base asset
   let currentWeek = -1
 
   candlesticks.forEach((candle) => {
@@ -313,20 +314,19 @@ export function calculateWeeklyVWAP(candlesticks: CandlestickForVWAP[]): VWAPDat
 
     // Reset accumulation on new week
     if (currentWeek !== -1 && weekKey !== currentWeek) {
-      cumulativeTPV = 0
-      cumulativeVolume = 0
+      cumulativeQuoteVolume = 0
+      cumulativeBaseVolume = 0
     }
     currentWeek = weekKey
 
-    // Calculate typical price (average of high, low, close)
-    const typicalPrice = (candle.high + candle.low + candle.close) / 3
+    // Accumulate volumes (Binance standard approach)
+    cumulativeQuoteVolume += candle.quoteVolume
+    cumulativeBaseVolume += candle.volume
 
-    // Accumulate
-    cumulativeTPV += typicalPrice * candle.volume
-    cumulativeVolume += candle.volume
-
-    // Calculate VWAP for this point
-    const vwap = cumulativeVolume > 0 ? cumulativeTPV / cumulativeVolume : typicalPrice
+    // Calculate VWAP: weighted average price from actual trades
+    const vwap = cumulativeBaseVolume > 0 
+      ? cumulativeQuoteVolume / cumulativeBaseVolume 
+      : candle.close // Fallback to close price
 
     result.push({
       time: candle.time,
