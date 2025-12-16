@@ -16,12 +16,9 @@ import type { AlertHistoryEntry } from '@/types/alertHistory'
 import type { Bubble } from '@/types/bubble'
 import { calculateWeeklyVWAP } from '@/utils/indicators'
 
-export type ChartType = 'candlestick' | 'line' | 'area'
-
 export interface TradingChartProps {
   data: Candlestick[]
   symbol: string
-  type?: ChartType
   height?: number
   showVolume?: boolean
   showWeeklyVWAP?: boolean
@@ -134,7 +131,6 @@ const getBubbleMarkerStyle = (bubble: Bubble): {
 export function TradingChart({
   data,
   symbol,
-  type = 'candlestick',
   height = 400,
   showVolume = true,
   showWeeklyVWAP = false,
@@ -147,7 +143,7 @@ export function TradingChart({
 }: TradingChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
-  const mainSeriesRef = useRef<ISeriesApi<'Candlestick' | 'Line' | 'Area'> | null>(null)
+  const mainSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
   const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null)
   const weeklyVWAPRef = useRef<ISeriesApi<'Line'> | null>(null)
   const markersRef = useRef<SeriesMarker<Time>[]>([]) // Store markers to re-apply on zoom
@@ -251,7 +247,8 @@ export function TradingChart({
     }
   }, [height, showVolume])
 
-  // Update data and series when data/settings change
+  // Update main chart series when data or chart type changes
+  // Separated from markers to avoid unnecessary series recreation
   useEffect(() => {
     if (!chartRef.current || data.length === 0) return
 
@@ -259,33 +256,14 @@ export function TradingChart({
 
     const chart = chartRef.current
 
-    // Remove existing series (with null checks to prevent errors)
+    // Remove existing main series
     try {
       if (mainSeriesRef.current) {
         chart.removeSeries(mainSeriesRef.current)
         mainSeriesRef.current = null
       }
     } catch (e) {
-      // Series may already be removed, ignore
       mainSeriesRef.current = null
-    }
-    
-    try {
-      if (volumeSeriesRef.current) {
-        chart.removeSeries(volumeSeriesRef.current)
-        volumeSeriesRef.current = null
-      }
-    } catch (e) {
-      volumeSeriesRef.current = null
-    }
-    
-    try {
-      if (weeklyVWAPRef.current) {
-        chart.removeSeries(weeklyVWAPRef.current)
-        weeklyVWAPRef.current = null
-      }
-    } catch (e) {
-      weeklyVWAPRef.current = null
     }
 
     // Calculate appropriate price precision based on price range
@@ -306,79 +284,49 @@ export function TradingChart({
       precision = 3 // Standard values (< $100)
     }
 
-    // Create main series based on chart type
-    let mainSeries: ISeriesApi<'Candlestick' | 'Line' | 'Area'>
+    // Create candlestick series
+    const mainSeries = chart.addCandlestickSeries({
+      upColor: '#10b981', // bullish
+      downColor: '#ef4444', // bearish
+      borderVisible: false,
+      wickUpColor: '#10b981',
+      wickDownColor: '#ef4444',
+      priceFormat: {
+        type: 'price',
+        precision,
+        minMove: 1 / Math.pow(10, precision),
+      },
+    })
 
-    if (type === 'candlestick') {
-      mainSeries = chart.addCandlestickSeries({
-        upColor: '#10b981', // bullish
-        downColor: '#ef4444', // bearish
-        borderVisible: false,
-        wickUpColor: '#10b981',
-        wickDownColor: '#ef4444',
-        priceFormat: {
-          type: 'price',
-          precision,
-          minMove: 1 / Math.pow(10, precision),
-        },
-      })
+    const candlestickData: CandlestickData[] = data.map((candle) => ({
+      time: candle.time as any, // lightweight-charts expects Time type
+      open: candle.open,
+      high: candle.high,
+      low: candle.low,
+      close: candle.close,
+    }))
 
-      const candlestickData: CandlestickData[] = data.map((candle) => ({
-        time: candle.time as any, // lightweight-charts expects Time type
-        open: candle.open,
-        high: candle.high,
-        low: candle.low,
-        close: candle.close,
-      }))
-
-      mainSeries.setData(candlestickData)
-    } else if (type === 'line') {
-      mainSeries = chart.addLineSeries({
-        color: '#2B95FF', // accent
-        lineWidth: 2,
-        crosshairMarkerVisible: true,
-        crosshairMarkerRadius: 4,
-        lastValueVisible: true,
-        priceLineVisible: true,
-        priceFormat: {
-          type: 'price',
-          precision,
-          minMove: 1 / Math.pow(10, precision),
-        },
-      })
-
-      const lineData = data.map((candle) => ({
-        time: candle.time as any, // lightweight-charts expects Time type
-        value: candle.close,
-      }))
-
-      mainSeries.setData(lineData)
-    } else {
-      // area
-      mainSeries = chart.addAreaSeries({
-        topColor: 'rgba(43, 149, 255, 0.4)', // accent with opacity
-        bottomColor: 'rgba(43, 149, 255, 0.0)',
-        lineColor: '#2B95FF',
-        lineWidth: 2,
-        crosshairMarkerVisible: true,
-        lastValueVisible: true,
-        priceLineVisible: true,
-        priceFormat: {
-          type: 'price',
-          precision,
-          minMove: 1 / Math.pow(10, precision),
-        },
-      })
-
-      const areaData = data.map((candle) => ({
-        time: candle.time as any, // lightweight-charts expects Time type
-        value: candle.close,
-      }))
-
-      mainSeries.setData(areaData)
-    }
-
+    mainSeries.setData(candlestickData)
     mainSeriesRef.current = mainSeries
+
+    setIsLoading(false)
+  }, [data]) // Only data triggers main series recreation
+
+  // Update volume series when data or showVolume changes
+  useEffect(() => {
+    if (!chartRef.current || !mainSeriesRef.current || data.length === 0) return
+
+    const chart = chartRef.current
+
+    // Remove existing volume series
+    try {
+      if (volumeSeriesRef.current) {
+        chart.removeSeries(volumeSeriesRef.current)
+        volumeSeriesRef.current = null
+      }
+    } catch (e) {
+      volumeSeriesRef.current = null
+    }
 
     // Add volume series if enabled
     if (showVolume) {
@@ -415,6 +363,23 @@ export function TradingChart({
         },
       })
     }
+  }, [data, showVolume]) // Only data and showVolume trigger volume series update
+
+  // Update VWAP series when enabled or data changes
+  useEffect(() => {
+    if (!chartRef.current || !mainSeriesRef.current) return
+
+    const chart = chartRef.current
+
+    // Remove existing VWAP series
+    try {
+      if (weeklyVWAPRef.current) {
+        chart.removeSeries(weeklyVWAPRef.current)
+        weeklyVWAPRef.current = null
+      }
+    } catch (e) {
+      weeklyVWAPRef.current = null
+    }
 
     // Add weekly VWAP series if enabled and vwapData is available
     // Uses separate 15m interval data for consistent VWAP regardless of chart interval
@@ -438,6 +403,13 @@ export function TradingChart({
 
       weeklyVWAPRef.current = weeklyVWAPSeries
     }
+  }, [showWeeklyVWAP, weeklyVWAPData]) // Only VWAP toggle and data trigger VWAP update
+
+  // Update markers when alerts or bubbles change
+  useEffect(() => {
+    if (!chartRef.current || !mainSeriesRef.current || data.length === 0) return
+
+    const mainSeries = mainSeriesRef.current
 
     // Add alert markers if enabled
     if (showAlerts && alerts.length > 0 && mainSeries) {
@@ -595,14 +567,7 @@ export function TradingChart({
         mainSeries.setMarkers(bubbleMarkers)
       }
     }
-
-    // Only fit content on first load, otherwise zoom is preserved automatically
-    if (!mainSeriesRef.current) {
-      chart.timeScale().fitContent()
-    }
-
-    setIsLoading(false)
-  }, [data, type, showVolume, showWeeklyVWAP, vwapData, showAlerts, alerts, showBubbles, bubbles, symbol])
+  }, [showAlerts, alerts, showBubbles, bubbles, data]) // Only marker-related changes trigger update
 
   return (
     <div className={`relative ${className}`}>
