@@ -10,12 +10,13 @@ import type { Bubble } from '@/types/bubble'
 
 interface UseBubbleStreamOptions {
   maxHistory?: number  // Max bubbles to keep in memory (default: 1000)
+  maxAgeMinutes?: number // Max age in minutes before cleanup (default: 30)
   symbolFilter?: string // Only track bubbles for specific symbol
   enabled?: boolean     // Enable/disable bubble tracking (default: true)
 }
 
 export function useBubbleStream(options: UseBubbleStreamOptions = {}) {
-  const { maxHistory = 1000, symbolFilter, enabled = true } = options
+  const { maxHistory = 1000, maxAgeMinutes = 30, symbolFilter, enabled = true } = options
   const [bubbles, setBubbles] = useState<Bubble[]>([])
   const [isActive, setIsActive] = useState(false)
 
@@ -52,8 +53,12 @@ export function useBubbleStream(options: UseBubbleStreamOptions = {}) {
       console.log(`🫧 useBubbleStream: Received bubble for ${bubble.symbol} (filter=${symbolFilter})`, bubble)
 
       setBubbles(prev => {
-        const updated = [...prev, bubble]
-        // Keep only recent bubbles
+        // Filter out bubbles older than maxAgeMinutes
+        const cutoffTime = Date.now() - (maxAgeMinutes * 60 * 1000)
+        const recentBubbles = prev.filter(b => b.time >= cutoffTime)
+        
+        const updated = [...recentBubbles, bubble]
+        // Keep only recent bubbles by count
         if (updated.length > maxHistory) {
           return updated.slice(-maxHistory)
         }
@@ -77,7 +82,25 @@ export function useBubbleStream(options: UseBubbleStreamOptions = {}) {
       streamManager.off('started', handleStarted)
       streamManager.off('stopped', handleStopped)
     }
-  }, [maxHistory, symbolFilter, enabled])
+  }, [maxHistory, maxAgeMinutes, symbolFilter, enabled])
+
+  // Periodic cleanup of old bubbles (runs every minute)
+  useEffect(() => {
+    if (!enabled || bubbles.length === 0) return
+
+    const cleanupInterval = setInterval(() => {
+      const cutoffTime = Date.now() - (maxAgeMinutes * 60 * 1000)
+      setBubbles(prev => {
+        const filtered = prev.filter(b => b.time >= cutoffTime)
+        if (filtered.length < prev.length) {
+          console.log(`🧹 useBubbleStream: Cleaned up ${prev.length - filtered.length} old bubbles (older than ${maxAgeMinutes}m)`)
+        }
+        return filtered
+      })
+    }, 60000) // Run every minute
+
+    return () => clearInterval(cleanupInterval)
+  }, [enabled, maxAgeMinutes, bubbles.length])
 
   const clearBubbles = useCallback(() => {
     setBubbles([])
