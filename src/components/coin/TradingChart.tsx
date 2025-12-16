@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import {
   createChart,
   ColorType,
@@ -153,6 +153,12 @@ export function TradingChart({
   const markersRef = useRef<SeriesMarker<Time>[]>([]) // Store markers to re-apply on zoom
   const [isLoading, setIsLoading] = useState(true)
   const chartInitializedRef = useRef(false)
+
+  // Memoize VWAP calculation to avoid recalculating 672 candles on every render
+  const weeklyVWAPData = useMemo(() => {
+    if (!showWeeklyVWAP || vwapData.length === 0) return []
+    return calculateWeeklyVWAP(vwapData)
+  }, [vwapData, showWeeklyVWAP])
 
   // Create chart instance once on mount
   useEffect(() => {
@@ -412,7 +418,7 @@ export function TradingChart({
 
     // Add weekly VWAP series if enabled and vwapData is available
     // Uses separate 15m interval data for consistent VWAP regardless of chart interval
-    if (showWeeklyVWAP && vwapData.length > 0) {
+    if (showWeeklyVWAP && weeklyVWAPData.length > 0) {
       const weeklyVWAPSeries = chart.addLineSeries({
         color: '#f59e0b', // Amber-500 for weekly VWAP
         lineWidth: 2,
@@ -423,7 +429,6 @@ export function TradingChart({
         crosshairMarkerRadius: 4,
       })
 
-      const weeklyVWAPData = calculateWeeklyVWAP(vwapData)
       weeklyVWAPSeries.setData(
         weeklyVWAPData.map((d) => ({
           time: d.time as any,
