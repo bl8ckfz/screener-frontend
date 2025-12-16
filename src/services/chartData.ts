@@ -56,7 +56,7 @@ export interface Candlestick {
   high: number
   low: number
   close: number
-  volume: number
+  volume: number        // Quote asset volume (for VWAP: dollar value, not coin count)
   trades: number
 }
 
@@ -114,7 +114,7 @@ export async function fetchKlines(
       high: parseFloat(kline[2]),
       low: parseFloat(kline[3]),
       close: parseFloat(kline[4]),
-      volume: parseFloat(kline[5]),
+      volume: parseFloat(kline[7]), // Quote asset volume (USDT value for VWAP)
       trades: kline[8],
     }))
     

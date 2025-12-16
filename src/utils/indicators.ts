@@ -280,6 +280,7 @@ export interface VWAPData {
 
 /**
  * Candlestick data structure (matches chartData.ts)
+ * Volume must be quote asset volume (dollar value) for correct VWAP
  */
 export interface CandlestickForVWAP {
   time: number
@@ -287,12 +288,13 @@ export interface CandlestickForVWAP {
   high: number
   low: number
   close: number
-  volume: number
+  volume: number // Quote asset volume (USDT/USD value, not base coin count)
 }
 
 /**
  * Calculate weekly VWAP from candlestick data
  * VWAP = Σ(Typical Price × Volume) / Σ(Volume)
+ * Uses quote asset volume (dollar value) for proper liquidity weighting
  * Resets every Monday (ISO week start)
  */
 export function calculateWeeklyVWAP(candlesticks: CandlestickForVWAP[]): VWAPData[] {
