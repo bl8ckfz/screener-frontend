@@ -25,6 +25,7 @@ export interface TradingChartProps {
   height?: number
   showVolume?: boolean
   showWeeklyVWAP?: boolean
+  vwapData?: Candlestick[] // Separate VWAP data (15m interval for efficiency)
   showAlerts?: boolean
   alerts?: AlertHistoryEntry[]
   showBubbles?: boolean
@@ -137,6 +138,7 @@ export function TradingChart({
   height = 400,
   showVolume = true,
   showWeeklyVWAP = false,
+  vwapData = [],
   showAlerts = false,
   alerts = [],
   showBubbles = false,
@@ -408,8 +410,9 @@ export function TradingChart({
       })
     }
 
-    // Add weekly VWAP series if enabled
-    if (showWeeklyVWAP && data.length > 0) {
+    // Add weekly VWAP series if enabled and vwapData is available
+    // Uses separate 15m interval data for consistent VWAP regardless of chart interval
+    if (showWeeklyVWAP && vwapData.length > 0) {
       const weeklyVWAPSeries = chart.addLineSeries({
         color: '#f59e0b', // Amber-500 for weekly VWAP
         lineWidth: 2,
@@ -420,7 +423,7 @@ export function TradingChart({
         crosshairMarkerRadius: 4,
       })
 
-      const weeklyVWAPData = calculateWeeklyVWAP(data)
+      const weeklyVWAPData = calculateWeeklyVWAP(vwapData)
       weeklyVWAPSeries.setData(
         weeklyVWAPData.map((d) => ({
           time: d.time as any,
@@ -594,7 +597,7 @@ export function TradingChart({
     }
 
     setIsLoading(false)
-  }, [data, type, showVolume, showWeeklyVWAP, showAlerts, alerts, showBubbles, bubbles, symbol])
+  }, [data, type, showVolume, showWeeklyVWAP, vwapData, showAlerts, alerts, showBubbles, bubbles, symbol])
 
   return (
     <div className={`relative ${className}`}>

@@ -25,6 +25,7 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
   const [bubbleTimeframe, setBubbleTimeframe] = useState<'5m' | '15m' | 'both'>('both')
   const [bubbleSize, setBubbleSize] = useState<'large' | 'medium+' | 'all'>('large')
   const [chartData, setChartData] = useState<any[]>([])
+  const [vwapData, setVwapData] = useState<any[]>([]) // Separate data for VWAP (15m interval)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [alertRefresh, setAlertRefresh] = useState(0)
@@ -127,6 +128,44 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
       window.clearInterval(refreshInterval)
     }
   }, [coin.symbol, coin.pair, interval])
+
+  // Fetch VWAP data separately (only when enabled) with efficient caching
+  // Uses 15m interval: 7 days = 672 candles (vs 10,080 for 1m)
+  // Refresh every 15 minutes to match interval and minimize API calls
+  useEffect(() => {
+    if (!showWeeklyVWAP) {
+      setVwapData([])
+      return
+    }
+
+    let isCancelled = false
+
+    const fetchVwapData = async () => {
+      try {
+        // Fetch 15m candles: 7 days × 24 hours × 4 candles/hour = 672 candles
+        // This covers a full week with efficient data usage
+        const data = await fetchKlines(coin.symbol, coin.pair, '15m', 672)
+        
+        if (!isCancelled) {
+          setVwapData(data.candlesticks)
+        }
+      } catch (err) {
+        console.warn('VWAP data fetch failed:', err)
+        // Don't block chart display on VWAP failure
+      }
+    }
+
+    // Initial fetch
+    fetchVwapData()
+
+    // Refresh every 15 minutes (matches interval, minimizes API calls)
+    const vwapRefreshInterval = window.setInterval(fetchVwapData, 15 * 60 * 1000)
+
+    return () => {
+      isCancelled = true
+      window.clearInterval(vwapRefreshInterval)
+    }
+  }, [coin.symbol, coin.pair, showWeeklyVWAP])
 
   const handleIntervalChange = (newInterval: KlineInterval) => {
     setInterval(newInterval)
@@ -271,6 +310,7 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
             height={400}
             showVolume={chartType === 'candlestick'}
             showWeeklyVWAP={showWeeklyVWAP}
+            vwapData={vwapData}
             showAlerts={showAlerts}
             alerts={coinAlerts}
             showBubbles={showBubbles}
