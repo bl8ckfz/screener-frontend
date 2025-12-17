@@ -232,11 +232,17 @@ export function AlertConfig({
       </div>
 
       {/* Custom Rules List */}
-      {rules.some(r => !r.conditions[0]?.type.startsWith('futures_')) && (
+      {rules.some(r => {
+        const type = r.conditions[0]?.type
+        return type && !type.startsWith('futures_') && !type.startsWith('ichimoku_')
+      }) && (
         <div className="space-y-2">
           <h4 className="text-sm font-semibold text-white mb-2">Custom Rules</h4>
           {rules
-            .filter(r => !r.conditions[0]?.type.startsWith('futures_'))
+            .filter(r => {
+              const type = r.conditions[0]?.type
+              return type && !type.startsWith('futures_') && !type.startsWith('ichimoku_')
+            })
             .map((rule) => (
               <div
                 key={rule.id}
