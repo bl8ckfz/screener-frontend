@@ -454,14 +454,18 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
         debug.log('📊 Fetching 15m Ichimoku data for all coins...')
         const symbols = coins.map(coin => ({ symbol: coin.symbol, pair: coin.pair }))
         
+        // Update timestamp BEFORE fetch to prevent duplicate fetches
+        lastIchimokuUpdate = now
+        
         // Fetch async but don't block alert evaluation
         fetchIchimokuData(symbols)
           .then(() => {
-            lastIchimokuUpdate = now
             debug.log('✅ Ichimoku data fetched and cached')
           })
           .catch(error => {
             debug.error('❌ Failed to fetch Ichimoku data:', error)
+            // Reset timestamp on error so it retries next evaluation
+            lastIchimokuUpdate = 0
           })
       } else {
         const timeUntilNext = Math.ceil((ICHIMOKU_CACHE_DURATION - (now - lastIchimokuUpdate)) / 60000)
