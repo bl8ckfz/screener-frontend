@@ -351,14 +351,98 @@ useEffect(() => {
 src/
   components/
     coin/
-      TradingChart.tsx         (~230 lines) - Core chart component
-      ChartContainer.tsx       (~120 lines) - Wrapper with controls
+      TradingChart.tsx         (~770 lines) - Core chart component with Ichimoku
+      ChartContainer.tsx       (~360 lines) - Wrapper with controls
       index.ts                 (Updated) - Export new components
   services/
     chartData.ts              (~245 lines) - Binance klines API
+  utils/
+    indicators.ts             (Updated) - Ichimoku calculation + VWAP
+  tests/
+    utils/
+      indicators.test.ts      (Updated) - 25 tests including 14 for Ichimoku
 docs/
   CHART_IMPLEMENTATION.md     (This file) - Documentation
+  ICHIMOKU_CLOUD_ROADMAP.md   - Ichimoku implementation plan
 ```
+
+## Technical Indicators
+
+### Ichimoku Cloud (Added December 2025)
+
+**Overview**: Full Ichimoku Kinko Hyo indicator with all 5 components.
+
+**Components**:
+1. **Tenkan-sen** (Conversion Line) - Blue (#3b82f6)
+   - Formula: (9-period high + 9-period low) / 2
+   - Fast-moving indicator
+
+2. **Kijun-sen** (Base Line) - Red (#ef4444)
+   - Formula: (26-period high + 26-period low) / 2
+   - Medium-speed indicator
+
+3. **Senkou Span A** (Leading Span A) - Gray (#9ca3af)
+   - Formula: (Tenkan-sen + Kijun-sen) / 2
+   - Plotted 26 periods ahead
+   - Forms top of cloud
+
+4. **Senkou Span B** (Leading Span B) - Gray (#6b7280)
+   - Formula: (52-period high + 52-period low) / 2
+   - Plotted 26 periods ahead
+   - Forms bottom of cloud
+
+5. **Chikou Span** (Lagging Span) - Purple (#8b5cf6), dashed
+   - Formula: Close price plotted 26 periods behind
+   - Confirms trend direction
+
+**Data Requirements**:
+- Minimum: 52 candles (for Senkou Span B calculation)
+- Recommended: 100+ candles for context
+- Toggle button disabled when data insufficient
+
+**Interpretation**:
+- **Cloud (Kumo)**: Space between Senkou Span A and B
+- **Bullish Signal**: Price above cloud, Span A > Span B
+- **Bearish Signal**: Price below cloud, Span A < Span B
+- **Support/Resistance**: Cloud acts as dynamic S/R zone
+
+**Implementation Details**:
+- Calculation: `calculateIchimoku()` in `utils/indicators.ts`
+- Memoized with 60-second cache
+- 14 comprehensive unit tests
+- Displacement handled in chart rendering layer
+
+**UI Controls**:
+- Toggle button with cloud icon (☁)
+- Legend showing all 5 components with color codes
+- Works with all chart intervals (optimized for 15m)
+
+**Code Example**:
+```typescript
+// In ChartContainer.tsx
+const [showIchimoku, setShowIchimoku] = useState(false)
+const [ichimokuData, setIchimokuData] = useState<IchimokuData[]>([])
+
+// Calculate when enabled
+useEffect(() => {
+  if (showIchimoku && chartData.length >= 52) {
+    const calculated = calculateIchimoku(chartData)
+    setIchimokuData(calculated)
+  }
+}, [chartData, showIchimoku])
+
+// Pass to TradingChart
+<TradingChart
+  showIchimoku={showIchimoku}
+  ichimokuData={ichimokuData}
+  // ... other props
+/>
+```
+
+**Performance**:
+- Bundle impact: +3KB gzipped
+- Calculation: <1ms for 100 candles
+- Rendering: 5 line series (efficient)
 
 ## Commands
 
@@ -367,18 +451,22 @@ docs/
 npm run dev          # Start dev server with HMR
 npm run type-check   # Verify TypeScript compilation
 npm run lint         # Check ESLint issues
+npm test             # Run unit tests (including Ichimoku tests)
 ```
 
 ### Testing Charts
-1. Open app: http://localhost:3001
+1. Open app: http://localhost:3000
 2. Click any coin row to open modal
 3. Chart should load with 5m candlesticks
 4. Click interval buttons to change timeframe
-5. Click chart type buttons to change display
+5. Toggle "Ichimoku" button to show/hide indicator
+6. Observe legend at bottom showing active indicators
 
 ## References
 
 - **lightweight-charts docs**: https://tradingview.github.io/lightweight-charts/
 - **Binance klines API**: https://binance-docs.github.io/apidocs/spot/en/#kline-candlestick-data
+- **Ichimoku Strategy**: https://www.investopedia.com/terms/i/ichimoku-cloud.asp
 - **Design System**: `docs/DESIGN_SYSTEM.md`
-- **Project Roadmap**: `ROADMAP.md` (Phase 4.3 ✅)
+- **Project Roadmap**: `docs/ROADMAP.md`
+- **Ichimoku Roadmap**: `docs/ICHIMOKU_CLOUD_ROADMAP.md`

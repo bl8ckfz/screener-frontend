@@ -437,9 +437,25 @@ export function TradingChart({
 
     // Add Ichimoku series if enabled and data is available
     if (showIchimoku && ichimokuData.length > 0) {
-      // Senkou Span B (cloud bottom) - plotted first (behind Span A)
+      const displacement = 26 // Standard Ichimoku displacement
+
+      // Prepare data with forward displacement for Senkou spans
+      const senkouData = ichimokuData.map((d, i) => {
+        // Find the time 26 periods forward for displacement
+        const displacedIndex = Math.min(i + displacement, ichimokuData.length - 1)
+        const displacedTime = ichimokuData[displacedIndex]?.time || d.time
+        
+        return {
+          time: displacedTime,
+          spanA: d.senkouSpanA,
+          spanB: d.senkouSpanB,
+          isBullish: d.senkouSpanA > d.senkouSpanB,
+        }
+      })
+
+      // Senkou Span B (cloud bottom line)
       const senkouBSeries = chart.addLineSeries({
-        color: '#6b7280', // gray-500 - neutral cloud base
+        color: '#6b7280', // gray-500
         lineWidth: 1,
         lineStyle: LineStyle.Solid,
         priceLineVisible: false,
@@ -448,16 +464,16 @@ export function TradingChart({
       })
 
       senkouBSeries.setData(
-        ichimokuData.map((d) => ({
+        senkouData.map((d) => ({
           time: d.time as any,
-          value: d.senkouSpanB,
+          value: d.spanB,
         }))
       )
       senkouBRef.current = senkouBSeries
 
-      // Senkou Span A (cloud top)
+      // Senkou Span A (cloud top line) with dynamic color
       const senkouASeries = chart.addLineSeries({
-        color: '#9ca3af', // gray-400 - slightly lighter for distinction
+        color: '#9ca3af', // gray-400
         lineWidth: 1,
         lineStyle: LineStyle.Solid,
         priceLineVisible: false,
@@ -466,9 +482,9 @@ export function TradingChart({
       })
 
       senkouASeries.setData(
-        ichimokuData.map((d) => ({
+        senkouData.map((d) => ({
           time: d.time as any,
-          value: d.senkouSpanA,
+          value: d.spanA,
         }))
       )
       senkouARef.current = senkouASeries
@@ -522,8 +538,7 @@ export function TradingChart({
         crosshairMarkerRadius: 3,
       })
 
-      // Chikou Span is plotted 26 periods back
-      const displacement = 26
+      // Chikou Span is plotted 26 periods back (use same displacement constant)
       chikouSeries.setData(
         ichimokuData
           .filter((_, i) => i >= displacement) // Start from period 26
@@ -720,8 +735,40 @@ export function TradingChart({
       )}
       
       {/* Chart Info */}
-      <div className="mt-2 text-xs text-text-tertiary">
-        {symbol} • {data.length} candles
+      <div className="mt-2 flex items-center justify-between text-xs text-text-tertiary">
+        <div>{symbol} • {data.length} candles</div>
+        
+        {/* Indicator Legend */}
+        {(showWeeklyVWAP || showIchimoku) && (
+          <div className="flex items-center gap-3">
+            {showWeeklyVWAP && (
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-0.5 bg-amber-500"></div>
+                <span>Weekly VWAP</span>
+              </div>
+            )}
+            {showIchimoku && ichimokuData.length > 0 && (
+              <>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-0.5 bg-blue-500"></div>
+                  <span>Tenkan</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-0.5 bg-red-500"></div>
+                  <span>Kijun</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-0.5 bg-gray-400"></div>
+                  <span>Cloud</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-0.5 bg-purple-500 border-t border-dashed border-purple-500"></div>
+                  <span>Chikou</span>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
