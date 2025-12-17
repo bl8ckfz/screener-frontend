@@ -3,6 +3,7 @@ import { TradingChart } from './TradingChart'
 import { fetchKlines, type KlineInterval, COMMON_INTERVALS, INTERVAL_LABELS } from '@/services/chartData'
 import { alertHistoryService } from '@/services/alertHistoryService'
 import { useBubbleStream } from '@/hooks/useBubbleStream'
+import { calculateIchimoku, type IchimokuData } from '@/utils/indicators'
 import type { Coin } from '@/types/coin'
 import { ChartSkeleton, ErrorState } from '@/components/ui'
 import { debug } from '@/utils/debug'
@@ -20,6 +21,7 @@ export interface ChartContainerProps {
 export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
   const [interval, setInterval] = useState<KlineInterval>('5m')
   const [showWeeklyVWAP, setShowWeeklyVWAP] = useState(false)
+  const [showIchimoku, setShowIchimoku] = useState(false)
   const [showAlerts, setShowAlerts] = useState(true)
   const [showBubbles, setShowBubbles] = useState(true)
   const [bubbleTimeframe, setBubbleTimeframe] = useState<'5m' | '15m' | 'both'>('both')
@@ -29,6 +31,7 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
   const intervalTimerRef = useRef<number | null>(null)
   const [chartData, setChartData] = useState<any[]>([])
   const [vwapData, setVwapData] = useState<any[]>([]) // Separate data for VWAP (15m interval)
+  const [ichimokuData, setIchimokuData] = useState<IchimokuData[]>([]) // Ichimoku indicator data
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [alertRefresh, setAlertRefresh] = useState(0)
@@ -170,6 +173,23 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
     }
   }, [coin.symbol, coin.pair, showWeeklyVWAP])
 
+  // Calculate Ichimoku when enabled and chart data changes
+  useEffect(() => {
+    if (!showIchimoku || chartData.length < 52) {
+      setIchimokuData([])
+      return
+    }
+
+    try {
+      const calculated = calculateIchimoku(chartData)
+      setIchimokuData(calculated)
+      debug.log(`📊 Calculated Ichimoku: ${calculated.length} data points`)
+    } catch (err) {
+      debug.error('Ichimoku calculation failed:', err)
+      setIchimokuData([])
+    }
+  }, [chartData, showIchimoku])
+
   const handleIntervalChange = (newInterval: KlineInterval) => {
     // Clear existing timer
     if (intervalTimerRef.current !== null) {
@@ -230,6 +250,19 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
           >
             <span className={showWeeklyVWAP ? 'text-amber-500' : 'text-gray-400'}>●</span>
             Weekly VWAP
+          </button>
+          <button
+            onClick={() => setShowIchimoku(!showIchimoku)}
+            disabled={chartData.length < 52}
+            className={`px-3 py-1 text-xs rounded transition-colors flex items-center gap-1.5 ${
+              showIchimoku
+                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50'
+                : 'bg-surface-light text-text-secondary hover:bg-surface-lighter disabled:opacity-50 disabled:cursor-not-allowed'
+            }`}
+            title={chartData.length < 52 ? 'Requires 52+ candles' : 'Ichimoku Cloud (Tenkan, Kijun, Senkou A/B, Chikou)'}
+          >
+            <span className={showIchimoku ? 'text-blue-500' : 'text-gray-400'}>☁</span>
+            Ichimoku
           </button>
           <button
             onClick={() => setShowAlerts(!showAlerts)}
@@ -306,6 +339,8 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
             showVolume={true}
             showWeeklyVWAP={showWeeklyVWAP}
             vwapData={vwapData}
+            showIchimoku={showIchimoku}
+            ichimokuData={ichimokuData}
             showAlerts={showAlerts}
             alerts={coinAlerts}
             showBubbles={showBubbles}

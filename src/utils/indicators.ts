@@ -367,3 +367,140 @@ export function applyTechnicalIndicators(coins: Coin[]): Coin[] {
     indicators: calculateTechnicalIndicators(coin, ethCoin, btcCoin, paxgCoin),
   }))
 }
+
+/**
+ * Ichimoku Cloud Data Point
+ */
+export interface IchimokuData {
+  time: number
+  tenkanSen: number      // Conversion Line: (9-period high + low) / 2
+  kijunSen: number       // Base Line: (26-period high + low) / 2
+  senkouSpanA: number    // Leading Span A: (Tenkan + Kijun) / 2, shifted +26
+  senkouSpanB: number    // Leading Span B: (52-period high + low) / 2, shifted +26
+  chikouSpan: number     // Lagging Span: Close price, shifted -26
+}
+
+/**
+ * Candlestick interface for Ichimoku calculations
+ */
+export interface CandlestickForIchimoku {
+  time: number
+  high: number
+  low: number
+  close: number
+}
+
+/**
+ * Calculate highest high over a period
+ */
+function getHighestHigh(candlesticks: CandlestickForIchimoku[], startIndex: number, period: number): number {
+  let highest = -Infinity
+  const endIndex = Math.max(0, startIndex - period + 1)
+  
+  for (let i = startIndex; i >= endIndex && i >= 0; i--) {
+    if (candlesticks[i].high > highest) {
+      highest = candlesticks[i].high
+    }
+  }
+  
+  return highest
+}
+
+/**
+ * Calculate lowest low over a period
+ */
+function getLowestLow(candlesticks: CandlestickForIchimoku[], startIndex: number, period: number): number {
+  let lowest = Infinity
+  const endIndex = Math.max(0, startIndex - period + 1)
+  
+  for (let i = startIndex; i >= endIndex && i >= 0; i--) {
+    if (candlesticks[i].low < lowest) {
+      lowest = candlesticks[i].low
+    }
+  }
+  
+  return lowest
+}
+
+/**
+ * Calculate Ichimoku Cloud indicator
+ * 
+ * @param candlesticks - Array of candlestick data
+ * @param tenkanPeriod - Conversion line period (default: 9)
+ * @param kijunPeriod - Base line period (default: 26)
+ * @param senkouBPeriod - Leading Span B period (default: 52)
+ * @returns Array of Ichimoku data points
+ * 
+ * Components:
+ * - Tenkan-sen (Conversion Line): (9-period high + 9-period low) / 2
+ * - Kijun-sen (Base Line): (26-period high + 26-period low) / 2
+ * - Senkou Span A (Leading Span A): (Tenkan-sen + Kijun-sen) / 2, plotted 26 periods ahead
+ * - Senkou Span B (Leading Span B): (52-period high + 52-period low) / 2, plotted 26 periods ahead
+ * - Chikou Span (Lagging Span): Current close price, plotted 26 periods behind
+ * 
+ * The "cloud" (Kumo) is formed between Senkou Span A and Senkou Span B
+ * - Bullish when Span A > Span B (green cloud)
+ * - Bearish when Span A < Span B (red cloud)
+ */
+export function calculateIchimoku(
+  candlesticks: CandlestickForIchimoku[],
+  tenkanPeriod: number = 9,
+  kijunPeriod: number = 26,
+  senkouBPeriod: number = 52
+): IchimokuData[] {
+  // Need at least senkouBPeriod candles for accurate calculation
+  if (candlesticks.length < senkouBPeriod) {
+    return []
+  }
+
+  const result: IchimokuData[] = []
+
+  // Calculate for each candle (starting from senkouBPeriod-1 to have enough history)
+  for (let i = senkouBPeriod - 1; i < candlesticks.length; i++) {
+    // Tenkan-sen (Conversion Line): (9-period high + low) / 2
+    const tenkanHigh = getHighestHigh(candlesticks, i, tenkanPeriod)
+    const tenkanLow = getLowestLow(candlesticks, i, tenkanPeriod)
+    const tenkanSen = (tenkanHigh + tenkanLow) / 2
+
+    // Kijun-sen (Base Line): (26-period high + low) / 2
+    const kijunHigh = getHighestHigh(candlesticks, i, kijunPeriod)
+    const kijunLow = getLowestLow(candlesticks, i, kijunPeriod)
+    const kijunSen = (kijunHigh + kijunLow) / 2
+
+    // Senkou Span A: (Tenkan + Kijun) / 2
+    const senkouSpanA = (tenkanSen + kijunSen) / 2
+
+    // Senkou Span B: (52-period high + low) / 2
+    const senkouBHigh = getHighestHigh(candlesticks, i, senkouBPeriod)
+    const senkouBLow = getLowestLow(candlesticks, i, senkouBPeriod)
+    const senkouSpanB = (senkouBHigh + senkouBLow) / 2
+
+    // Chikou Span: Current close (will be plotted 26 periods behind)
+    const chikouSpan = candlesticks[i].close
+
+    // Note: Time displacement for Senkou spans (+26) and Chikou span (-26)
+    // will be handled in the chart rendering layer for proper visualization
+    result.push({
+      time: candlesticks[i].time,
+      tenkanSen: roundTo6Decimals(tenkanSen),
+      kijunSen: roundTo6Decimals(kijunSen),
+      senkouSpanA: roundTo6Decimals(senkouSpanA),
+      senkouSpanB: roundTo6Decimals(senkouSpanB),
+      chikouSpan: roundTo6Decimals(chikouSpan),
+    })
+  }
+
+  return result
+}
+
+/**
+ * Memoized version of calculateIchimoku
+ */
+export const calculateIchimokuMemoized = memoize(
+  (candlesticks: CandlestickForIchimoku[], tenkanPeriod: number, kijunPeriod: number, senkouBPeriod: number) => 
+    calculateIchimoku(candlesticks, tenkanPeriod, kijunPeriod, senkouBPeriod),
+  {
+    maxSize: 50,
+    maxAge: 60000, // 60 seconds
+  }
+)

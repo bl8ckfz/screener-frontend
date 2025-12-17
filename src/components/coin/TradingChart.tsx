@@ -14,7 +14,7 @@ import {
 import type { Candlestick } from '@/services/chartData'
 import type { AlertHistoryEntry } from '@/types/alertHistory'
 import type { Bubble } from '@/types/bubble'
-import { calculateWeeklyVWAP } from '@/utils/indicators'
+import { calculateWeeklyVWAP, type IchimokuData } from '@/utils/indicators'
 import { debug } from '@/utils/debug'
 
 export interface TradingChartProps {
@@ -24,6 +24,8 @@ export interface TradingChartProps {
   showVolume?: boolean
   showWeeklyVWAP?: boolean
   vwapData?: Candlestick[] // Separate VWAP data (15m interval for efficiency)
+  showIchimoku?: boolean
+  ichimokuData?: IchimokuData[]
   showAlerts?: boolean
   alerts?: AlertHistoryEntry[]
   showBubbles?: boolean
@@ -136,6 +138,8 @@ export function TradingChart({
   showVolume = true,
   showWeeklyVWAP = false,
   vwapData = [],
+  showIchimoku = false,
+  ichimokuData = [],
   showAlerts = false,
   alerts = [],
   showBubbles = false,
@@ -147,6 +151,12 @@ export function TradingChart({
   const mainSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
   const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null)
   const weeklyVWAPRef = useRef<ISeriesApi<'Line'> | null>(null)
+  // Ichimoku series refs
+  const tenkanRef = useRef<ISeriesApi<'Line'> | null>(null)
+  const kijunRef = useRef<ISeriesApi<'Line'> | null>(null)
+  const senkouARef = useRef<ISeriesApi<'Line'> | null>(null)
+  const senkouBRef = useRef<ISeriesApi<'Line'> | null>(null)
+  const chikouRef = useRef<ISeriesApi<'Line'> | null>(null)
   const markersRef = useRef<SeriesMarker<Time>[]>([]) // Store markers to re-apply on zoom
   const [isLoading, setIsLoading] = useState(true)
   const chartInitializedRef = useRef(false)
@@ -405,6 +415,128 @@ export function TradingChart({
       weeklyVWAPRef.current = weeklyVWAPSeries
     }
   }, [showWeeklyVWAP, weeklyVWAPData]) // Only VWAP toggle and data trigger VWAP update
+
+  // Update Ichimoku series when enabled or data changes
+  useEffect(() => {
+    if (!chartRef.current || !mainSeriesRef.current) return
+
+    const chart = chartRef.current
+
+    // Remove existing Ichimoku series
+    const refs = [tenkanRef, kijunRef, senkouARef, senkouBRef, chikouRef]
+    refs.forEach(ref => {
+      try {
+        if (ref.current) {
+          chart.removeSeries(ref.current)
+          ref.current = null
+        }
+      } catch (e) {
+        ref.current = null
+      }
+    })
+
+    // Add Ichimoku series if enabled and data is available
+    if (showIchimoku && ichimokuData.length > 0) {
+      // Senkou Span B (cloud bottom) - plotted first (behind Span A)
+      const senkouBSeries = chart.addLineSeries({
+        color: '#6b7280', // gray-500 - neutral cloud base
+        lineWidth: 1,
+        lineStyle: LineStyle.Solid,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        crosshairMarkerVisible: false,
+      })
+
+      senkouBSeries.setData(
+        ichimokuData.map((d) => ({
+          time: d.time as any,
+          value: d.senkouSpanB,
+        }))
+      )
+      senkouBRef.current = senkouBSeries
+
+      // Senkou Span A (cloud top)
+      const senkouASeries = chart.addLineSeries({
+        color: '#9ca3af', // gray-400 - slightly lighter for distinction
+        lineWidth: 1,
+        lineStyle: LineStyle.Solid,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        crosshairMarkerVisible: false,
+      })
+
+      senkouASeries.setData(
+        ichimokuData.map((d) => ({
+          time: d.time as any,
+          value: d.senkouSpanA,
+        }))
+      )
+      senkouARef.current = senkouASeries
+
+      // Kijun-sen (Base Line) - red
+      const kijunSeries = chart.addLineSeries({
+        color: '#ef4444', // red-500
+        lineWidth: 2,
+        lineStyle: LineStyle.Solid,
+        priceLineVisible: false,
+        lastValueVisible: true,
+        crosshairMarkerVisible: true,
+        crosshairMarkerRadius: 3,
+      })
+
+      kijunSeries.setData(
+        ichimokuData.map((d) => ({
+          time: d.time as any,
+          value: d.kijunSen,
+        }))
+      )
+      kijunRef.current = kijunSeries
+
+      // Tenkan-sen (Conversion Line) - blue
+      const tenkanSeries = chart.addLineSeries({
+        color: '#3b82f6', // blue-500
+        lineWidth: 2,
+        lineStyle: LineStyle.Solid,
+        priceLineVisible: false,
+        lastValueVisible: true,
+        crosshairMarkerVisible: true,
+        crosshairMarkerRadius: 3,
+      })
+
+      tenkanSeries.setData(
+        ichimokuData.map((d) => ({
+          time: d.time as any,
+          value: d.tenkanSen,
+        }))
+      )
+      tenkanRef.current = tenkanSeries
+
+      // Chikou Span (Lagging Span) - purple
+      const chikouSeries = chart.addLineSeries({
+        color: '#8b5cf6', // purple-500
+        lineWidth: 1,
+        lineStyle: LineStyle.Dashed,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        crosshairMarkerVisible: true,
+        crosshairMarkerRadius: 3,
+      })
+
+      // Chikou Span is plotted 26 periods back
+      const displacement = 26
+      chikouSeries.setData(
+        ichimokuData
+          .filter((_, i) => i >= displacement) // Start from period 26
+          .map((d, i) => ({
+            time: ichimokuData[i]?.time as any, // Use time from 26 periods ago
+            value: d.chikouSpan,
+          }))
+      )
+      chikouRef.current = chikouSeries
+
+      debug.log(`📊 Ichimoku Cloud rendered with ${ichimokuData.length} data points`)
+    }
+  }, [showIchimoku, ichimokuData]) // Only Ichimoku toggle and data trigger update
 
   // Helper function to find closest candle to a timestamp
   const findClosestCandle = (targetTime: number, candles: Candlestick[]): Candlestick | null => {
