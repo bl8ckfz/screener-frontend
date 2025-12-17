@@ -439,21 +439,36 @@ export function TradingChart({
     if (showIchimoku && ichimokuData.length > 0) {
       const displacement = 26 // Standard Ichimoku displacement
 
+      // Calculate time interval between candles (in seconds)
+      const timeInterval = ichimokuData.length >= 2 
+        ? (ichimokuData[1].time as number) - (ichimokuData[0].time as number)
+        : 300 // Default to 5m if can't calculate
+
       // For Senkou spans: plot them 26 periods ahead
-      // We take values from early data points and plot them at future times
+      // We take current values and project them into the future
       const senkouData: Array<{ time: any; spanA: number; spanB: number }> = []
       
       for (let i = 0; i < ichimokuData.length; i++) {
+        // Calculate future time by adding displacement * interval
+        // If we have future data points, use their times; otherwise extrapolate
+        let futureTime: number
         const futureIndex = i + displacement
         
-        // Only create data points where we have a future time to plot to
         if (futureIndex < ichimokuData.length) {
-          senkouData.push({
-            time: ichimokuData[futureIndex].time,
-            spanA: ichimokuData[i].senkouSpanA,
-            spanB: ichimokuData[i].senkouSpanB,
-          })
+          // Use actual future time from data
+          futureTime = ichimokuData[futureIndex].time as number
+        } else {
+          // Extrapolate beyond data range
+          const periodsAhead = futureIndex - ichimokuData.length + 1
+          const lastTime = ichimokuData[ichimokuData.length - 1].time as number
+          futureTime = lastTime + (periodsAhead * timeInterval)
         }
+        
+        senkouData.push({
+          time: futureTime,
+          spanA: ichimokuData[i].senkouSpanA,
+          spanB: ichimokuData[i].senkouSpanB,
+        })
       }
 
       debug.log(`📊 Ichimoku: ${senkouData.length} cloud points (displaced +${displacement})`)
