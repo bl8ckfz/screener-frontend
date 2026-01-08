@@ -235,7 +235,7 @@ export function TradingChart({
     }
     timeScale.subscribeVisibleLogicalRangeChange(handleVisibleRangeChange)
 
-    // Handle window resize
+    // Handle container resize using ResizeObserver (not just window resize)
     const handleResize = () => {
       if (chartContainerRef.current && chartRef.current) {
         chartRef.current.applyOptions({
@@ -244,11 +244,18 @@ export function TradingChart({
       }
     }
 
-    window.addEventListener('resize', handleResize)
+    // Use ResizeObserver to detect container size changes (e.g., modal open, layout shifts)
+    const resizeObserver = new ResizeObserver(() => {
+      handleResize()
+    })
+
+    if (chartContainerRef.current) {
+      resizeObserver.observe(chartContainerRef.current)
+    }
 
     // Cleanup on unmount
     return () => {
-      window.removeEventListener('resize', handleResize)
+      resizeObserver.disconnect()
       timeScale.unsubscribeVisibleLogicalRangeChange(handleVisibleRangeChange)
       if (chartRef.current) {
         chartRef.current.remove()
@@ -751,7 +758,7 @@ export function TradingChart({
       
       <div
         ref={chartContainerRef}
-        className="rounded-lg overflow-hidden"
+        className="w-full rounded-lg overflow-hidden"
         style={{ height: `${height}px` }}
       />
       
