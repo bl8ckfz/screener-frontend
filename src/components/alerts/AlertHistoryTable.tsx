@@ -44,8 +44,9 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
     }
   }
 
-  const sortedStats = useMemo(() => {
-    const sorted = [...stats].sort((a, b) => {
+  // Sort function
+  const sortStats = (statsToSort: CoinAlertStats[]) => {
+    return [...statsToSort].sort((a, b) => {
       let comparison = 0
 
       switch (sortField) {
@@ -68,20 +69,18 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
 
       return sortDirection === 'asc' ? comparison : -comparison
     })
-
-    return sorted
-  }, [stats, sortField, sortDirection])
+  }
   
-  // Split stats into watchlist and main sections
+  // Split stats into watchlist and main sections, then sort each independently
   const { watchlistStats, mainStats } = useMemo(() => {
     if (!currentWatchlist) {
-      return { watchlistStats: [], mainStats: sortedStats }
+      return { watchlistStats: [], mainStats: sortStats(stats) }
     }
     
     const watchlist: CoinAlertStats[] = []
     const main: CoinAlertStats[] = []
     
-    sortedStats.forEach((stat) => {
+    stats.forEach((stat) => {
       if (currentWatchlist.symbols.includes(stat.symbol)) {
         watchlist.push(stat)
       } else {
@@ -89,8 +88,11 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
       }
     })
     
-    return { watchlistStats: watchlist, mainStats: main }
-  }, [sortedStats, currentWatchlist])
+    return { 
+      watchlistStats: sortStats(watchlist), 
+      mainStats: sortStats(main) 
+    }
+  }, [stats, currentWatchlist, sortField, sortDirection])
 
   const formatTimeAgo = (timestamp: number): string => {
     const seconds = Math.floor((Date.now() - timestamp) / 1000)
@@ -396,7 +398,7 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
 
       {/* Summary Footer */}
       <div className="text-sm text-gray-500 text-center py-2">
-        Total: {sortedStats.reduce((sum, stat) => sum + stat.totalAlerts, 0)} alerts across {sortedStats.length} coins
+        Total: {stats.reduce((sum, stat) => sum + stat.totalAlerts, 0)} alerts across {stats.length} coins
         {watchlistStats.length > 0 && (
           <span className="ml-2 text-green-400">
             ({watchlistStats.length} watchlist)
