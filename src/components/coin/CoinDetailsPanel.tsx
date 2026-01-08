@@ -80,7 +80,7 @@ export function CoinDetailsPanel({ coin, onClose, className = '' }: CoinDetailsP
       {/* Scrollable Content */}
       <div className="space-y-3 p-3 overflow-y-auto max-h-[600px]">
         {/* Current Price - Inline */}
-        <div className="bg-gray-800 rounded-lg p-2.5">
+        <div className="bg-gray-700 rounded-lg p-2.5">
           <div className="flex items-baseline justify-between">
             <div className={`text-lg font-bold ${priceChangeColor}`}>
               {formatPrice(coin.lastPrice)}
@@ -94,7 +94,7 @@ export function CoinDetailsPanel({ coin, onClose, className = '' }: CoinDetailsP
         {/* 24h Statistics, Volume & Fibonacci - 3 Column Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {/* 24h Statistics */}
-          <div className="bg-gray-800 rounded-lg p-3 space-y-2">
+          <div className="bg-gray-700 rounded-lg p-3 space-y-2">
             <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
               24h Statistics
             </h4>
@@ -133,7 +133,7 @@ export function CoinDetailsPanel({ coin, onClose, className = '' }: CoinDetailsP
           </div>
 
           {/* Volume Information */}
-          <div className="bg-gray-800 rounded-lg p-3 space-y-2">
+          <div className="bg-gray-700 rounded-lg p-3 space-y-2">
             <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
               Volume
             </h4>
@@ -160,7 +160,7 @@ export function CoinDetailsPanel({ coin, onClose, className = '' }: CoinDetailsP
           </div>
 
           {/* Fibonacci Pivots */}
-          <div className="bg-gray-800 rounded-lg p-3 space-y-2">
+          <div className="bg-gray-700 rounded-lg p-3 space-y-2">
             <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
               Fibonacci Pivots
             </h4>

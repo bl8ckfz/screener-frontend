@@ -21,7 +21,7 @@ function TechnicalIndicatorsComponent({ coin }: TechnicalIndicatorsProps) {
         <h3 className="text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">
           VCP Analysis
         </h3>
-        <div className="bg-gray-800 rounded-lg p-2.5">
+        <div className="bg-gray-700 rounded-lg p-2.5">
           <div className="flex items-center justify-between">
             <span className="text-gray-300 text-xs">VCP Value</span>
             <span
@@ -46,7 +46,7 @@ function TechnicalIndicatorsComponent({ coin }: TechnicalIndicatorsProps) {
         <h3 className="text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">
           Market Dominance
         </h3>
-        <div className="bg-gray-800 rounded-lg p-2 flex items-center gap-2 flex-wrap">
+        <div className="bg-gray-700 rounded-lg p-2 flex items-center gap-2 flex-wrap">
           {indicators.ethDominance !== null && (
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-gray-400">ETH</span>
@@ -92,7 +92,7 @@ function TechnicalIndicatorsComponent({ coin }: TechnicalIndicatorsProps) {
           Change Metrics
         </h3>
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-gray-800 rounded-lg p-3">
+          <div className="bg-gray-700 rounded-lg p-3">
             <div className="text-xs text-gray-400 mb-1">From WA</div>
             <div
               className={`text-sm font-mono ${
@@ -106,7 +106,7 @@ function TechnicalIndicatorsComponent({ coin }: TechnicalIndicatorsProps) {
               {formatPercent(indicators.priceChangeFromWeightedAvg)}
             </div>
           </div>
-          <div className="bg-gray-800 rounded-lg p-3">
+          <div className="bg-gray-700 rounded-lg p-3">
             <div className="text-xs text-gray-400 mb-1">From Prev Close</div>
             <div
               className={`text-sm font-mono ${
