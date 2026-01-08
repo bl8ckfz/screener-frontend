@@ -91,8 +91,8 @@ export function CoinDetailsPanel({ coin, onClose, className = '' }: CoinDetailsP
           </div>
         </div>
 
-        {/* 24h Statistics & Volume - Side by Side */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {/* 24h Statistics, Volume & Fibonacci - 3 Column Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {/* 24h Statistics */}
           <div className="bg-gray-800 rounded-lg p-3 space-y-2">
             <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
@@ -158,36 +158,51 @@ export function CoinDetailsPanel({ coin, onClose, className = '' }: CoinDetailsP
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Order Book */}
-        <div className="bg-gray-800 rounded-lg p-2.5">
-          <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-            Order Book
-          </h4>
-          <div className="space-y-1">
-            <div className="flex justify-between items-baseline text-xs">
-              <span className="text-gray-400">Bid</span>
-              <div className="text-right">
-                <span className="font-mono text-green-400">{formatPrice(coin.bidPrice)}</span>
-                <span className="text-gray-500 ml-2">({formatLargeNumber(coin.bidQty)})</span>
+          {/* Fibonacci Pivots */}
+          <div className="bg-gray-800 rounded-lg p-3 space-y-2">
+            <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+              Fibonacci Pivots
+            </h4>
+            <div className="space-y-1">
+              {/* Resistance Levels */}
+              <div className="space-y-0.5">
+                <div className="flex justify-between text-xs">
+                  <span className="text-red-400">R1</span>
+                  <span className="font-mono text-xs">{formatPrice(coin.indicators.fibonacci.resistance1)}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-red-300">R.618</span>
+                  <span className="font-mono text-xs">{formatPrice(coin.indicators.fibonacci.resistance0618)}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-red-200">R.382</span>
+                  <span className="font-mono text-xs">{formatPrice(coin.indicators.fibonacci.resistance0382)}</span>
+                </div>
               </div>
-            </div>
-            <div className="flex justify-between items-baseline text-xs">
-              <span className="text-gray-400">Ask</span>
-              <div className="text-right">
-                <span className="font-mono text-red-400">{formatPrice(coin.askPrice)}</span>
-                <span className="text-gray-500 ml-2">({formatLargeNumber(coin.askQty)})</span>
+              
+              {/* Pivot */}
+              <div className="border-y border-blue-700/50 py-0.5">
+                <div className="flex justify-between text-xs">
+                  <span className="text-blue-400 font-semibold">Pivot</span>
+                  <span className="font-mono font-semibold text-xs">{formatPrice(coin.indicators.fibonacci.pivot)}</span>
+                </div>
               </div>
-            </div>
-            <div className="pt-1 border-t border-gray-700">
-              <div className="flex justify-between text-xs">
-                <span className="text-gray-400">Spread</span>
-                <span className="font-mono text-gray-300">
-                  {formatPercent(
-                    ((coin.askPrice - coin.bidPrice) / coin.bidPrice) * 100
-                  )}
-                </span>
+              
+              {/* Support Levels */}
+              <div className="space-y-0.5">
+                <div className="flex justify-between text-xs">
+                  <span className="text-green-200">S.382</span>
+                  <span className="font-mono text-xs">{formatPrice(coin.indicators.fibonacci.support0382)}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-green-300">S.618</span>
+                  <span className="font-mono text-xs">{formatPrice(coin.indicators.fibonacci.support0618)}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-green-400">S1</span>
+                  <span className="font-mono text-xs">{formatPrice(coin.indicators.fibonacci.support1)}</span>
+                </div>
               </div>
             </div>
           </div>
