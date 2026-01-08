@@ -247,7 +247,7 @@ function App() {
             <SearchBar ref={searchInputRef} onSearch={setSearchQuery} />
 
             {/* Alert History Table - Compact */}
-            <div className="bg-gray-900/40 rounded-lg overflow-hidden border border-gray-700">
+            <div className="bg-gray-900/40 rounded-lg overflow-hidden border border-gray-700 bg-gray-800">
               <AlertHistoryTable
                 stats={filteredAlertStats}
                 selectedSymbol={selectedAlert?.coin?.symbol}
@@ -271,7 +271,7 @@ function App() {
 
             {/* Coin Details Below Chart */}
             {selectedAlert?.coin && (
-              <div className="bg-gray-900/40 rounded-lg border border-gray-700 p-4">
+              <div className="bg-gray-800 rounded-lg border border-gray-700">
                 <CoinDetailsPanel 
                   coin={selectedAlert.coin}
                   onClose={() => setSelectedAlert(null)}

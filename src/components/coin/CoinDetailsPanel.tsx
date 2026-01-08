@@ -41,48 +41,44 @@ export function CoinDetailsPanel({ coin, onClose, className = '' }: CoinDetailsP
         : 'text-neutral'
 
   return (
-    <div className={`h-full overflow-y-auto ${className}`}>
-      {/* Sticky Header */}
-      <div className="sticky top-0 z-10 bg-gray-900 border-b border-gray-700 p-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div>
-              <h3 className="text-base font-bold text-white">
-                {coin.symbol}
-                <span className="text-gray-400 text-xs ml-1.5">/ {coin.pair}</span>
-              </h3>
-            </div>
-            <Badge
-              variant={
-                coin.priceChangePercent > 0
-                  ? 'success'
-                  : coin.priceChangePercent < 0
-                    ? 'danger'
-                    : 'default'
-              }
-              size="md"
-            >
-              {coin.priceChangePercent > 0 ? '+' : ''}
-              {formatPercent(coin.priceChangePercent)}
-            </Badge>
-          </div>
-          
-          {onClose && (
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-white transition-colors"
-              aria-label="Deselect coin"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
+    <div className={`${className}`}>
+      {/* Header - Matches Chart Section Style */}
+      <div className="flex items-center justify-between p-4 border-b border-gray-700">
+        <div className="flex items-center space-x-3">
+          <h3 className="text-lg font-semibold text-white">
+            {coin.symbol}
+            <span className="text-gray-400 text-sm ml-2">/ {coin.pair}</span>
+          </h3>
+          <Badge
+            variant={
+              coin.priceChangePercent > 0
+                ? 'success'
+                : coin.priceChangePercent < 0
+                  ? 'danger'
+                  : 'default'
+            }
+            size="md"
+          >
+            {coin.priceChangePercent > 0 ? '+' : ''}
+            {formatPercent(coin.priceChangePercent)}
+          </Badge>
         </div>
+        
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-white transition-colors"
+            aria-label="Deselect coin"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Scrollable Content */}
-      <div className="space-y-3 p-3">
+      <div className="space-y-3 p-3 overflow-y-auto max-h-[600px]">
         {/* Current Price - Inline */}
         <div className="bg-gray-800 rounded-lg p-2.5">
           <div className="flex items-baseline justify-between">

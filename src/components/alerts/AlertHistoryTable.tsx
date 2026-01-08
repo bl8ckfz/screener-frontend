@@ -180,16 +180,16 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
   }
 
   return (
-    <div className="space-y-2">
-      {/* Header with Clear button - Compact */}
-      <div className="flex items-center justify-between px-3 py-2">
-        <div>
-          <h2 className="text-base font-bold text-white">
+    <div className="space-y-0">
+      {/* Header with Clear button - Matches Chart Section Style */}
+      <div className="flex items-center justify-between p-4 bg-gray-800 border-b border-gray-700 rounded-t-lg">
+        <div className="flex items-center space-x-3">
+          <h2 className="text-lg font-semibold text-white">
             Alert History
           </h2>
-          <p className="text-xs text-gray-400 mt-0.5">
+          <div className="text-xs text-gray-400">
             {stats.length} coins
-          </p>
+          </div>
         </div>
         <Button
           onClick={onClearHistory}
