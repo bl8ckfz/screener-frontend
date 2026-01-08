@@ -412,7 +412,8 @@ function App() {
             <div className="bg-gray-900 rounded-lg overflow-hidden p-6">
               <AlertHistoryTable
                 stats={filteredAlertStats}
-                onCoinClick={(symbol) => {
+                selectedSymbol={selectedCoin?.symbol}
+                onAlertClick={(symbol: string) => {
                   const coin = coins?.find((c) => c.symbol === symbol)
                   if (coin) setSelectedCoin(coin)
                 }}
