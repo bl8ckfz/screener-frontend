@@ -202,8 +202,8 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
 
       {/* Watchlist Alerts Section */}
       {watchlistStats.length > 0 && (
-        <div className="bg-green-800/20 border-l-2 border-green-400 rounded-r-lg overflow-hidden">
-          <div className="sticky top-0 bg-gray-700/50 backdrop-blur-sm px-3 py-1.5 flex items-center justify-between border-b border-green-400/30">
+        <div className="bg-gray-900/60 border-l-2 border-green-400 rounded-r-lg overflow-hidden">
+          <div className="sticky top-0 bg-gray-800/80 backdrop-blur-sm px-3 py-1.5 flex items-center justify-between border-b border-green-400/30">
             <Badge variant="success" size="md">
               ⭐ Watchlist ({watchlistStats.length})
             </Badge>
@@ -218,7 +218,7 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
             <div>
               <table className="w-full table-fixed">
                 <thead>
-                  <tr className="border-b border-gray-600/50 bg-gray-700/30">
+                  <tr className="border-b border-gray-600/50 bg-gray-800/50">
                     <th className="text-center py-1 px-2 text-xs font-semibold text-gray-300 w-10">
                       ⭐
                     </th>
@@ -294,9 +294,9 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
       {/* Divider - Only show if both sections have data */}
       {watchlistStats.length > 0 && mainStats.length > 0 && (
         <div className="relative">
-          <div className="h-px bg-gradient-to-r from-transparent via-gray-600 to-transparent" />
+          <div className="h-px bg-gradient-to-r from-transparent via-gray-700 to-transparent" />
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="bg-gray-900 px-4 text-xs text-gray-500 uppercase tracking-wider">
+            <div className="bg-gray-900/95 px-4 text-xs text-gray-500 uppercase tracking-wider">
               All Other Alerts
             </div>
           </div>
@@ -305,8 +305,8 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
 
       {/* Main Alerts Section */}
       {mainStats.length > 0 && (
-        <div className="bg-blue-800/20 border-l-2 border-blue-400 rounded-r-lg overflow-hidden">
-          <div className="sticky top-0 bg-gray-700/50 backdrop-blur-sm px-3 py-1.5 flex items-center justify-between border-b border-blue-400/30">
+        <div className="bg-gray-900/60 border-l-2 border-blue-400 rounded-r-lg overflow-hidden">
+          <div className="sticky top-0 bg-gray-800/80 backdrop-blur-sm px-3 py-1.5 flex items-center justify-between border-b border-blue-400/30">
             <Badge variant="info" size="md">
               📊 All Alerts ({mainStats.length})
             </Badge>
@@ -321,13 +321,13 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
             <div>
               <table className="w-full table-fixed">
                 <thead>
-                  <tr className="border-b border-gray-600/50 bg-gray-700/30">
+                  <tr className="border-b border-gray-600/50 bg-gray-800/50">
                     <th className="text-center py-1 px-2 text-xs font-semibold text-gray-300 w-10">
                       ⭐
                     </th>
                     <th 
                       onClick={() => handleSort('symbol')}
-                      className="text-left py-3 px-4 text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none"
+                      className="text-left py-1 px-2 text-xs font-semibold text-gray-300 cursor-pointer hover:text-white transition-colors select-none"
                     >
                       <div className="flex items-center gap-1">
                         Symbol
@@ -338,7 +338,7 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
                     </th>
                     <th 
                       onClick={() => handleSort('price')}
-                      className="text-right py-3 px-4 text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none"
+                      className="text-right py-1 px-2 text-xs font-semibold text-gray-300 cursor-pointer hover:text-white transition-colors select-none"
                     >
                       <div className="flex items-center justify-end gap-1">
                         Price
@@ -349,10 +349,10 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
                     </th>
                     <th 
                       onClick={() => handleSort('change')}
-                      className="text-right py-3 px-4 text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none"
+                      className="text-right py-1 px-2 text-xs font-semibold text-gray-300 cursor-pointer hover:text-white transition-colors select-none"
                     >
                       <div className="flex items-center justify-end gap-1">
-                        24h Change
+                        24h
                         {sortField === 'change' && (
                           <span className="text-accent">{sortDirection === 'asc' ? '↑' : '↓'}</span>
                         )}
@@ -360,24 +360,24 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
                     </th>
                     <th 
                       onClick={() => handleSort('alerts')}
-                      className="text-center py-3 px-4 text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none"
+                      className="text-center py-1 px-2 text-xs font-semibold text-gray-300 cursor-pointer hover:text-white transition-colors select-none"
                     >
                       <div className="flex items-center justify-center gap-1">
-                        Total Alerts
+                        #
                         {sortField === 'alerts' && (
                           <span className="text-accent">{sortDirection === 'asc' ? '↑' : '↓'}</span>
                         )}
                       </div>
                     </th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-400">
-                      Alert Types
+                    <th className="text-left py-1 px-2 text-xs font-semibold text-gray-300">
+                      Types
                     </th>
                     <th 
                       onClick={() => handleSort('lastAlert')}
-                      className="text-right py-3 px-4 text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none"
+                      className="text-right py-1 px-2 text-xs font-semibold text-gray-300 cursor-pointer hover:text-white transition-colors select-none"
                     >
                       <div className="flex items-center justify-end gap-1">
-                        Last Alert
+                        Time
                         {sortField === 'lastAlert' && (
                           <span className="text-accent">{sortDirection === 'asc' ? '↑' : '↓'}</span>
                         )}
