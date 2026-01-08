@@ -221,35 +221,40 @@ function App() {
         subtitle="Real-time USDT market analysis"
         onOpenSettings={() => setIsSettingsOpen(true)}
       >
-        {/* Market Summary - Full Width Above Content */}
-        <div className="mb-6">
-          <div className="bg-gray-900 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-white">Market Overview</h2>
+        {/* Compact Market Summary Bar */}
+        <div className="mb-4">
+          <div className="bg-gray-900 rounded-lg px-4 py-2">
+            <div className="flex items-center justify-between">
+              <MarketSummary coins={coins} isLoading={isLoading} />
               <div className="flex items-center space-x-4">
-                <WatchlistSelector />
                 <LiveStatusBadge
                   connected={isInitialized}
                   lastUpdate={lastUpdate}
                   warmupStatus={warmupStatus}
                 />
+                {wsError && (
+                  <div className="text-xs text-error-text bg-error-bg border border-error-border rounded px-2 py-1">
+                    WS Error: {wsError.message}
+                  </div>
+                )}
               </div>
             </div>
-            <MarketSummary coins={coins} isLoading={isLoading} />
-            {wsError && (
-              <div className="text-xs text-error-text bg-error-bg border border-error-border rounded px-2 py-1 mt-4">
-                WebSocket Error: {wsError.message}
-              </div>
-            )}
           </div>
         </div>
 
-        {/* Three Column Layout: Alert History | Chart | Coin Details */}
+        {/* Two Column Layout: Alert History with Charts | Coin Details */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-          {/* Left Column - Alert History */}
-          <div className="lg:col-span-4 space-y-4">
-            {/* Search Bar */}
-            <SearchBar ref={searchInputRef} onSearch={setSearchQuery} />
+          {/* Left Column - Alert History with Expandable Charts */}
+          <div className={`transition-all duration-300 space-y-4 ${
+            rightSidebarCollapsed ? 'lg:col-span-12' : 'lg:col-span-9'
+          }`}>
+            {/* Search Bar and Watchlist Selector */}
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <SearchBar ref={searchInputRef} onSearch={setSearchQuery} />
+              </div>
+              <WatchlistSelector />
+            </div>
 
             {/* Alert History Table */}
             <div className="bg-gray-900 rounded-lg overflow-hidden">
@@ -264,16 +269,16 @@ function App() {
                 }}
               />
             </div>
-          </div>
 
-          {/* Middle Column - Chart Section */}
-          <div className={`transition-all duration-300 ${
-            rightSidebarCollapsed ? 'lg:col-span-8' : 'lg:col-span-5'
-          }`}>
-            <ChartSection 
-              selectedCoin={selectedAlert?.coin || null}
-              onClose={() => setSelectedAlert(null)}
-            />
+            {/* Chart Section - Slides down when coin selected */}
+            {selectedAlert?.coin && (
+              <div className="animate-slide-down">
+                <ChartSection 
+                  selectedCoin={selectedAlert.coin}
+                  onClose={() => setSelectedAlert(null)}
+                />
+              </div>
+            )}
           </div>
 
           {/* Right Column - Coin Details Sidebar */}
