@@ -223,7 +223,7 @@ function App() {
       >
         {/* Compact Market Summary Bar */}
         <div className="mb-4">
-          <div className="bg-gray-900 rounded-lg px-4 py-2">
+          <div className="bg-gray-700/40 backdrop-blur-sm rounded-lg px-4 py-2 border border-gray-600">
             <div className="flex items-center justify-between">
               <MarketSummary coins={coins} isLoading={isLoading} />
               <div className="flex items-center space-x-4">
@@ -242,32 +242,20 @@ function App() {
           </div>
         </div>
 
-        {/* Two Column Layout: Alert History with Charts | Coin Details */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-          {/* Left Column - Alert History with Sticky Chart Above */}
-          <div className={`transition-all duration-300 space-y-4 ${
-            rightSidebarCollapsed ? 'lg:col-span-12' : 'lg:col-span-9'
-          }`}>
+        {/* Three Column Layout: Alert History | Fixed Chart | Coin Details */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
+          {/* Left Column - Alert History (Compact) */}
+          <div className="lg:col-span-4 space-y-3">
             {/* Search Bar and Watchlist Selector */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
               <div className="flex-1">
                 <SearchBar ref={searchInputRef} onSearch={setSearchQuery} />
               </div>
               <WatchlistSelector />
             </div>
 
-            {/* Sticky Chart Section - Appears above table when coin selected */}
-            {selectedAlert?.coin && (
-              <div className="sticky top-0 z-10 animate-slide-down">
-                <ChartSection 
-                  selectedCoin={selectedAlert.coin}
-                  onClose={() => setSelectedAlert(null)}
-                />
-              </div>
-            )}
-
-            {/* Alert History Table - Full Width */}
-            <div className="bg-gray-900 rounded-lg overflow-hidden">
+            {/* Alert History Table - Compact */}
+            <div className="bg-gray-800/50 rounded-lg overflow-hidden border border-gray-700">
               <AlertHistoryTable
                 stats={filteredAlertStats}
                 selectedSymbol={selectedAlert?.coin?.symbol}
@@ -279,6 +267,16 @@ function App() {
                 }}
               />
             </div>
+          </div>
+
+          {/* Middle Column - Fixed Chart (Never Moves) */}
+          <div className={`transition-all duration-300 ${
+            rightSidebarCollapsed ? 'lg:col-span-8' : 'lg:col-span-5'
+          }`}>
+            <ChartSection 
+              selectedCoin={selectedAlert?.coin || null}
+              onClose={() => setSelectedAlert(null)}
+            />
           </div>
 
           {/* Right Column - Coin Details Sidebar */}

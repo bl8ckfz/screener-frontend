@@ -101,35 +101,34 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
     return `${Math.floor(seconds / 86400)}d ago`
   }
   
-  // Render table rows for a section
+  // Render table rows for a section - COMPACT VERSION
   const renderRows = (statsToRender: CoinAlertStats[]) => (
     statsToRender.map((stat) => (
       <tr
         key={stat.symbol}
-        className={`border-b border-gray-800 hover:bg-gray-800/50 transition-colors cursor-pointer ${
-          selectedSymbol === stat.symbol ? 'bg-blue-900/30' : ''
+        className={`border-b border-gray-700/50 hover:bg-gray-700/30 transition-colors cursor-pointer text-sm ${
+          selectedSymbol === stat.symbol ? 'bg-blue-800/40' : ''
         }`}
         onClick={() => onAlertClick(stat.symbol, stat)}
       >
         {/* Watchlist Star */}
-        <td className="py-3 px-3 w-16" onClick={(e) => e.stopPropagation()}>
+        <td className="py-1.5 px-2 w-10" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-center">
             <WatchlistBadge symbol={stat.symbol} />
           </div>
         </td>
 
         {/* Symbol */}
-        <td className="py-3 px-4">
-          <div className="flex items-center gap-2">
-            <span className="font-mono font-semibold text-white">
+        <td className="py-1.5 px-2">
+          <div className="flex items-center gap-1">
+            <span className="font-mono font-semibold text-white text-sm">
               {stat.symbol}
             </span>
-            <span className="text-xs text-gray-500">USDT</span>
           </div>
         </td>
 
         {/* Current Price */}
-        <td className="py-3 px-4 text-right font-mono text-sm text-gray-200">
+        <td className="py-1.5 px-2 text-right font-mono text-xs text-gray-200">
           {stat.currentPrice < 0.0001
             ? stat.currentPrice.toFixed(8)
             : stat.currentPrice < 1
@@ -138,7 +137,7 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
         </td>
 
         {/* 24h Change */}
-        <td className="py-3 px-4 text-right font-mono text-sm font-semibold">
+        <td className="py-1.5 px-2 text-right font-mono text-xs font-semibold">
           <span
             className={
               stat.priceChange >= 0
@@ -147,28 +146,28 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
             }
           >
             {stat.priceChange >= 0 ? '+' : ''}
-            {stat.priceChange.toFixed(2)}%
+            {stat.priceChange.toFixed(1)}%
           </span>
         </td>
 
         {/* Total Alerts */}
-        <td className="py-3 px-4 text-center">
-          <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-accent/20 text-accent font-bold text-sm">
+        <td className="py-1.5 px-2 text-center">
+          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-accent/20 text-accent font-bold text-xs">
             {stat.totalAlerts}
           </span>
         </td>
 
         {/* Alert Type Badges */}
-        <td className="py-3 px-4">
+        <td className="py-1.5 px-2">
           <AlertBadges 
             alertTypes={stat.alertTypes} 
-            maxVisible={3}
+            maxVisible={2}
             latestAlertType={stat.alerts[0]?.alertType}
           />
         </td>
 
         {/* Last Alert Time */}
-        <td className="py-3 px-4 text-right text-xs text-gray-400">
+        <td className="py-1.5 px-2 text-right text-[10px] text-gray-400">
           {formatTimeAgo(stat.lastAlertTimestamp)}
         </td>
       </tr>
@@ -181,15 +180,15 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header with Clear button */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-2">
+      {/* Header with Clear button - Compact */}
+      <div className="flex items-center justify-between px-3 py-2">
         <div>
-          <h2 className="text-xl font-bold text-white">
+          <h2 className="text-base font-bold text-white">
             Alert History
           </h2>
-          <p className="text-sm text-gray-400 mt-1">
-            Showing {stats.length} coins with alerts in the last 24 hours
+          <p className="text-xs text-gray-400 mt-0.5">
+            {stats.length} coins
           </p>
         </div>
         <Button
@@ -197,20 +196,20 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
           variant="secondary"
           size="sm"
         >
-          🗑️ Clear History
+          🗑️
         </Button>
       </div>
 
       {/* Watchlist Alerts Section */}
       {watchlistStats.length > 0 && (
-        <div className="bg-green-900/10 border-l-4 border-green-500 rounded-r-lg overflow-hidden">
-          <div className="sticky top-0 bg-gray-900 px-4 py-3 flex items-center justify-between border-b border-green-500/30">
+        <div className="bg-green-800/20 border-l-2 border-green-400 rounded-r-lg overflow-hidden">
+          <div className="sticky top-0 bg-gray-700/50 backdrop-blur-sm px-3 py-1.5 flex items-center justify-between border-b border-green-400/30">
             <Badge variant="success" size="md">
-              ⭐ Watchlist Alerts ({watchlistStats.length})
+              ⭐ Watchlist ({watchlistStats.length})
             </Badge>
             <button
               onClick={() => setWatchlistCollapsed(!watchlistCollapsed)}
-              className="text-xs text-gray-400 hover:text-white transition-colors"
+              className="text-[10px] text-gray-300 hover:text-white transition-colors"
             >
               {watchlistCollapsed ? 'Expand ▼' : 'Collapse ▲'}
             </button>
@@ -219,13 +218,13 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-700">
-                    <th className="text-center py-3 px-3 text-sm font-semibold text-gray-400 w-16">
+                  <tr className="border-b border-gray-600/50 bg-gray-700/30">
+                    <th className="text-center py-1 px-2 text-xs font-semibold text-gray-300 w-10">
                       ⭐
                     </th>
                     <th 
                       onClick={() => handleSort('symbol')}
-                      className="text-left py-3 px-4 text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none"
+                      className="text-left py-1 px-2 text-xs font-semibold text-gray-300 cursor-pointer hover:text-white transition-colors select-none"
                     >
                       <div className="flex items-center gap-1">
                         Symbol
