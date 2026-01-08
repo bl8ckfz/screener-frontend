@@ -43,15 +43,14 @@ export function CoinDetailsPanel({ coin, onClose, className = '' }: CoinDetailsP
   return (
     <div className={`h-full overflow-y-auto ${className}`}>
       {/* Sticky Header */}
-      <div className="sticky top-0 z-10 bg-gray-900 border-b border-gray-700 p-4">
+      <div className="sticky top-0 z-10 bg-gray-900 border-b border-gray-700 p-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
             <div>
-              <h3 className="text-lg font-bold text-white">
+              <h3 className="text-base font-bold text-white">
                 {coin.symbol}
-                <span className="text-gray-400 text-sm ml-2">/ {coin.pair}</span>
+                <span className="text-gray-400 text-xs ml-1.5">/ {coin.pair}</span>
               </h3>
-              <p className="text-xs text-gray-500">{coin.fullSymbol}</p>
             </div>
             <Badge
               variant={
@@ -74,7 +73,7 @@ export function CoinDetailsPanel({ coin, onClose, className = '' }: CoinDetailsP
               className="text-gray-400 hover:text-white transition-colors"
               aria-label="Deselect coin"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -84,16 +83,15 @@ export function CoinDetailsPanel({ coin, onClose, className = '' }: CoinDetailsP
 
       {/* Scrollable Content */}
       <div className="space-y-3 p-3">
-        {/* Current Price */}
-        <div className="bg-gray-800 rounded-lg p-3">
-          <div className="text-xs text-gray-400 mb-1">
-            Current Price
-          </div>
-          <div className={`text-xl font-bold ${priceChangeColor}`}>
-            {formatPrice(coin.lastPrice)}
-          </div>
-          <div className="text-xs text-gray-500 mt-0.5">
-            {formatDateTime(coin.closeTime)}
+        {/* Current Price - Inline */}
+        <div className="bg-gray-800 rounded-lg p-2.5">
+          <div className="flex items-baseline justify-between">
+            <div className={`text-lg font-bold ${priceChangeColor}`}>
+              {formatPrice(coin.lastPrice)}
+            </div>
+            <div className="text-xs text-gray-500">
+              {formatDateTime(coin.closeTime)}
+            </div>
           </div>
         </div>
 
@@ -167,32 +165,26 @@ export function CoinDetailsPanel({ coin, onClose, className = '' }: CoinDetailsP
         </div>
 
         {/* Order Book */}
-        <div className="bg-gray-800 rounded-lg p-3 space-y-2">
-          <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+        <div className="bg-gray-800 rounded-lg p-2.5">
+          <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
             Order Book
           </h4>
-          <div className="space-y-1.5">
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-400">Best Bid</span>
-              <span className="font-mono text-green-400">
-                {formatPrice(coin.bidPrice)}
-              </span>
+          <div className="space-y-1">
+            <div className="flex justify-between items-baseline text-xs">
+              <span className="text-gray-400">Bid</span>
+              <div className="text-right">
+                <span className="font-mono text-green-400">{formatPrice(coin.bidPrice)}</span>
+                <span className="text-gray-500 ml-2">({formatLargeNumber(coin.bidQty)})</span>
+              </div>
             </div>
-            <div className="flex justify-between text-xs text-gray-500">
-              <span>Bid Qty</span>
-              <span>{formatLargeNumber(coin.bidQty)}</span>
+            <div className="flex justify-between items-baseline text-xs">
+              <span className="text-gray-400">Ask</span>
+              <div className="text-right">
+                <span className="font-mono text-red-400">{formatPrice(coin.askPrice)}</span>
+                <span className="text-gray-500 ml-2">({formatLargeNumber(coin.askQty)})</span>
+              </div>
             </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-400">Best Ask</span>
-              <span className="font-mono text-red-400">
-                {formatPrice(coin.askPrice)}
-              </span>
-            </div>
-            <div className="flex justify-between text-xs text-gray-500">
-              <span>Ask Qty</span>
-              <span>{formatLargeNumber(coin.askQty)}</span>
-            </div>
-            <div className="pt-1.5 border-t border-gray-700">
+            <div className="pt-1 border-t border-gray-700">
               <div className="flex justify-between text-xs">
                 <span className="text-gray-400">Spread</span>
                 <span className="font-mono text-gray-300">
