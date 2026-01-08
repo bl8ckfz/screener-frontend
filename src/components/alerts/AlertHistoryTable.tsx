@@ -4,7 +4,7 @@ import { AlertBadges } from './AlertBadges'
 import { EmptyAlertHistory } from './EmptyAlertHistory'
 import { formatNumber } from '@/utils/format'
 import { Button } from '@/components/ui'
-import { WatchlistBadge } from '@/components/watchlist/WatchlistBadge'
+import { WatchlistStar } from '@/components/coin/WatchlistStar'
 import { useStore } from '@/hooks/useStore'
 
 interface AlertHistoryTableProps {
@@ -21,7 +21,7 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
   const [sortField, setSortField] = useState<SortField>('alerts')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
   
-  const watchlists = useStore((state) => state.watchlists)
+  const watchlistSymbols = useStore((state) => state.watchlistSymbols)
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -59,17 +59,11 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
   
   // Split stats into watchlist and main sections, then sort each independently
   const { watchlistStats, mainStats } = useMemo(() => {
-    // Get all symbols from ALL watchlists
-    const allWatchlistSymbols = new Set<string>()
-    watchlists.forEach((wl) => {
-      wl.symbols.forEach((symbol) => allWatchlistSymbols.add(symbol))
-    })
-    
     const watchlist: CoinAlertStats[] = []
     const main: CoinAlertStats[] = []
     
     stats.forEach((stat) => {
-      if (allWatchlistSymbols.has(stat.symbol)) {
+      if (watchlistSymbols.includes(stat.symbol)) {
         watchlist.push(stat)
       } else {
         main.push(stat)
@@ -80,7 +74,7 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
       watchlistStats: sortStats(watchlist), 
       mainStats: sortStats(main) 
     }
-  }, [stats, watchlists, sortField, sortDirection])
+  }, [stats, watchlistSymbols, sortField, sortDirection])
 
   const formatTimeAgo = (timestamp: number): string => {
     const seconds = Math.floor((Date.now() - timestamp) / 1000)
@@ -177,9 +171,9 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
               }`}
               onClick={() => onAlertClick(stat.symbol, stat)}
             >
-              <td className="py-1.5 px-2 w-10" onClick={(e) => e.stopPropagation()}>
+              <td className="py-1.5 px-2 w-10">
                 <div className="flex items-center justify-center">
-                  <WatchlistBadge symbol={stat.symbol} />
+                  <WatchlistStar symbol={stat.symbol} />
                 </div>
               </td>
               <td className="py-1.5 px-2">
@@ -241,9 +235,9 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
               }`}
               onClick={() => onAlertClick(stat.symbol, stat)}
             >
-              <td className="py-1.5 px-2 w-10" onClick={(e) => e.stopPropagation()}>
+              <td className="py-1.5 px-2 w-10">
                 <div className="flex items-center justify-center">
-                  <WatchlistBadge symbol={stat.symbol} />
+                  <WatchlistStar symbol={stat.symbol} />
                 </div>
               </td>
               <td className="py-1.5 px-2">

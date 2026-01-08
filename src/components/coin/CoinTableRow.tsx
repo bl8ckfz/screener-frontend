@@ -8,7 +8,7 @@
 import { memo } from 'react'
 import type { Coin } from '@/types/coin'
 import { formatPrice, formatPercent, formatVolume } from '@/utils/format'
-import { WatchlistBadge } from '@/components/watchlist/WatchlistBadge'
+import { WatchlistStar } from './WatchlistStar'
 
 interface CoinTableRowProps {
   coin: Coin
@@ -29,9 +29,9 @@ function CoinTableRowComponent({ coin, index, onClick }: CoinTableRowProps) {
       className="border-b border-gray-800 hover:bg-gray-900 cursor-pointer transition-all duration-150 hover:scale-[1.01] hover:shadow-lg animate-in fade-in slide-in-from-left-2"
       style={{ animationDelay: `${index * 20}ms` }}
     >
-      <td className="px-3 py-2.5 w-16" onClick={(e) => e.stopPropagation()}>
+      <td className="px-3 py-2.5 w-16">
         <div className="flex items-center justify-center">
-          <WatchlistBadge symbol={coin.symbol} />
+          <WatchlistStar symbol={coin.symbol} />
         </div>
       </td>
       <td className="px-4 py-2.5 font-medium whitespace-nowrap text-base w-28">{coin.symbol}</td>

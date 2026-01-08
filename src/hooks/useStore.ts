@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { debug } from '@/utils/debug'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import type { CurrencyPair, Coin, CoinSort } from '@/types/coin'
-import type { ScreeningListId, Watchlist } from '@/types/screener'
+import type { ScreeningListId } from '@/types/screener'
 import type { AppConfig } from '@/types/config'
 import { DEFAULT_CONFIG, STORAGE_KEYS } from '@/types/config'
 import type { AlertRule, AlertSettings, Alert } from '@/types/alert'
@@ -59,9 +59,8 @@ interface AppState {
   activeView: 'coins' | 'alerts'
   setActiveView: (view: 'coins' | 'alerts') => void
 
-  // Watchlists
-  watchlists: Watchlist[]
-  currentWatchlistId: string | null
+  // Watchlist (simplified - single default watchlist)
+  watchlistSymbols: string[]
 
   // Auth
   user: User | null
@@ -100,13 +99,8 @@ interface AppState {
   clearAlerts: () => void
   
   // Watchlist actions
-  addWatchlist: (watchlist: Omit<Watchlist, 'id' | 'createdAt' | 'updatedAt'>) => void
-  updateWatchlist: (watchlistId: string, updates: Partial<Omit<Watchlist, 'id' | 'createdAt'>>) => void
-  deleteWatchlist: (watchlistId: string) => void
-  setCurrentWatchlist: (watchlistId: string | null) => void
-  addToWatchlist: (watchlistId: string, symbol: string) => Promise<void>
-  removeFromWatchlist: (watchlistId: string, symbol: string) => Promise<void>
-  setWatchlists: (watchlists: Watchlist[]) => void
+  toggleWatchlist: (symbol: string) => void
+  setWatchlistSymbols: (symbols: string[]) => void
   setAlertRules: (rules: AlertRule[]) => void
   
   // Auth actions
@@ -165,9 +159,8 @@ const initialState = {
   alertHistoryRefresh: Date.now(),
   activeView: 'coins' as const,
   
-  // Watchlist defaults
-  watchlists: [] as Watchlist[],
-  currentWatchlistId: null,
+  // Watchlist defaults (simplified - single array)
+  watchlistSymbols: [] as string[],
   
   // Auth defaults
   user: null,
@@ -307,84 +300,19 @@ export const useStore = create<AppState>()(
         }
       },
 
-      // Watchlist actions
-      addWatchlist: (watchlist) => {
-        const now = Date.now()
-        const newWatchlist: Watchlist = {
-          ...watchlist,
-          id: `watchlist_${now}_${Math.random().toString(36).substr(2, 9)}`,
-          createdAt: now,
-          updatedAt: now,
-        }
-        set((state) => ({
-          watchlists: [...state.watchlists, newWatchlist],
-        }))
-      },
-
-      updateWatchlist: (watchlistId, updates) =>
-        set((state) => ({
-          watchlists: state.watchlists.map((wl) =>
-            wl.id === watchlistId
-              ? { ...wl, ...updates, updatedAt: Date.now() }
-              : wl
-          ),
-        })),
-
-      deleteWatchlist: (watchlistId) =>
-        set((state) => ({
-          watchlists: state.watchlists.filter((wl) => wl.id !== watchlistId),
-          currentWatchlistId: state.currentWatchlistId === watchlistId ? null : state.currentWatchlistId,
-        })),
-
-      setCurrentWatchlist: (watchlistId) =>
-        set({ currentWatchlistId: watchlistId }),
-
-      addToWatchlist: async (watchlistId, symbol) => {
-        let updatedWatchlist: Watchlist | undefined
-        let userId: string | undefined
-
+      // Watchlist actions (simplified)
+      toggleWatchlist: (symbol) =>
         set((state) => {
-          userId = state.user?.id
-          const updatedWatchlists = state.watchlists.map((wl: Watchlist) =>
-            wl.id === watchlistId && !wl.symbols.includes(symbol)
-              ? { ...wl, symbols: [...wl.symbols, symbol], updatedAt: Date.now() }
-              : wl
-          )
-          updatedWatchlist = updatedWatchlists.find((wl: Watchlist) => wl.id === watchlistId)
-          return { watchlists: updatedWatchlists }
-        })
+          const isInWatchlist = state.watchlistSymbols.includes(symbol)
+          const newWatchlistSymbols = isInWatchlist
+            ? state.watchlistSymbols.filter((s) => s !== symbol)
+            : [...state.watchlistSymbols, symbol]
+          
+          return { watchlistSymbols: newWatchlistSymbols }
+        }),
 
-        // Sync to cloud if authenticated
-        if (userId && updatedWatchlist) {
-          const { syncSingleWatchlistToCloud } = await import('@/services/syncService')
-          await syncSingleWatchlistToCloud(userId, updatedWatchlist).catch(console.error)
-        }
-      },
-
-      removeFromWatchlist: async (watchlistId, symbol) => {
-        let updatedWatchlist: Watchlist | undefined
-        let userId: string | undefined
-
-        set((state) => {
-          userId = state.user?.id
-          const updatedWatchlists = state.watchlists.map((wl: Watchlist) =>
-            wl.id === watchlistId
-              ? { ...wl, symbols: wl.symbols.filter((s: string) => s !== symbol), updatedAt: Date.now() }
-              : wl
-          )
-          updatedWatchlist = updatedWatchlists.find((wl: Watchlist) => wl.id === watchlistId)
-          return { watchlists: updatedWatchlists }
-        })
-
-        // Sync to cloud if authenticated
-        if (userId && updatedWatchlist) {
-          const { syncSingleWatchlistToCloud } = await import('@/services/syncService')
-          await syncSingleWatchlistToCloud(userId, updatedWatchlist).catch(console.error)
-        }
-      },
-
-      setWatchlists: (watchlists) =>
-        set({ watchlists }),
+      setWatchlistSymbols: (watchlistSymbols) =>
+        set({ watchlistSymbols }),
 
       setAlertRules: (alertRules) =>
         set({ alertRules }),
@@ -419,7 +347,7 @@ export const useStore = create<AppState>()(
               theme: state.theme,
             },
             alertSettings: state.alertSettings,
-            watchlists: state.watchlists,
+            watchlistSymbols: state.watchlistSymbols,
             alertRules: state.alertRules,
             webhooks: state.alertSettings.webhooks,
           })
@@ -467,7 +395,7 @@ export const useStore = create<AppState>()(
           }
           
           set({
-            watchlists: cloudData.watchlists,
+            watchlistSymbols: cloudData.watchlistSymbols || [],
             alertRules: cloudData.alertRules,
             alertSettings: {
               ...state.alertSettings,
@@ -503,8 +431,7 @@ export const useStore = create<AppState>()(
         rightSidebarCollapsed: state.rightSidebarCollapsed,
         alertRules: state.alertRules,
         alertSettings: state.alertSettings,
-        watchlists: state.watchlists,
-        currentWatchlistId: state.currentWatchlistId,
+        watchlistSymbols: state.watchlistSymbols, // Simplified watchlist
         activeView: state.activeView,
         // Persist auth state
         user: state.user,

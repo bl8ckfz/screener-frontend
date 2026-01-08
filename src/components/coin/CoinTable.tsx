@@ -13,21 +13,15 @@ interface CoinTableProps {
 
 export function CoinTable({ coins, onCoinClick, isLoading = false }: CoinTableProps) {
   const { sort, setSort } = useStore()
-  const watchlists = useStore((state) => state.watchlists)
+  const watchlistSymbols = useStore((state) => state.watchlistSymbols)
 
   const { watchlistCoins, otherCoins } = useMemo(() => {
-    // Get all symbols from ALL watchlists
-    const allWatchlistSymbols = new Set<string>()
-    watchlists.forEach((wl) => {
-      wl.symbols.forEach((symbol) => allWatchlistSymbols.add(symbol))
-    })
-
     // Separate coins into watchlist and non-watchlist
     const watchlist: Coin[] = []
     const other: Coin[] = []
 
     coins.forEach((coin) => {
-      if (allWatchlistSymbols.has(coin.symbol)) {
+      if (watchlistSymbols.includes(coin.symbol)) {
         watchlist.push(coin)
       } else {
         other.push(coin)
@@ -39,7 +33,7 @@ export function CoinTable({ coins, onCoinClick, isLoading = false }: CoinTablePr
       watchlistCoins: sortCoins(watchlist, sort),
       otherCoins: sortCoins(other, sort),
     }
-  }, [coins, sort, watchlists])
+  }, [coins, sort, watchlistSymbols])
 
   const handleSort = (field: typeof sort.field) => {
     setSort({

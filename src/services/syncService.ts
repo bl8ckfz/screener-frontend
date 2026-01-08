@@ -1,7 +1,6 @@
 import { supabase } from '@/config'
 import { debug } from '@/utils/debug'
 import type { AlertRule, AlertSettings } from '@/types/alert'
-import type { Watchlist } from '@/types/screener'
 import type { WebhookConfig } from '@/types/alert'
 
 /**
@@ -123,9 +122,11 @@ export async function syncAlertSettingsFromCloud(userId: string) {
 }
 
 // ============================================================================
-// Watchlists Sync
+// Watchlists Sync (deprecated - moved to simplified watchlistSymbols array)
 // ============================================================================
 
+// OLD IMPLEMENTATION COMMENTED OUT - uses Watchlist[] type
+/*
 export async function syncWatchlistsToCloud(userId: string, watchlists: Watchlist[]) {
   // Delete all existing watchlists for this user
   await supabase.from('watchlists').delete().eq('user_id', userId)
@@ -152,55 +153,12 @@ export async function syncWatchlistsToCloud(userId: string, watchlists: Watchlis
   if (error) throw error
   return data
 }
+*/
 
-export async function syncWatchlistsFromCloud(userId: string): Promise<Watchlist[]> {
-  const { data, error } = await supabase
-    .from('watchlists')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: true })
-
-  if (error) throw error
-  if (!data) return []
-
-  return (data as any[]).map((wl) => ({
-    id: wl.id,
-    name: wl.name,
-    color: wl.color,
-    icon: wl.icon,
-    symbols: wl.symbols,
-    createdAt: new Date(wl.created_at).getTime(),
-    updatedAt: new Date(wl.updated_at).getTime(),
-  }))
-}
-
-export async function syncSingleWatchlistToCloud(userId: string, watchlist: Watchlist) {
-  const { data, error } = await supabase
-    .from('watchlists')
-    .upsert({
-      id: watchlist.id,
-      user_id: userId,
-      name: watchlist.name,
-      color: watchlist.color,
-      icon: watchlist.icon,
-      symbols: watchlist.symbols,
-      created_at: new Date(watchlist.createdAt).toISOString(),
-      updated_at: new Date(watchlist.updatedAt).toISOString(),
-    } as any)
-    .select()
-    .single()
-
-  if (error) throw error
-  return data
-}
-
-export async function deleteWatchlistFromCloud(watchlistId: string) {
-  const { error } = await supabase
-    .from('watchlists')
-    .delete()
-    .eq('id', watchlistId)
-
-  if (error) throw error
+export async function syncWatchlistsFromCloud(_userId: string): Promise<string[]> {
+  // TODO: Implement for simplified watchlist
+  debug.log('⚠️ syncWatchlistsFromCloud not implemented for simplified watchlist')
+  return []
 }
 
 // ============================================================================
@@ -382,7 +340,7 @@ export async function deleteWebhookFromCloud(webhookId: string) {
 export interface SyncState {
   userSettings?: any
   alertSettings?: Partial<AlertSettings>
-  watchlists: Watchlist[]
+  watchlistSymbols?: string[]
   alertRules: AlertRule[]
   webhooks: WebhookConfig[]
 }
@@ -392,10 +350,10 @@ export interface SyncState {
  * Called on sign in or manual refresh
  */
 export async function pullAllFromCloud(userId: string): Promise<SyncState> {
-  const [userSettings, alertSettings, watchlists, alertRules, webhooks] = await Promise.all([
+  const [userSettings, alertSettings, watchlistSymbols, alertRules, webhooks] = await Promise.all([
     syncUserSettingsFromCloud(userId),
     syncAlertSettingsFromCloud(userId),
-    syncWatchlistsFromCloud(userId),
+    syncWatchlistsFromCloud(userId), // Returns string[]
     syncAlertRulesFromCloud(userId),
     syncWebhooksFromCloud(userId),
   ])
@@ -403,7 +361,7 @@ export async function pullAllFromCloud(userId: string): Promise<SyncState> {
   return {
     userSettings: userSettings || undefined,
     alertSettings: alertSettings || undefined,
-    watchlists,
+    watchlistSymbols,
     alertRules,
     webhooks,
   }
@@ -417,7 +375,7 @@ export async function pushAllToCloud(userId: string, state: SyncState) {
   await Promise.all([
     state.userSettings ? syncUserSettingsToCloud(userId, state.userSettings) : Promise.resolve(),
     state.alertSettings ? syncAlertSettingsToCloud(userId, state.alertSettings as AlertSettings) : Promise.resolve(),
-    syncWatchlistsToCloud(userId, state.watchlists),
+    // Watchlist sync disabled for simplified watchlist
     syncAlertRulesToCloud(userId, state.alertRules),
     syncWebhooksToCloud(userId, state.webhooks),
   ])
@@ -430,34 +388,18 @@ export async function pushAllToCloud(userId: string, state: SyncState) {
 export function setupRealtimeSync(
   userId: string,
   callbacks: {
-    onWatchlistChange?: (watchlists: Watchlist[]) => void
+    onWatchlistChange?: (watchlistSymbols: string[]) => void
     onAlertRuleChange?: (rules: AlertRule[]) => void
     onWebhookChange?: (webhooks: WebhookConfig[]) => void
   }
 ) {
   const channels: ReturnType<typeof supabase.channel>[] = []
 
-  // Subscribe to watchlists changes
+  // TODO: Implement watchlist sync for simplified single-watchlist system
+  // Subscribe to watchlist changes
   if (callbacks.onWatchlistChange) {
-    const watchlistChannel = supabase
-      .channel('watchlists_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'watchlists',
-          filter: `user_id=eq.${userId}`,
-        },
-        async () => {
-          // Refetch all watchlists on any change
-          const watchlists = await syncWatchlistsFromCloud(userId)
-          callbacks.onWatchlistChange?.(watchlists)
-        }
-      )
-      .subscribe()
-
-    channels.push(watchlistChannel)
+    // Watchlist sync disabled - needs schema update for simplified watchlist
+    debug.log('⚠️ Watchlist real-time sync not yet implemented for simplified watchlist')
   }
 
   // Subscribe to alert rules changes

@@ -1,3 +1,2 @@
-export { WatchlistManager } from './WatchlistManager'
-export { WatchlistSelector } from './WatchlistSelector'
-export { WatchlistBadge } from './WatchlistBadge'
+// Watchlist components simplified - only WatchlistStar is used now
+// Old components removed: WatchlistManager, WatchlistSelector, WatchlistBadge

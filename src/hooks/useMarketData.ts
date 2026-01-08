@@ -124,10 +124,6 @@ if (!batchCallbackInitialized) {
 export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?: () => any[], tickersReady?: boolean, lastUpdate?: number) {
   // Debug logging removed - hook called frequently during normal operation
   
-  // Watchlist filtering
-  const currentWatchlistId = useStore((state) => state.currentWatchlistId)
-  const watchlists = useStore((state) => state.watchlists)
-  
   // Alert system integration
   const alertRules = useStore((state) => state.alertRules)
   const alertSettings = useStore((state) => state.alertSettings)
@@ -144,7 +140,7 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
 
   // Query for market data
   const query = useQuery({
-    queryKey: ['marketData', 'USDT', currentWatchlistId, lastUpdate],
+    queryKey: ['marketData', 'USDT', lastUpdate],
     queryFn: async (): Promise<Coin[]> => {
       // ALWAYS use WebSocket ticker data (no REST API calls!)
       let tickers
@@ -198,14 +194,6 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
       const coinsWithMetrics = coins.filter(c => c.futuresMetrics).length
       if (import.meta.env.DEV && coins.length > 0) {
         debug.log(`📊 Metrics status: ${coinsWithMetrics}/${coins.length} coins have metrics (WS: ${wsMetricsCount}, cached: ${cachedMetricsCount})`)
-      }
-
-      // Filter by watchlist if one is selected
-      if (currentWatchlistId) {
-        const selectedWatchlist = watchlists.find((wl) => wl.id === currentWatchlistId)
-        if (selectedWatchlist) {
-          coins = coins.filter((coin) => selectedWatchlist.symbols.includes(coin.symbol))
-        }
       }
 
       // Save coins for next fetch (no longer need history preservation)
@@ -438,8 +426,7 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
     }
 
     const marketMode = useStore.getState().marketMode
-    const activeWatchlistId = useStore.getState().currentWatchlistId
-    debug.log(`📋 Evaluating ${enabledRules.length} enabled alert rules (market mode: ${marketMode}, UI watchlist: ${activeWatchlistId || 'none'})...`)
+    debug.log(`📋 Evaluating ${enabledRules.length} enabled alert rules (market mode: ${marketMode})...`)
     
     // Fetch Ichimoku data if needed (check if any rules use ichimoku_bull or ichimoku_bear)
     const hasIchimokuRules = enabledRules.some(rule => 
@@ -521,9 +508,8 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
         }
 
         // Check if this coin is in any watchlist (for webhook routing)
-        const watchlists = useStore.getState().watchlists
-        const coinWatchlist = watchlists.find(wl => wl.symbols.includes(symbol))
-        const isInWatchlist = !!coinWatchlist
+        const watchlistSymbols = useStore.getState().watchlistSymbols
+        const isInWatchlist = watchlistSymbols.includes(symbol)
         const alertSource: 'main' | 'watchlist' = isInWatchlist ? 'watchlist' : 'main'
         
         // Create alert object
@@ -540,8 +526,7 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
           timestamp: now,
           read: false,
           dismissed: false,
-          source: alertSource, // 'watchlist' if coin is in a watchlist, 'main' otherwise
-          watchlistId: coinWatchlist?.id, // Include watchlist ID if in watchlist
+          source: alertSource, // 'watchlist' if coin is in watchlist, 'main' otherwise
         }
 
         // Find coin data for history
@@ -676,10 +661,9 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
         
         recentAlerts.current.set(symbol, now)
         
-        // Check if this coin is in any watchlist (for webhook routing)
-        const watchlists = useStore.getState().watchlists
-        const coinWatchlist = watchlists.find(wl => wl.symbols.includes(symbol))
-        const isInWatchlist = !!coinWatchlist
+        // Check if this coin is in watchlist (for webhook routing)
+        const watchlistSymbols = useStore.getState().watchlistSymbols
+        const isInWatchlist = watchlistSymbols.includes(symbol)
         const alertSource: 'main' | 'watchlist' = isInWatchlist ? 'watchlist' : 'main'
         
         // Create and add alert
@@ -696,8 +680,7 @@ export function useMarketData(wsMetricsMap?: Map<string, any>, wsGetTickerData?:
           timestamp: now,
           read: false,
           dismissed: false,
-          source: alertSource, // 'watchlist' if coin is in a watchlist, 'main' otherwise
-          watchlistId: coinWatchlist?.id, // Include watchlist ID if in watchlist
+          source: alertSource, // 'watchlist' if coin is in watchlist, 'main' otherwise
         }
         
         const coin = coins.find(c => c.symbol === symbol)

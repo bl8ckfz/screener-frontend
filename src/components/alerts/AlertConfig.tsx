@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Input } from '@/components/ui/Input'
 import { CustomAlertBuilder } from './CustomAlertBuilder'
-import { WebhookManager } from './WebhookManager'
 import { useStore } from '@/hooks/useStore'
 import {
   isNotificationSupported,
@@ -390,9 +389,6 @@ export function AlertConfig({
           </div>
         </div>
       )}
-
-      {/* Webhook Manager */}
-      <WebhookManager />
 
       {/* Legacy Discord Webhook (Deprecated - for backwards compatibility) */}
       {alertSettings.discordWebhookUrl && (

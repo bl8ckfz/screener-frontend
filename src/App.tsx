@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { debug } from '@/utils/debug'
 import { memoryProfiler } from '@/utils/memoryProfiler'
 import { useMarketData } from '@/hooks/useMarketData'
@@ -34,22 +34,9 @@ function App() {
   // Pass WebSocket metrics and ticker data to market data
   const { data: coins, isLoading } = useMarketData(metricsMap, getTickerData, tickersReady, lastUpdate)
   
-  const currentWatchlistId = useStore((state) => state.currentWatchlistId)
-  const watchlists = useStore((state) => state.watchlists)
-  
   // Alert history state
   const clearAlertHistory = useStore((state) => state.clearAlertHistory)
   const alertStats = useAlertStats(coins || [])
-  
-  // Filter alert stats by watchlist
-  const filteredAlertStats = useMemo(() => {
-    if (!currentWatchlistId) return alertStats
-    
-    const watchlist = watchlists.find((wl) => wl.id === currentWatchlistId)
-    if (!watchlist) return alertStats
-    
-    return alertStats.filter((stat) => watchlist.symbols.includes(stat.symbol))
-  }, [alertStats, currentWatchlistId, watchlists])
   
   // Auth state
   const setUser = useStore((state) => state.setUser)
@@ -100,9 +87,9 @@ function App() {
       const { setupRealtimeSync } = await import('@/services/syncService')
       
       const cleanup = setupRealtimeSync(user.id, {
-        onWatchlistChange: (newWatchlists) => {
-          debug.log('🔄 Watchlists updated from cloud')
-          useStore.setState({ watchlists: newWatchlists })
+        onWatchlistChange: (newWatchlistSymbols: string[]) => {
+          debug.log('🔄 Watchlist updated from cloud')
+          useStore.setState({ watchlistSymbols: newWatchlistSymbols })
         },
         onAlertRuleChange: (newRules) => {
           debug.log('🔄 Alert rules updated from cloud')
@@ -280,7 +267,7 @@ function App() {
                 >
                   <div className="flex items-center justify-center gap-2">
                     <span>🔔 Alert History</span>
-                    <span className="text-xs opacity-75">({filteredAlertStats.length})</span>
+                    <span className="text-xs opacity-75">({alertStats.length})</span>
                   </div>
                 </button>
               </div>
@@ -294,7 +281,7 @@ function App() {
                 />
               ) : (
                 <AlertHistoryTable
-                  stats={filteredAlertStats}
+                  stats={alertStats}
                   selectedSymbol={selectedAlert?.coin?.symbol}
                   onAlertClick={handleAlertClick}
                   onClearHistory={() => {
