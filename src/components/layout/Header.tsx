@@ -1,14 +1,16 @@
 import { useCallback } from 'react'
 import { ThemeToggle } from '@/components/controls'
 import { AuthModal, UserMenu } from '@/components/auth'
+import { SettingsButton } from '@/components/settings'
 import { useStore } from '@/hooks/useStore'
 
 interface HeaderProps {
   title?: string
   subtitle?: string
+  onOpenSettings?: () => void
 }
 
-export function Header({ title = 'Crypto Screener', subtitle }: HeaderProps) {
+export function Header({ title = 'Crypto Screener', subtitle, onOpenSettings }: HeaderProps) {
   const isAuthModalOpen = useStore((state) => state.isAuthModalOpen)
   const setAuthModalOpen = useStore((state) => state.setAuthModalOpen)
 
@@ -32,6 +34,7 @@ export function Header({ title = 'Crypto Screener', subtitle }: HeaderProps) {
                 <span className="text-bullish">●</span> Live
               </div>
               <UserMenu onSignIn={handleOpenAuth} />
+              {onOpenSettings && <SettingsButton onClick={onOpenSettings} />}
               <ThemeToggle />
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, lazy, Suspense, useEffect } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { debug } from '@/utils/debug'
 import { memoryProfiler } from '@/utils/memoryProfiler'
 import { useMarketData } from '@/hooks/useMarketData'
@@ -9,23 +9,14 @@ import { supabase } from '@/config'
 import { alertHistoryService } from '@/services'
 import { ALERT_HISTORY_CONFIG } from '@/types'
 import { Layout, Sidebar } from '@/components/layout'
-import { SmartCoinTable } from '@/components/coin'
+import { ChartSection, CoinDetailsPanel } from '@/components/coin'
 import { MarketSummary } from '@/components/market'
-import {
-  SearchBar,
-  ExportButton,
-  ViewToggle,
-} from '@/components/controls'
+import { SearchBar } from '@/components/controls'
 import { WatchlistSelector } from '@/components/watchlist'
-import { ErrorStates, EmptyStates, ShortcutHelp, LiveStatusBadge } from '@/components/ui'
+import { ShortcutHelp, LiveStatusBadge } from '@/components/ui'
 import { StorageMigration } from '@/components/StorageMigration'
-import { AlertNotificationContainer, AlertConfig, AlertHistoryTable } from '@/components/alerts'
-import { sortCoinsByList } from '@/utils'
-import { getListById } from '@/types'
-import type { Coin } from '@/types/coin'
-
-// Lazy load heavy components
-const CoinModal = lazy(() => import('@/components/coin/CoinModal').then(m => ({ default: m.CoinModal })))
+import { AlertNotificationContainer, AlertHistoryTable } from '@/components/alerts'
+import { SettingsModal } from '@/components/settings'
 
 function App() {
   // WebSocket streaming for futures data (real-time)
@@ -42,20 +33,16 @@ function App() {
   } = useFuturesStreaming()
   
   // Pass WebSocket metrics and ticker data to market data
-  const { data: coins, isLoading, error } = useMarketData(metricsMap, getTickerData, tickersReady, lastUpdate)
+  const { data: coins, isLoading } = useMarketData(metricsMap, getTickerData, tickersReady, lastUpdate)
   
-  const currentList = useStore((state) => state.currentList)
   const currentWatchlistId = useStore((state) => state.currentWatchlistId)
   const watchlists = useStore((state) => state.watchlists)
-  // setCurrentList unused after removing ListSelector
   const leftSidebarCollapsed = useStore((state) => state.leftSidebarCollapsed)
   const rightSidebarCollapsed = useStore((state) => state.rightSidebarCollapsed)
   const setLeftSidebarCollapsed = useStore((state) => state.setLeftSidebarCollapsed)
   const setRightSidebarCollapsed = useStore((state) => state.setRightSidebarCollapsed)
   
   // Alert history state
-  const activeView = useStore((state) => state.activeView)
-  const setActiveView = useStore((state) => state.setActiveView)
   const clearAlertHistory = useStore((state) => state.clearAlertHistory)
   const alertStats = useAlertStats(coins || [])
   
@@ -163,87 +150,40 @@ function App() {
   }, [])
   
   // Alert system state
-  const alertRules = useStore((state) => state.alertRules)
-  const addAlertRule = useStore((state) => state.addAlertRule)
-  const deleteAlertRule = useStore((state) => state.deleteAlertRule)
-  const toggleAlertRule = useStore((state) => state.toggleAlertRule)
+  // Alert rule management moved to SettingsModal
 
   // Local state for UI interactions
   const [searchQuery, setSearchQuery] = useState('')
-  // Timeframe selection removed per new plan
-  const [selectedCoin, setSelectedCoin] = useState<Coin | null>(null)
+  const [selectedAlert, setSelectedAlert] = useState<any>(null)
   const [showShortcutHelp, setShowShortcutHelp] = useState(false)
-  const [selectedRowIndex, setSelectedRowIndex] = useState(0)
-  // Alert history dropdown removed; history now shown via dedicated view
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   
   // Ref for search input
   const searchInputRef = useRef<HTMLInputElement>(null)
-
-  // Sentiment filter
-  const sentimentFilter = useStore((state) => state.sentimentFilter)
-
-  // Filter and sort coins based on search query, sentiment, watchlist, and selected list
-  const filteredCoins = useMemo(() => {
-    if (!coins) return []
-
-    // Apply watchlist filter first
-    let filtered = coins
-    if (currentWatchlistId) {
-      const watchlist = watchlists.find((wl) => wl.id === currentWatchlistId)
-      if (watchlist) {
-        filtered = coins.filter((coin) => watchlist.symbols.includes(coin.symbol))
-      }
-    }
-
-    // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim()
-      filtered = filtered.filter(
-        (coin) =>
-          coin.symbol.toLowerCase().includes(query) ||
-          coin.fullSymbol.toLowerCase().includes(query)
-      )
-    }
-
-    // Apply sentiment filter
-    if (sentimentFilter !== 'all') {
-      filtered = filtered.filter((coin) => {
-        if (sentimentFilter === 'bullish') {
-          return coin.priceChangePercent > 0
-        } else if (sentimentFilter === 'bearish') {
-          return coin.priceChangePercent < 0
-        } else { // neutral
-          return coin.priceChangePercent === 0
-        }
-      })
-
-      // Sort by volume when sentiment filter is active
-      filtered = [...filtered].sort((a, b) => b.quoteVolume - a.quoteVolume)
-    }
-
-    // Apply list-based sorting only if no sentiment filter
-    if (sentimentFilter === 'all') {
-      const list = getListById(currentList)
-      if (list) {
-        return sortCoinsByList(filtered, currentList, list.sortField, list.isBull)
-      }
-    }
-
-    return filtered
-  }, [coins, searchQuery, currentList, sentimentFilter, currentWatchlistId, watchlists])
 
   // Keyboard shortcuts
   useKeyboardShortcuts([
     {
       key: 'Escape',
-      description: 'Close modal or clear search',
+      description: 'Close settings or clear selection',
       callback: () => {
-        if (selectedCoin) {
-          setSelectedCoin(null)
+        if (isSettingsOpen) {
+          setIsSettingsOpen(false)
+        } else if (selectedAlert) {
+          setSelectedAlert(null)
         } else if (searchQuery) {
           setSearchQuery('')
         }
       },
+    },
+    {
+      key: ',',
+      ctrl: true,
+      description: 'Open settings',
+      callback: () => {
+        setIsSettingsOpen(true)
+      },
+      preventDefault: true,
     },
     {
       key: 'k',
@@ -261,39 +201,17 @@ function App() {
       },
       preventDefault: true,
     },
-    {
-      key: 'ArrowDown',
-      description: 'Navigate to next coin',
-      callback: () => {
-        if (!selectedCoin && filteredCoins.length > 0) {
-          const nextIndex = (selectedRowIndex + 1) % filteredCoins.length
-          setSelectedRowIndex(nextIndex)
-        }
-      },
-      enabled: !selectedCoin,
-    },
-    {
-      key: 'ArrowUp',
-      description: 'Navigate to previous coin',
-      callback: () => {
-        if (!selectedCoin && filteredCoins.length > 0) {
-          const prevIndex = selectedRowIndex === 0 ? filteredCoins.length - 1 : selectedRowIndex - 1
-          setSelectedRowIndex(prevIndex)
-        }
-      },
-      enabled: !selectedCoin,
-    },
-    {
-      key: 'Enter',
-      description: 'Open selected coin details',
-      callback: () => {
-        if (!selectedCoin && filteredCoins[selectedRowIndex]) {
-          setSelectedCoin(filteredCoins[selectedRowIndex])
-        }
-      },
-      enabled: !selectedCoin && filteredCoins.length > 0,
-    },
   ])
+  
+  // Handle alert click - set selected coin and alert
+  const handleAlertClick = (symbol: string) => {
+    const coin = coins?.find((c) => c.symbol === symbol)
+    if (coin) {
+      // Find the alert stats for this coin
+      const alertStat = alertStats.find((stat) => stat.symbol === symbol)
+      setSelectedAlert({ coin, alertStat })
+    }
+  }
 
   return (
     <>
@@ -303,6 +221,7 @@ function App() {
       <Layout
         title="Crypto Screener"
         subtitle="Real-time USDT market analysis"
+        onOpenSettings={() => setIsSettingsOpen(true)}
       >
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
         {/* Left Sidebar - Filters & Controls */}
@@ -334,7 +253,7 @@ function App() {
           </Sidebar>
         </div>
 
-        {/* Main Content - View Toggle + Tables */}
+        {/* Main Content - Alert History Centric Layout */}
         <div className={`transition-all duration-300 space-y-4 ${
           leftSidebarCollapsed && rightSidebarCollapsed
             ? 'lg:col-span-10'
@@ -342,136 +261,65 @@ function App() {
             ? 'lg:col-span-8'
             : 'lg:col-span-6'
         }`}>
-          {/* View Toggle */}
-          <ViewToggle
-            activeView={activeView}
-            onViewChange={setActiveView}
-            alertCount={filteredAlertStats.length}
+          {/* Chart Section - Always Visible */}
+          <ChartSection 
+            selectedCoin={selectedAlert?.coin || null}
+            onClose={() => setSelectedAlert(null)}
           />
 
-          {activeView === 'coins' ? (
-            <>
-              {/* Search Bar */}
-              <SearchBar ref={searchInputRef} onSearch={setSearchQuery} />
+          {/* Search Bar */}
+          <SearchBar ref={searchInputRef} onSearch={setSearchQuery} />
 
-              {/* Coin Table */}
-              <div className="bg-gray-900 rounded-lg overflow-x-auto">
-            {/* Header */}
-            <div className="p-4 border-b border-gray-800">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-semibold">
-                    Market Data{' '}
-                    <span className="text-accent">USDT</span>
-                  </h2>
-                  {coins && (
-                    <span className="text-sm text-gray-400">
-                      {filteredCoins.length} of {coins.length} coins
-                      {searchQuery && ' (filtered)'}
-                    </span>
-                  )}
-                </div>
-                <ExportButton coins={filteredCoins} disabled={isLoading} />
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="min-h-[600px]">
-              {error ? (
-                ErrorStates.API()
-              ) : isLoading ? (
-                <div className="text-center py-12 text-gray-400">
-                  Loading coin data...
-                </div>
-              ) : (
-                <>
-                  <SmartCoinTable
-                    coins={filteredCoins}
-                    onCoinClick={setSelectedCoin}
-                    selectedRowIndex={selectedRowIndex}
-                  />
-
-                  {filteredCoins &&
-                    filteredCoins.length === 0 &&
-                    searchQuery &&
-                    EmptyStates.NoSearchResults(searchQuery, () => setSearchQuery(''))}
-
-                  {filteredCoins &&
-                    filteredCoins.length === 0 &&
-                    !searchQuery &&
-                    coins &&
-                    coins.length === 0 &&
-                    EmptyStates.NoCoins('USDT')}
-                </>
-              )}
-            </div>
+          {/* Alert History Table - ONLY VIEW */}
+          <div className="bg-gray-900 rounded-lg overflow-hidden p-6">
+            <AlertHistoryTable
+              stats={filteredAlertStats}
+              selectedSymbol={selectedAlert?.coin?.symbol}
+              onAlertClick={handleAlertClick}
+              onClearHistory={() => {
+                if (confirm('Clear all alert history? This cannot be undone.')) {
+                  clearAlertHistory()
+                }
+              }}
+            />
           </div>
-            </>
-          ) : (
-            /* Alert History View */
-            <div className="bg-gray-900 rounded-lg overflow-hidden p-6">
-              <AlertHistoryTable
-                stats={filteredAlertStats}
-                selectedSymbol={selectedCoin?.symbol}
-                onAlertClick={(symbol: string) => {
-                  const coin = coins?.find((c) => c.symbol === symbol)
-                  if (coin) setSelectedCoin(coin)
-                }}
-                onClearHistory={() => {
-                  if (confirm('Clear all alert history? This cannot be undone.')) {
-                    clearAlertHistory()
-                  }
-                }}
-              />
-            </div>
-          )}
         </div>
 
-        {/* Right Sidebar - Alerts */}
+        {/* Right Sidebar - Coin Details */}
         <div className={`transition-all duration-300 ${rightSidebarCollapsed ? 'self-start lg:col-span-1' : 'lg:col-span-3'}`}>
           <Sidebar
             position="right"
-            title="Alert Configuration"
+            title="Coin Details"
             isCollapsed={rightSidebarCollapsed}
             onToggle={() => setRightSidebarCollapsed(!rightSidebarCollapsed)}
           >
-            {/* Alert Configuration */}
             {!rightSidebarCollapsed && (
-              <div className="mt-4 space-y-4">
-                <AlertConfig 
-                  rules={alertRules}
-                  onRuleToggle={toggleAlertRule}
-                  onRuleCreate={addAlertRule}
-                  onRuleDelete={deleteAlertRule}
+              <div className="mt-4">
+                <CoinDetailsPanel 
+                  coin={selectedAlert?.coin || null}
+                  onClose={() => setSelectedAlert(null)}
                 />
-                
-                {/* Inline alert history dropdown removed per UI cleanup */}
               </div>
             )}
           </Sidebar>
         </div>
       </div>
 
-      {/* Coin Detail Modal */}
-      <Suspense fallback={null}>
-        <CoinModal
-          coin={selectedCoin}
-          isOpen={!!selectedCoin}
-          onClose={() => setSelectedCoin(null)}
-        />
-      </Suspense>
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+      />
 
       {/* Keyboard Shortcuts Help */}
       <ShortcutHelp
         isOpen={showShortcutHelp}
         onClose={() => setShowShortcutHelp(false)}
         shortcuts={[
-          { key: 'Escape', description: 'Close modal or clear search', callback: () => {} },
+          { key: 'Escape', description: 'Close settings or clear selection', callback: () => {} },
+          { key: ',', ctrl: true, description: 'Open settings', callback: () => {} },
           { key: 'k', ctrl: true, description: 'Focus search bar', callback: () => {} },
           { key: '?', description: 'Show keyboard shortcuts', callback: () => {} },
-          { key: 'ArrowDown', description: 'Navigate to next coin', callback: () => {} },
-          { key: 'ArrowUp', description: 'Navigate to previous coin', callback: () => {} },
-          { key: 'Enter', description: 'Open selected coin details', callback: () => {} },
         ]}
       />
       
