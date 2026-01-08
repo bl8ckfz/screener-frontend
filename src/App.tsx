@@ -9,7 +9,7 @@ import { supabase } from '@/config'
 import { alertHistoryService } from '@/services'
 import { ALERT_HISTORY_CONFIG } from '@/types'
 import { Layout } from '@/components/layout'
-import { ChartSection, CoinDetailsPanel } from '@/components/coin'
+import { ChartSection, CoinDetailsPanel, CoinTable } from '@/components/coin'
 import { MarketSummary } from '@/components/market'
 import { SearchBar } from '@/components/controls'
 import { ShortcutHelp, LiveStatusBadge } from '@/components/ui'
@@ -152,6 +152,7 @@ function App() {
   const [selectedAlert, setSelectedAlert] = useState<any>(null)
   const [showShortcutHelp, setShowShortcutHelp] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<'coins' | 'alerts'>('coins')
   
   // Ref for search input
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -208,6 +209,12 @@ function App() {
     }
   }
 
+  // Handle coin table row click
+  const handleCoinClick = (coin: any) => {
+    const alertStat = alertStats.find((stat) => stat.symbol === coin.symbol)
+    setSelectedAlert({ coin, alertStat })
+  }
+
   return (
     <>
       {/* Handle localStorage → IndexedDB migration on first load */}
@@ -241,23 +248,62 @@ function App() {
 
         {/* Two Column Layout: Alert History | Chart + Coin Details */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-          {/* Left Column - Alert History (Wider) */}
+          {/* Left Column - Tabbed View (Coins / Alerts) */}
           <div className="lg:col-span-5 space-y-3">
             {/* Search Bar */}
             <SearchBar ref={searchInputRef} onSearch={setSearchQuery} />
 
-            {/* Alert History Table - Compact */}
-            <div className="bg-gray-900/40 rounded-lg overflow-hidden border border-gray-700 bg-gray-800">
-              <AlertHistoryTable
-                stats={filteredAlertStats}
-                selectedSymbol={selectedAlert?.coin?.symbol}
-                onAlertClick={handleAlertClick}
-                onClearHistory={() => {
-                  if (confirm('Clear all alert history? This cannot be undone.')) {
-                    clearAlertHistory()
-                  }
-                }}
-              />
+            {/* Tabbed Content */}
+            <div className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
+              {/* Tab Buttons */}
+              <div className="flex items-center border-b border-gray-700 bg-gray-800">
+                <button
+                  onClick={() => setActiveTab('coins')}
+                  className={`flex-1 px-4 py-3 text-sm font-semibold transition-colors ${
+                    activeTab === 'coins'
+                      ? 'bg-gray-700 text-white border-b-2 border-accent'
+                      : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
+                  }`}
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <span>📊 Market Coins</span>
+                    <span className="text-xs opacity-75">({coins?.length || 0})</span>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setActiveTab('alerts')}
+                  className={`flex-1 px-4 py-3 text-sm font-semibold transition-colors ${
+                    activeTab === 'alerts'
+                      ? 'bg-gray-700 text-white border-b-2 border-accent'
+                      : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
+                  }`}
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <span>🔔 Alert History</span>
+                    <span className="text-xs opacity-75">({filteredAlertStats.length})</span>
+                  </div>
+                </button>
+              </div>
+
+              {/* Tab Content */}
+              {activeTab === 'coins' ? (
+                <CoinTable
+                  coins={coins || []}
+                  onCoinClick={handleCoinClick}
+                  isLoading={isLoading}
+                />
+              ) : (
+                <AlertHistoryTable
+                  stats={filteredAlertStats}
+                  selectedSymbol={selectedAlert?.coin?.symbol}
+                  onAlertClick={handleAlertClick}
+                  onClearHistory={() => {
+                    if (confirm('Clear all alert history? This cannot be undone.')) {
+                      clearAlertHistory()
+                    }
+                  }}
+                />
+              )}
             </div>
           </div>
 
