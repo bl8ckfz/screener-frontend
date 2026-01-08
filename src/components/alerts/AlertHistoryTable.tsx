@@ -21,7 +21,6 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
   const [sortField, setSortField] = useState<SortField>('alerts')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
   
-  const currentWatchlistId = useStore((state) => state.currentWatchlistId)
   const watchlists = useStore((state) => state.watchlists)
 
   const handleSort = (field: SortField) => {
@@ -60,16 +59,17 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
   
   // Split stats into watchlist and main sections, then sort each independently
   const { watchlistStats, mainStats } = useMemo(() => {
-    const currentWatchlist = watchlists.find((wl) => wl.id === currentWatchlistId)
-    if (!currentWatchlist) {
-      return { watchlistStats: [], mainStats: sortStats(stats) }
-    }
+    // Get all symbols from ALL watchlists
+    const allWatchlistSymbols = new Set<string>()
+    watchlists.forEach((wl) => {
+      wl.symbols.forEach((symbol) => allWatchlistSymbols.add(symbol))
+    })
     
     const watchlist: CoinAlertStats[] = []
     const main: CoinAlertStats[] = []
     
     stats.forEach((stat) => {
-      if (currentWatchlist.symbols.includes(stat.symbol)) {
+      if (allWatchlistSymbols.has(stat.symbol)) {
         watchlist.push(stat)
       } else {
         main.push(stat)
@@ -80,7 +80,7 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
       watchlistStats: sortStats(watchlist), 
       mainStats: sortStats(main) 
     }
-  }, [stats, currentWatchlistId, watchlists, sortField, sortDirection])
+  }, [stats, watchlists, sortField, sortDirection])
 
   const formatTimeAgo = (timestamp: number): string => {
     const seconds = Math.floor((Date.now() - timestamp) / 1000)
