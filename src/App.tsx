@@ -243,7 +243,7 @@ function App() {
       <StorageMigration />
       
       <Layout
-        title="Crypto Screener"
+        title="Screener"
         subtitle="Real-time USDT market analysis"
         onOpenSettings={() => setIsSettingsOpen(true)}
       >

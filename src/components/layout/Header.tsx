@@ -10,7 +10,7 @@ interface HeaderProps {
   onOpenSettings?: () => void
 }
 
-export function Header({ title = 'Crypto Screener', subtitle, onOpenSettings }: HeaderProps) {
+export function Header({ title = 'Screener', subtitle, onOpenSettings }: HeaderProps) {
   const isAuthModalOpen = useStore((state) => state.isAuthModalOpen)
   const setAuthModalOpen = useStore((state) => state.setAuthModalOpen)
 
@@ -21,7 +21,7 @@ export function Header({ title = 'Crypto Screener', subtitle, onOpenSettings }: 
   return (
     <>
       <header className="sticky top-0 z-50 bg-gray-900 border-b border-gray-800 backdrop-blur-sm bg-opacity-95">
-        <div className="container mx-auto px-4 py-4">
+        <div className="w-full max-w-[1920px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-white">{title}</h1>
@@ -30,9 +30,6 @@ export function Header({ title = 'Crypto Screener', subtitle, onOpenSettings }: 
               )}
             </div>
             <div className="flex items-center space-x-4">
-              <div className="text-sm text-gray-400">
-                <span className="text-bullish">●</span> Live
-              </div>
               <UserMenu onSignIn={handleOpenAuth} />
               {onOpenSettings && <SettingsButton onClick={onOpenSettings} />}
               <ThemeToggle />
