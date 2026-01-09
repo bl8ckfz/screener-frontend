@@ -110,9 +110,15 @@ export function MarketSummary({ coins, isLoading: isLoadingProp }: MarketSummary
           <span className="text-bearish font-bold">{stats.bearishCount}</span>
           <span className="text-gray-400 text-xs">({bearishPercent.toFixed(0)}%)</span>
         </button>
-        <div className="text-gray-500 border-l border-gray-700 pl-3">
+        <button
+          onClick={() => setSentimentFilter('all')}
+          className={`text-gray-500 border-l border-gray-700 pl-3 hover:text-gray-300 transition-colors ${
+            currentFilter === 'all' ? 'text-gray-300' : ''
+          }`}
+          title="Show all coins"
+        >
           <span className="text-xs">Total:</span> <span className="font-semibold">{stats.totalCoins}</span>
-        </div>
+        </button>
       </div>
     </div>
   )

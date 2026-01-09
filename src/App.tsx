@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { debug } from '@/utils/debug'
 import { memoryProfiler } from '@/utils/memoryProfiler'
 import { useMarketData } from '@/hooks/useMarketData'
@@ -36,6 +36,7 @@ function App() {
   
   // Alert history state
   const clearAlertHistory = useStore((state) => state.clearAlertHistory)
+  const sentimentFilter = useStore((state) => state.sentimentFilter)
   const alertStats = useAlertStats(coins || [])
   
   // Auth state
@@ -143,6 +144,40 @@ function App() {
   
   // Ref for search input
   const searchInputRef = useRef<HTMLInputElement>(null)
+  
+  // Filter coins by sentiment and search query
+  const filteredCoins = useMemo(() => {
+    if (!coins) return []
+    
+    let filtered = coins
+    
+    // Apply sentiment filter
+    if (sentimentFilter !== 'all') {
+      filtered = filtered.filter((coin) => {
+        switch (sentimentFilter) {
+          case 'bullish':
+            return coin.priceChangePercent > 0
+          case 'bearish':
+            return coin.priceChangePercent < 0
+          case 'neutral':
+            return coin.priceChangePercent === 0
+          default:
+            return true
+        }
+      })
+    }
+    
+    // Apply search query filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter((coin) =>
+        coin.symbol.toLowerCase().includes(query) ||
+        coin.fullSymbol.toLowerCase().includes(query)
+      )
+    }
+    
+    return filtered
+  }, [coins, sentimentFilter, searchQuery])
 
   // Keyboard shortcuts
   useKeyboardShortcuts([
@@ -275,7 +310,7 @@ function App() {
               {/* Tab Content */}
               {activeTab === 'coins' ? (
                 <CoinTable
-                  coins={coins || []}
+                  coins={filteredCoins}
                   onCoinClick={handleCoinClick}
                   isLoading={isLoading}
                 />
