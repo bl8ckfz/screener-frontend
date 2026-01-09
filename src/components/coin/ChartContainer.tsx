@@ -320,7 +320,7 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
       {/* Chart */}
       <div className="bg-surface-dark border border-border rounded-lg p-4">
         {isLoading ? (
-          <ChartSkeleton height={400} />
+          <ChartSkeleton height={480} />
         ) : error ? (
           <ErrorState
             icon="📉"
@@ -335,7 +335,7 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
           <TradingChart
             data={chartData}
             symbol={`${coin.symbol}/${coin.pair}`}
-            height={400}
+            height={480}
             showVolume={true}
             showWeeklyVWAP={showWeeklyVWAP}
             vwapData={vwapData}

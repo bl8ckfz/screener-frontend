@@ -46,7 +46,11 @@ const getAlertMarkerSize = (alertType: string): 0 | 1 | 2 => {
   if (alertType.includes('15')) {
     return 1
   }
-  // 5m and pioneer alerts - small markers
+  // Pioneer and hunter alerts - medium markers for visibility
+  if (alertType.includes('pioneer') || alertType.includes('hunter')) {
+    return 1
+  }
+  // 5m alerts - small markers
   return 0
 }
 
@@ -182,7 +186,7 @@ const getBubbleMarkerStyle = (bubble: Bubble): {
 export function TradingChart({
   data,
   symbol,
-  height = 400,
+  height = 480,
   showVolume = true,
   showWeeklyVWAP = false,
   vwapData = [],

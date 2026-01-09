@@ -301,7 +301,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
         <TradingChart
           data={chartData}
           symbol={selectedCoin.fullSymbol}
-          height={300} // Mobile: 250px, Desktop: 400px handled by responsive CSS
+          height={360} // Mobile: 300px, Desktop: 480px handled by responsive CSS (20% increase)
           showVolume={true}
           showWeeklyVWAP={showWeeklyVWAP}
           vwapData={vwapData}
