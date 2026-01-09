@@ -45,23 +45,39 @@ const getAlertMarkerSize = (alertType: string): 0 | 1 | 2 => {
   return 1
 }
 
+// Match alert marker colors with alert timeline legend
+const ALERT_MARKER_COLORS: Record<string, string> = {
+  // Bullish
+  futures_big_bull_60: '#22c55e',
+  futures_pioneer_bull: '#10b981',
+  futures_5_big_bull: '#84cc16',
+  futures_15_big_bull: '#4ade80',
+  futures_bottom_hunter: '#34d399',
+  // Bearish
+  futures_big_bear_60: '#ef4444',
+  futures_pioneer_bear: '#dc2626',
+  futures_5_big_bear: '#f87171',
+  futures_15_big_bear: '#fb923c',
+  futures_top_hunter: '#f97316',
+}
+
 /**
  * Get alert marker color and position based on alert type
  */
 const getAlertMarkerStyle = (alertType: string): { color: string; position: 'aboveBar' | 'belowBar'; shape: 'circle' | 'arrowUp' | 'arrowDown' } => {
-  // Bullish alerts - green, below bar, arrow up
-  if (alertType.includes('bull') || alertType.includes('bottom_hunter')) {
-    return {
-      color: '#22c55e', // green-500
-      position: 'belowBar' as const,
-      shape: 'arrowUp' as const,
-    }
-  }
-  // Bearish alerts - red, above bar, arrow down
+  const cleanType = alertType.replace(/^futures_/, '')
+  const normalizedKey = alertType.startsWith('futures_') ? alertType : `futures_${alertType}`
+  const isBullish = cleanType.includes('bull') || cleanType === 'bottom_hunter'
+  const isHunter = cleanType === 'bottom_hunter' || cleanType === 'top_hunter'
+
+  const color = ALERT_MARKER_COLORS[normalizedKey]
+    || (isBullish ? '#22c55e' : '#ef4444')
+
   return {
-    color: '#ef4444', // red-500
-    position: 'aboveBar' as const,
-    shape: 'arrowDown' as const,
+    color,
+    position: isBullish ? 'belowBar' : 'aboveBar',
+    // Bottom/Top hunters should be circles to match timeline dots
+    shape: isHunter ? 'circle' : (isBullish ? 'arrowUp' : 'arrowDown'),
   }
 }
 
