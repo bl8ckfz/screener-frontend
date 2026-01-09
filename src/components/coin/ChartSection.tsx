@@ -346,7 +346,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
       </div>
 
       {/* Alert Timeline Chart */}
-      <div className="px-4 pb-4">
+      <div className="px-4 pt-4 pb-4">
         <div className="bg-gray-900 rounded-lg p-3">
           <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
             Alert Timeline (24h)
