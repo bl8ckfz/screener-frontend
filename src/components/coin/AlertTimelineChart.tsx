@@ -70,10 +70,15 @@ export function AlertTimelineChart({ symbol, height: _unusedHeight }: AlertTimel
     ).sort((a, b) => a.timestamp - b.timestamp) // Sort by time ascending
   }, [symbol, alertHistoryRefresh])
 
-  // Get unique alert types present in the data
+  // Get unique alert types in chronological order; new types appear after existing ones
   const alertTypes = useMemo(() => {
-    const types = new Set(filteredAlerts.map(entry => entry.alertType))
-    return Array.from(types).sort()
+    const types: string[] = []
+    for (const entry of filteredAlerts) {
+      if (!types.includes(entry.alertType)) {
+        types.push(entry.alertType)
+      }
+    }
+    return types
   }, [filteredAlerts])
 
   // Calculate dynamic height based on number of alert types
