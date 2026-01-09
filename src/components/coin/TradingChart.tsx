@@ -35,23 +35,16 @@ export interface TradingChartProps {
 
 /**
  * Determine alert marker size based on alert type priority
- * Option A: Shape-based by category with size indicating timeframe
+ * All alerts now use medium or large sizes for visibility
  */
 const getAlertMarkerSize = (alertType: string): 0 | 1 | 2 => {
   // 60m alerts - largest markers (most significant)
   if (alertType.includes('60')) {
     return 2
   }
-  // 15m alerts - medium markers
-  if (alertType.includes('15')) {
-    return 1
-  }
-  // Pioneer and hunter alerts - medium markers for visibility
-  if (alertType.includes('pioneer') || alertType.includes('hunter')) {
-    return 1
-  }
-  // 5m alerts - small markers
-  return 0
+  // All other alerts - medium markers for visibility
+  // (15m, 5m, pioneer, hunter, ichimoku)
+  return 1
 }
 
 /**
