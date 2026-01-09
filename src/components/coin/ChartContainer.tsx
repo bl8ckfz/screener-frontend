@@ -118,7 +118,10 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
         const data = await fetchKlines(coin.symbol, coin.pair, interval, 100)
         
         if (!isCancelled) {
-          setChartData(data.candlesticks)
+          // Force React to detect change by creating new array reference with timestamp
+          const candlesWithTimestamp = [...data.candlesticks]
+          console.log(`🔄 Chart refresh: ${candlesWithTimestamp.length} candles, last=${candlesWithTimestamp[candlesWithTimestamp.length-1]?.close}`)
+          setChartData(candlesWithTimestamp)
         }
       } catch (err) {
         // Silent fail on refresh - don't show error for background updates
