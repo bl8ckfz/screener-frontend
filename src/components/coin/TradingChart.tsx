@@ -610,12 +610,14 @@ export function TradingChart({
 
     const mainSeries = mainSeriesRef.current
 
-    // Add alert markers if enabled
+    // Prepare alert markers if enabled
+    let alertMarkers: SeriesMarker<Time>[] = []
+    
     if (showAlerts && alerts.length > 0 && mainSeries) {
       debug.log(`🎯 Processing ${alerts.length} alerts for markers`)
       debug.log('Alert types:', alerts.map(a => a.alertType))
       
-      const markers: SeriesMarker<Time>[] = alerts
+      alertMarkers = alerts
         .map(alert => {
           // Convert alert timestamp (ms) to candle time (seconds)
           const alertTime = Math.floor(alert.timestamp / 1000)
@@ -651,23 +653,20 @@ export function TradingChart({
         })
         .filter((marker): marker is SeriesMarker<Time> => marker !== null)
 
-      debug.log(`📍 Setting ${markers.length} alert markers on chart`)
+      debug.log(`📍 Prepared ${alertMarkers.length} alert markers`)
       
-      // Store markers in ref for re-application on zoom
-      markersRef.current = markers
-      
-      if (markers.length > 0) {
-        mainSeries.setMarkers(markers)
-      } else {
+      if (alertMarkers.length === 0) {
         debug.warn('⚠️  No valid alert markers to display')
       }
     }
 
-    // Add bubble markers if enabled (combined with alert markers)
+    // Prepare bubble markers if enabled
+    let bubbleMarkers: SeriesMarker<Time>[] = []
+    
     if (showBubbles && bubbles.length > 0 && mainSeries) {
       debug.log(`🫧 Processing ${bubbles.length} bubbles for markers`)
       
-      const bubbleMarkers: SeriesMarker<Time>[] = bubbles
+      bubbleMarkers = bubbles
         .map(bubble => {
           // Convert bubble timestamp (ms) to candle time (seconds)
           const bubbleTime = Math.floor(bubble.time / 1000)
@@ -703,45 +702,21 @@ export function TradingChart({
         })
         .filter((marker): marker is SeriesMarker<Time> => marker !== null)
 
-      debug.log(`🫧 Setting ${bubbleMarkers.length} bubble markers on chart`)
-      
-      // Combine alert and bubble markers
-      if (showAlerts && alerts.length > 0) {
-        // Get existing alert markers
-        const alertMarkers: SeriesMarker<Time>[] = alerts
-          .map(alert => {
-            const alertTime = Math.floor(alert.timestamp / 1000)
-            const closestCandle = findClosestCandle(alertTime, data)
-            
-            if (!closestCandle) return null
-            
-            const candleTime = typeof closestCandle.time === 'number' ? closestCandle.time : Number(closestCandle.time)
-            const timeDiff = Math.abs(candleTime - alertTime)
-            
-            if (timeDiff > 300) return null
-            
-            const style = getAlertMarkerStyle(alert.alertType)
-            const size = getAlertMarkerSize(alert.alertType)
-            
-            return {
-              time: closestCandle.time,
-              position: style.position,
-              color: style.color,
-              shape: style.shape,
-              size,
-            } as SeriesMarker<Time>
-          })
-          .filter((marker): marker is SeriesMarker<Time> => marker !== null)
-        
-        // Combine both types of markers
-        const combinedMarkers = [...alertMarkers, ...bubbleMarkers]
-        markersRef.current = combinedMarkers // Store for re-application
-        mainSeries.setMarkers(combinedMarkers)
-        debug.log(`📍 Set ${combinedMarkers.length} total markers (${alertMarkers.length} alerts + ${bubbleMarkers.length} bubbles)`)
-      } else if (bubbleMarkers.length > 0) {
-        markersRef.current = bubbleMarkers // Store for re-application
-        mainSeries.setMarkers(bubbleMarkers)
-      }
+      debug.log(`🫧 Prepared ${bubbleMarkers.length} bubble markers`)
+    }
+
+    // Combine markers and apply to chart
+    const combinedMarkers = [...alertMarkers, ...bubbleMarkers]
+    
+    if (combinedMarkers.length > 0) {
+      markersRef.current = combinedMarkers // Store for re-application on zoom
+      mainSeries.setMarkers(combinedMarkers)
+      debug.log(`📍 Set ${combinedMarkers.length} total markers (${alertMarkers.length} alerts + ${bubbleMarkers.length} bubbles)`)
+    } else {
+      // Clear markers when both are disabled or empty
+      markersRef.current = []
+      mainSeries.setMarkers([])
+      debug.log('📍 Cleared all markers')
     }
   }, [showAlerts, alerts, showBubbles, bubbles, data]) // Only marker-related changes trigger update
 
