@@ -16,6 +16,7 @@ import type { AlertHistoryEntry } from '@/types/alertHistory'
 import type { Bubble } from '@/types/bubble'
 import { calculateWeeklyVWAP, type IchimokuData } from '@/utils/indicators'
 import { debug } from '@/utils/debug'
+import { onVisibilityChange } from '@/utils/performance'
 
 export interface TradingChartProps {
   data: Candlestick[]
@@ -309,6 +310,20 @@ export function TradingChart({
       }
     }
   }, [height, showVolume])
+
+  // Force chart update when tab becomes visible again
+  // This ensures new data is properly rendered after the chart was hidden
+  useEffect(() => {
+    const unsubscribe = onVisibilityChange((isVisible) => {
+      if (isVisible && chartRef.current && mainSeriesRef.current) {
+        debug.log('👁️ Tab visible - fitting chart content')
+        // Force chart to recalculate and re-render
+        chartRef.current.timeScale().fitContent()
+      }
+    })
+
+    return unsubscribe
+  }, [])
 
   // Update main chart series when data or chart type changes
   // Separated from markers to avoid unnecessary series recreation

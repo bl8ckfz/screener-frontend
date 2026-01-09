@@ -8,6 +8,7 @@ import { calculateIchimoku, type IchimokuData } from '@/utils/indicators'
 import type { Coin } from '@/types/coin'
 import { ChartSkeleton, ErrorState } from '@/components/ui'
 import { debug } from '@/utils/debug'
+import { isTabVisible, onVisibilityChange } from '@/utils/performance'
 
 export interface ChartContainerProps {
   coin: Coin
@@ -105,15 +106,24 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
   }, [coin.symbol, coin.pair, interval])
 
   // Auto-refresh chart data periodically to update the latest candle
+  // Pauses when tab is not visible and resumes when it becomes visible
   useEffect(() => {
     let isCancelled = false
+    let refreshInterval: number | null = null
     
     const refreshChartData = async () => {
+      // Skip refresh if tab is not visible (no point updating hidden charts)
+      if (!isTabVisible()) {
+        debug.log('⏸️ Chart refresh skipped (tab not visible)')
+        return
+      }
+      
       try {
         const data = await fetchKlines(coin.symbol, coin.pair, interval, 100)
         
         if (!isCancelled) {
           setChartData(data.candlesticks)
+          debug.log('🔄 Chart data refreshed')
         }
       } catch (err) {
         // Silent fail on refresh - don't show error for background updates
@@ -121,12 +131,44 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
       }
     }
 
-    // Refresh every 5 seconds to update the current candle
-    const refreshInterval = window.setInterval(refreshChartData, 5000)
+    const startRefresh = () => {
+      // Only start if not already running
+      if (refreshInterval === null) {
+        refreshInterval = window.setInterval(refreshChartData, 5000)
+        debug.log('▶️ Chart refresh started')
+      }
+    }
+
+    const stopRefresh = () => {
+      if (refreshInterval !== null) {
+        window.clearInterval(refreshInterval)
+        refreshInterval = null
+        debug.log('⏹️ Chart refresh stopped')
+      }
+    }
+
+    // Start refresh if tab is visible
+    if (isTabVisible()) {
+      startRefresh()
+    }
+
+    // Listen for visibility changes
+    const unsubscribe = onVisibilityChange((isVisible) => {
+      if (isVisible) {
+        debug.log('👁️ Tab visible - resuming chart refresh')
+        // Force immediate refresh when tab becomes visible
+        refreshChartData()
+        startRefresh()
+      } else {
+        debug.log('🙈 Tab hidden - pausing chart refresh')
+        stopRefresh()
+      }
+    })
 
     return () => {
       isCancelled = true
-      window.clearInterval(refreshInterval)
+      stopRefresh()
+      unsubscribe()
     }
   }, [coin.symbol, coin.pair, interval])
 
