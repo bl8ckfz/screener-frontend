@@ -112,6 +112,40 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
     }
   }, [selectedCoin, interval])
 
+  // Auto-refresh chart data periodically to update the latest candle
+  useEffect(() => {
+    if (!selectedCoin) return
+
+    console.log('🚀 Starting chart auto-refresh interval (ChartSection)')
+    let isCancelled = false
+
+    const refreshChartData = async () => {
+      console.log('🔄 Chart refresh triggered (ChartSection)')
+      try {
+        const data = await fetchKlines(selectedCoin.symbol, selectedCoin.pair, interval, 100)
+
+        if (!isCancelled) {
+          const candles = [...data.candlesticks]
+          console.log(`🔄 Chart refresh: ${candles.length} candles, last=${candles[candles.length - 1]?.close}`)
+          setChartData(candles)
+        }
+      } catch (err) {
+        console.error('❌ Chart refresh failed:', err)
+        debug.warn('Chart refresh failed:', err)
+      }
+    }
+
+    console.log('⏱️ Setting up 5-second interval (ChartSection)')
+    const refreshInterval = window.setInterval(refreshChartData, 5000)
+    console.log('✅ Interval created (ChartSection):', refreshInterval)
+
+    return () => {
+      console.log('🛑 Cleaning up chart refresh interval (ChartSection)')
+      isCancelled = true
+      window.clearInterval(refreshInterval)
+    }
+  }, [selectedCoin?.symbol, selectedCoin?.pair, interval])
+
   // Fetch VWAP data (15m interval) when toggled on or coin changes
   useEffect(() => {
     if (!selectedCoin || !showWeeklyVWAP) {
