@@ -206,6 +206,7 @@ export function TradingChart({
   const markersRef = useRef<SeriesMarker<Time>[]>([]) // Store markers to re-apply on zoom
   const [isLoading, setIsLoading] = useState(true)
   const chartInitializedRef = useRef(false)
+  const previousDataRef = useRef<Candlestick[]>([]) // Track previous data for incremental updates
 
   // Memoize VWAP calculation to avoid recalculating 672 candles on every render
   const weeklyVWAPData = useMemo(() => {
@@ -326,68 +327,102 @@ export function TradingChart({
   }, [])
 
   // Update main chart series when data or chart type changes
-  // Separated from markers to avoid unnecessary series recreation
+  // Uses incremental updates for better performance with live data
   useEffect(() => {
     if (!chartRef.current || data.length === 0) return
 
-    setIsLoading(true)
-
     const chart = chartRef.current
+    const previousData = previousDataRef.current
 
-    // Remove existing main series
-    try {
-      if (mainSeriesRef.current) {
-        chart.removeSeries(mainSeriesRef.current)
+    // Check if we can do an incremental update instead of full recreation
+    const canIncrementalUpdate = 
+      mainSeriesRef.current !== null &&
+      previousData.length > 0 &&
+      data.length >= previousData.length &&
+      // Check if all old data points match (same timestamps)
+      previousData.every((candle, idx) => data[idx]?.time === candle.time)
+
+    if (canIncrementalUpdate && mainSeriesRef.current) {
+      // Incremental update: update existing candles and add new ones
+      const mainSeries = mainSeriesRef.current
+      
+      // Update all candles that might have changed (especially the latest one)
+      for (let i = Math.max(0, previousData.length - 2); i < data.length; i++) {
+        const candle = data[i]
+        const candleData: CandlestickData = {
+          time: candle.time as any,
+          open: candle.open,
+          high: candle.high,
+          low: candle.low,
+          close: candle.close,
+        }
+        mainSeries.update(candleData)
+      }
+      
+      debug.log(`📊 Updated ${data.length - Math.max(0, previousData.length - 2)} candles incrementally`)
+    } else {
+      // Full recreation needed (first load, symbol change, or data mismatch)
+      setIsLoading(true)
+
+      // Remove existing main series
+      try {
+        if (mainSeriesRef.current) {
+          chart.removeSeries(mainSeriesRef.current)
+          mainSeriesRef.current = null
+        }
+      } catch (e) {
         mainSeriesRef.current = null
       }
-    } catch (e) {
-      mainSeriesRef.current = null
+
+      // Calculate appropriate price precision based on price range
+      const prices = data.map(candle => candle.close)
+      const maxPrice = Math.max(...prices)
+      const minPrice = Math.min(...prices)
+      const avgPrice = (maxPrice + minPrice) / 2
+      
+      // Determine precision: show at least 4 significant digits
+      let precision = 2 // Default for prices >= 100
+      if (avgPrice < 0.001) {
+        precision = 8 // Very small values (< $0.001)
+      } else if (avgPrice < 0.01) {
+        precision = 6 // Small values (< $0.01)
+      } else if (avgPrice < 1) {
+        precision = 4 // Medium values (< $1)
+      } else if (avgPrice < 100) {
+        precision = 3 // Standard values (< $100)
+      }
+
+      // Create candlestick series
+      const mainSeries = chart.addCandlestickSeries({
+        upColor: '#10b981', // bullish
+        downColor: '#ef4444', // bearish
+        borderVisible: false,
+        wickUpColor: '#10b981',
+        wickDownColor: '#ef4444',
+        priceFormat: {
+          type: 'price',
+          precision,
+          minMove: 1 / Math.pow(10, precision),
+        },
+      })
+
+      const candlestickData: CandlestickData[] = data.map((candle) => ({
+        time: candle.time as any, // lightweight-charts expects Time type
+        open: candle.open,
+        high: candle.high,
+        low: candle.low,
+        close: candle.close,
+      }))
+
+      mainSeries.setData(candlestickData)
+      mainSeriesRef.current = mainSeries
+
+      debug.log(`📊 Created new series with ${data.length} candles`)
+      setIsLoading(false)
     }
 
-    // Calculate appropriate price precision based on price range
-    const prices = data.map(candle => candle.close)
-    const maxPrice = Math.max(...prices)
-    const minPrice = Math.min(...prices)
-    const avgPrice = (maxPrice + minPrice) / 2
-    
-    // Determine precision: show at least 4 significant digits
-    let precision = 2 // Default for prices >= 100
-    if (avgPrice < 0.001) {
-      precision = 8 // Very small values (< $0.001)
-    } else if (avgPrice < 0.01) {
-      precision = 6 // Small values (< $0.01)
-    } else if (avgPrice < 1) {
-      precision = 4 // Medium values (< $1)
-    } else if (avgPrice < 100) {
-      precision = 3 // Standard values (< $100)
-    }
-
-    // Create candlestick series
-    const mainSeries = chart.addCandlestickSeries({
-      upColor: '#10b981', // bullish
-      downColor: '#ef4444', // bearish
-      borderVisible: false,
-      wickUpColor: '#10b981',
-      wickDownColor: '#ef4444',
-      priceFormat: {
-        type: 'price',
-        precision,
-        minMove: 1 / Math.pow(10, precision),
-      },
-    })
-
-    const candlestickData: CandlestickData[] = data.map((candle) => ({
-      time: candle.time as any, // lightweight-charts expects Time type
-      open: candle.open,
-      high: candle.high,
-      low: candle.low,
-      close: candle.close,
-    }))
-
-    mainSeries.setData(candlestickData)
-    mainSeriesRef.current = mainSeries
-
-    setIsLoading(false)
+    // Store current data for next comparison
+    previousDataRef.current = data
   }, [data]) // Only data triggers main series recreation
 
   // Update volume series when data or showVolume changes
