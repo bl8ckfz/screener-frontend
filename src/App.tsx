@@ -10,12 +10,14 @@ import { alertHistoryService } from '@/services'
 import { ALERT_HISTORY_CONFIG } from '@/types'
 import { Layout } from '@/components/layout'
 import { ChartSection, CoinTable } from '@/components/coin'
+import { MobileCoinDrawer } from '@/components/coin/MobileCoinDrawer'
 import { MarketSummary } from '@/components/market'
 import { SearchBar } from '@/components/controls'
 import { ShortcutHelp, LiveStatusBadge } from '@/components/ui'
 import { StorageMigration } from '@/components/StorageMigration'
 import { AlertNotificationContainer, AlertHistoryTable } from '@/components/alerts'
 import { SettingsModal } from '@/components/settings'
+import { FEATURE_FLAGS } from '@/config'
 
 function App() {
   // WebSocket streaming for futures data (real-time)
@@ -141,9 +143,19 @@ function App() {
   const [showShortcutHelp, setShowShortcutHelp] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'coins' | 'alerts'>('coins')
+  const [isMobile, setIsMobile] = useState(false)
   
   // Ref for search input
   const searchInputRef = useRef<HTMLInputElement>(null)
+
+  // Track viewport size for mobile-specific UI
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 768px)')
+    const update = () => setIsMobile(mql.matches)
+    update()
+    mql.addEventListener('change', update)
+    return () => mql.removeEventListener('change', update)
+  }, [])
   
   // Filter coins by sentiment and search query
   const filteredCoins = useMemo(() => {
@@ -193,6 +205,8 @@ function App() {
       return matchesSymbol || matchesType
     })
   }, [alertStats, searchQuery])
+
+  const mobileSheetEnabled = FEATURE_FLAGS.mobileCardView && isMobile
 
   // Keyboard shortcuts
   useKeyboardShortcuts([
@@ -353,7 +367,7 @@ function App() {
           </div>
 
           {/* Right Column - Chart Only */}
-          <div className="lg:col-span-7">
+          <div className={`lg:col-span-7 ${mobileSheetEnabled ? 'hidden md:block' : ''}`}>
             {/* Chart Section */}
             <ChartSection 
               selectedCoin={selectedAlert?.coin || null}
@@ -361,6 +375,15 @@ function App() {
             />
           </div>
         </div>
+
+        {/* Mobile Chart Drawer */}
+        {mobileSheetEnabled && selectedAlert?.coin && (
+          <MobileCoinDrawer
+            open={!!selectedAlert?.coin}
+            selectedCoin={selectedAlert.coin}
+            onClose={() => setSelectedAlert(null)}
+          />
+        )}
 
       {/* Settings Modal */}
       <SettingsModal
