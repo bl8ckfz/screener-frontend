@@ -321,7 +321,13 @@ function App() {
             </div>
 
             {/* Tabbed Content */}
-            <div className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
+            <div
+              className={
+                mobileSheetEnabled
+                  ? 'sticky top-[124px] z-20 bg-gray-800 rounded-lg overflow-hidden border border-gray-700'
+                  : 'bg-gray-800 rounded-lg overflow-hidden border border-gray-700'
+              }
+            >
               {/* Tab Buttons */}
               <div className="flex items-center border-b border-gray-700 bg-gray-800">
                 <button

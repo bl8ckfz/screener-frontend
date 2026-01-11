@@ -26,7 +26,7 @@ function CoinTableRowComponent({ coin, index, onClick }: CoinTableRowProps) {
   return (
     <tr
       onClick={() => onClick?.(coin)}
-      className="border-b border-gray-800 hover:bg-gray-900 cursor-pointer transition-all duration-150 hover:scale-[1.01] hover:shadow-lg animate-in fade-in slide-in-from-left-2"
+      className="border-b border-gray-800 hover:bg-gray-900 cursor-pointer transition-all duration-150 hover:shadow-lg motion-reduce:transform-none hover:scale-[1.01] animate-in fade-in slide-in-from-left-2"
       style={{ animationDelay: `${index * 20}ms` }}
     >
       <td className="px-3 py-2.5 w-16">
