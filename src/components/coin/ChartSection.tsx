@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { TradingChart } from './TradingChart'
 import { AlertTimelineChart } from './AlertTimelineChart'
 import { ExternalLinks } from './ExternalLinks'
@@ -8,6 +8,7 @@ import { useBubbleStream } from '@/hooks/useBubbleStream'
 import { useStore } from '@/hooks/useStore'
 import { calculateIchimoku, type IchimokuData } from '@/utils/indicators'
 import type { Coin } from '@/types/coin'
+import type { FuturesTickerData } from '@/types/api'
 import { ChartSkeleton, ErrorState, EmptyState } from '@/components/ui'
 import { debug } from '@/utils/debug'
 
@@ -15,6 +16,7 @@ export interface ChartSectionProps {
   selectedCoin: Coin | null
   onClose?: () => void
   className?: string
+  liveTicker?: FuturesTickerData
 }
 
 /**
@@ -26,7 +28,7 @@ export interface ChartSectionProps {
  * 
  * Phase 8.1.1: Extract Chart Section Component
  */
-export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSectionProps) {
+export function ChartSection({ selectedCoin, onClose, className = '', liveTicker }: ChartSectionProps) {
   const [interval, setInterval] = useState<KlineInterval>('5m')
   const [showWeeklyVWAP, setShowWeeklyVWAP] = useState(false)
   const [showIchimoku, setShowIchimoku] = useState(false)
@@ -40,6 +42,8 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
   const [ichimokuData, setIchimokuData] = useState<IchimokuData[]>([]) // Ichimoku indicator data
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const visibilityRef = useRef(!document.hidden)
+  const driftTimerRef = useRef<number | null>(null)
 
   // Get bubbles for current coin (use fullSymbol to match futures symbol)
   const { bubbles: allBubbles } = useBubbleStream({ symbolFilter: selectedCoin?.fullSymbol })
@@ -72,7 +76,47 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
     return allAlerts.filter(alert => alert.symbol === selectedCoin.symbol)
   }, [selectedCoin?.symbol, alertHistoryRefresh])
 
-  // Fetch chart data when coin or interval changes
+  const getIntervalSeconds = useCallback((ivl: KlineInterval) => {
+    const map: Record<KlineInterval, number> = {
+      '1m': 60,
+      '3m': 180,
+      '5m': 300,
+      '15m': 900,
+      '30m': 1800,
+      '1h': 3600,
+      '2h': 7200,
+      '4h': 14400,
+      '6h': 21600,
+      '8h': 28800,
+      '12h': 43200,
+      '1d': 86400,
+      '3d': 259200,
+      '1w': 604800,
+      '1M': 2592000,
+    }
+    return map[ivl] || 300
+  }, [])
+
+  const loadChartData = useCallback(
+    async (options?: { limit?: number }) => {
+      if (!selectedCoin) return
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        const data = await fetchKlines(selectedCoin.symbol, selectedCoin.pair, interval, options?.limit ?? 100)
+        setChartData(data.candlesticks)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load chart data')
+        debug.error('Chart data error:', err)
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [interval, selectedCoin]
+  )
+
+  // Initial load + interval/coin change
   useEffect(() => {
     if (!selectedCoin) {
       setChartData([])
@@ -80,71 +124,93 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
       setIchimokuData([])
       return
     }
-
-    let isCancelled = false
-
-    const loadChartData = async () => {
-      setIsLoading(true)
-      setError(null)
-
-      try {
-        const data = await fetchKlines(selectedCoin.symbol, selectedCoin.pair, interval, 100)
-        
-        if (!isCancelled) {
-          setChartData(data.candlesticks)
-        }
-      } catch (err) {
-        if (!isCancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to load chart data')
-          debug.error('Chart data error:', err)
-        }
-      } finally {
-        if (!isCancelled) {
-          setIsLoading(false)
-        }
-      }
-    }
-
     loadChartData()
+  }, [loadChartData, selectedCoin])
 
-    return () => {
-      isCancelled = true
+  // Visibility tracking to pause live updates in background tabs
+  useEffect(() => {
+    const handler = () => {
+      visibilityRef.current = !document.hidden
     }
-  }, [selectedCoin, interval])
+    document.addEventListener('visibilitychange', handler)
+    return () => document.removeEventListener('visibilitychange', handler)
+  }, [])
 
-  // Auto-refresh chart data periodically to update the latest candle
+  // Interval-close resync: fetch a small window at candle close
+  useEffect(() => {
+    if (!selectedCoin || chartData.length === 0) return
+    const intervalSeconds = getIntervalSeconds(interval)
+    const last = chartData[chartData.length - 1]
+    const nowSec = Math.floor(Date.now() / 1000)
+    const nextClose = last.time + intervalSeconds
+    const delayMs = Math.max(500, (nextClose - nowSec + 1) * 1000)
+
+    const timer = window.setTimeout(() => {
+      // Small resync to keep candles aligned; limit fetch size
+      loadChartData({ limit: 120 })
+    }, delayMs)
+
+    return () => clearTimeout(timer)
+  }, [chartData, getIntervalSeconds, interval, loadChartData, selectedCoin])
+
+  // Drift correction: infrequent full resync
   useEffect(() => {
     if (!selectedCoin) return
+    const intervalId = window.setInterval(() => {
+      loadChartData({ limit: 150 })
+    }, 120000) // every 2 minutes
 
-    console.log('🚀 Starting chart auto-refresh interval (ChartSection)')
-    let isCancelled = false
-
-    const refreshChartData = async () => {
-      console.log('🔄 Chart refresh triggered (ChartSection)')
-      try {
-        const data = await fetchKlines(selectedCoin.symbol, selectedCoin.pair, interval, 100)
-
-        if (!isCancelled) {
-          const candles = [...data.candlesticks]
-          console.log(`🔄 Chart refresh: ${candles.length} candles, last=${candles[candles.length - 1]?.close}`)
-          setChartData(candles)
-        }
-      } catch (err) {
-        console.error('❌ Chart refresh failed:', err)
-        debug.warn('Chart refresh failed:', err)
+    driftTimerRef.current = intervalId
+    return () => {
+      if (driftTimerRef.current) {
+        clearInterval(driftTimerRef.current)
+        driftTimerRef.current = null
       }
     }
+  }, [loadChartData, selectedCoin])
 
-    console.log('⏱️ Setting up 5-second interval (ChartSection)')
-    const refreshInterval = window.setInterval(refreshChartData, 5000)
-    console.log('✅ Interval created (ChartSection):', refreshInterval)
+  // Live ticker integration: patch last candle and add live price line
+  useEffect(() => {
+    if (!selectedCoin || !liveTicker || chartData.length === 0) return
+    if (!visibilityRef.current) return
 
-    return () => {
-      console.log('🛑 Cleaning up chart refresh interval (ChartSection)')
-      isCancelled = true
-      window.clearInterval(refreshInterval)
-    }
-  }, [selectedCoin?.symbol, selectedCoin?.pair, interval])
+    const price = liveTicker.close ?? liveTicker.lastPrice
+    const eventTimeSec = Math.floor((liveTicker.eventTime ?? Date.now()) / 1000)
+    if (!price || !eventTimeSec) return
+
+    const intervalSeconds = getIntervalSeconds(interval)
+
+    setChartData((prev) => {
+      if (!prev.length) return prev
+      const candles = [...prev]
+      const last = { ...candles[candles.length - 1] }
+      const barEnd = last.time + intervalSeconds
+
+      if (eventTimeSec < barEnd) {
+        last.close = price
+        last.high = Math.max(last.high, price)
+        last.low = Math.min(last.low, price)
+        candles[candles.length - 1] = last
+        return candles
+      }
+
+      // Bar closed; append a new bar seeded from last close and live price
+      const newBarTime = barEnd
+      const newBar = {
+        time: newBarTime,
+        open: last.close,
+        high: Math.max(last.close, price),
+        low: Math.min(last.close, price),
+        close: price,
+        volume: last.volume, // keep last known volume; refined on resync
+        quoteVolume: last.quoteVolume,
+        trades: last.trades,
+      }
+
+      const nextCandles = [...candles.slice(-99), newBar] // retain ~100 bars
+      return nextCandles
+    })
+  }, [chartData.length, getIntervalSeconds, interval, liveTicker, selectedCoin])
 
   // Fetch VWAP data (15m interval) when toggled on or coin changes
   useEffect(() => {

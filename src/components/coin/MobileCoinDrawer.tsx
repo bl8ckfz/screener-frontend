@@ -1,15 +1,17 @@
 import { useEffect } from 'react'
 import type { Coin } from '@/types/coin'
 import { ChartSection } from './ChartSection'
+import type { FuturesTickerData } from '@/types/api'
 
 interface MobileCoinDrawerProps {
   open: boolean
   selectedCoin: Coin | null
   onClose: () => void
+  liveTicker?: FuturesTickerData
 }
 
 // Mobile-only bottom sheet that presents the chart and alert timeline
-export function MobileCoinDrawer({ open, selectedCoin, onClose }: MobileCoinDrawerProps) {
+export function MobileCoinDrawer({ open, selectedCoin, onClose, liveTicker }: MobileCoinDrawerProps) {
   useEffect(() => {
     if (!open) return
     const previous = document.body.style.overflow
@@ -29,7 +31,7 @@ export function MobileCoinDrawer({ open, selectedCoin, onClose }: MobileCoinDraw
           <span className="h-1.5 w-12 rounded-full bg-gray-600" />
         </div>
         <div className="h-[calc(72vh-24px)] overflow-hidden">
-          <ChartSection selectedCoin={selectedCoin} onClose={onClose} className="h-full" />
+          <ChartSection selectedCoin={selectedCoin} onClose={onClose} className="h-full" liveTicker={liveTicker} />
         </div>
       </div>
     </div>

@@ -18,6 +18,7 @@ import { StorageMigration } from '@/components/StorageMigration'
 import { AlertNotificationContainer, AlertHistoryTable } from '@/components/alerts'
 import { SettingsModal } from '@/components/settings'
 import { FEATURE_FLAGS } from '@/config'
+import type { FuturesTickerData } from '@/types/api'
 
 function App() {
   // WebSocket streaming for futures data (real-time)
@@ -144,6 +145,12 @@ function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'coins' | 'alerts'>('coins')
   const [isMobile, setIsMobile] = useState(false)
+  const liveTicker: FuturesTickerData | undefined = useMemo(() => {
+    if (!selectedAlert?.coin || !getTickerData) return undefined
+    const tickers = getTickerData()
+    const symbol = selectedAlert.coin.fullSymbol || selectedAlert.coin.symbol
+    return tickers?.find((t) => t.symbol === symbol)
+  }, [getTickerData, selectedAlert?.coin])
   
   // Ref for search input
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -386,6 +393,7 @@ function App() {
             <ChartSection 
               selectedCoin={selectedAlert?.coin || null}
               onClose={() => setSelectedAlert(null)}
+              liveTicker={liveTicker}
             />
           </div>
         </div>
@@ -396,6 +404,7 @@ function App() {
             open={!!selectedAlert?.coin}
             selectedCoin={selectedAlert.coin}
             onClose={() => setSelectedAlert(null)}
+            liveTicker={liveTicker}
           />
         )}
 
