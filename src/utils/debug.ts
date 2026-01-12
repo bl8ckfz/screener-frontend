@@ -3,7 +3,7 @@
  * Conditionally logs based on development environment
  */
 
-const isDev = import.meta.env.DEV || true // Temporarily enable for debugging
+const isDev = import.meta.env.DEV
 
 export const debug = {
   log: (...args: unknown[]) => {
