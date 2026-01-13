@@ -34,7 +34,7 @@ export class FuturesMetricsService {
   // Configuration: Max symbols to stream (adjust based on needs)
   // Lower values = faster backfill, less memory, lower API usage
   // Higher values = more market coverage (Binance WebSocket limit: 200)
-  private static readonly MAX_SYMBOLS = 100
+  private static readonly MAX_SYMBOLS = 150
 
   private coinGeckoClient: CoinGeckoApiClient
   private stream1mManager: Stream1mManager

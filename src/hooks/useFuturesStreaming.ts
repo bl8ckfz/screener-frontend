@@ -62,7 +62,7 @@ const futuresMetricsService = new FuturesMetricsService()
  * 
  * Features:
  * - Instant market data (<2 seconds via ticker stream)
- * - Smart symbol selection (top 200 by 24h volume)
+ * - Smart symbol selection (top 150 by 24h volume)
  * - Background backfill for historical metrics (non-blocking)
  * - Real-time price/volume updates via WebSocket
  * - Zero ongoing API requests (only startup backfill)
@@ -70,7 +70,7 @@ const futuresMetricsService = new FuturesMetricsService()
  * 
  * Flow:
  * 1. Connect WebSocket and fetch all tickers (~500 symbols)
- * 2. Sort by 24h quote volume, select top 200 most liquid
+ * 2. Sort by 24h quote volume, select top 150 most liquid
  * 3. Display market data immediately → tickersReady=true (~1s)
  * 4. Background backfill of historical data → backfillProgress (0-100%)
  * 5. All features available → backfillComplete=true (~60s)
