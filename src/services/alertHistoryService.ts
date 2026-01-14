@@ -5,7 +5,7 @@ import { ALERT_HISTORY_CONFIG } from '@/types/alertHistory'
 
 /**
  * Service for managing alert history persistence and aggregation
- * Uses SessionStorage for session-based retention with 24h cleanup
+ * Uses localStorage for persistence across reloads with 24h cleanup
  */
 class AlertHistoryService {
   private readonly storageKey = ALERT_HISTORY_CONFIG.STORAGE_KEY
@@ -109,6 +109,18 @@ class AlertHistoryService {
 
     const removedCount = history.length - validEntries.length
     if (removedCount > 0) {
+      console.log(`🧹 Alert cleanup: Removing ${removedCount} alerts older than ${new Date(cutoffTime).toLocaleString()}`)
+      console.log(`   Retention: ${this.retentionMs}ms (${ALERT_HISTORY_CONFIG.RETENTION_HOURS}h)`)
+      console.log(`   Current time: ${new Date().toLocaleString()}`)
+      console.log(`   Cutoff time: ${new Date(cutoffTime).toLocaleString()}`)
+      
+      // Log removed alerts
+      const removed = history.filter((entry) => entry.timestamp < cutoffTime)
+      removed.forEach(entry => {
+        const age = (Date.now() - entry.timestamp) / (60 * 60 * 1000)
+        console.log(`   - ${entry.symbol} ${entry.alertType} at ${new Date(entry.timestamp).toLocaleString()} (${age.toFixed(1)}h old)`)
+      })
+      
       this.saveToStorage(validEntries)
       this.invalidateCache() // Clear cache after cleanup
     }
@@ -121,7 +133,7 @@ class AlertHistoryService {
    */
   clearHistory(): void {
     if (typeof window !== 'undefined') {
-      sessionStorage.removeItem(this.storageKey)
+      localStorage.removeItem(this.storageKey)
       this.invalidateCache() // Clear cache
     }
   }
@@ -134,14 +146,22 @@ class AlertHistoryService {
     if (typeof window === 'undefined') return []
 
     try {
-      const data = sessionStorage.getItem(this.storageKey)
+      const data = localStorage.getItem(this.storageKey)
       if (!data) return []
 
       const entries: AlertHistoryEntry[] = JSON.parse(data)
       const cutoffTime = Date.now() - this.retentionMs
+      const beforeCount = entries.length
 
       // Filter out expired entries
-      return entries.filter((entry) => entry.timestamp >= cutoffTime)
+      const filtered = entries.filter((entry) => entry.timestamp >= cutoffTime)
+      
+      if (filtered.length < beforeCount) {
+        const removed = beforeCount - filtered.length
+        console.log(`⚠️  loadFromStorage filtered out ${removed} expired alerts (cutoff: ${new Date(cutoffTime).toLocaleString()})`)
+      }
+      
+      return filtered
     } catch (error) {
       console.error('Failed to load alert history:', error)
       return []
@@ -155,7 +175,7 @@ class AlertHistoryService {
     if (typeof window === 'undefined') return
 
     try {
-      sessionStorage.setItem(this.storageKey, JSON.stringify(entries))
+      localStorage.setItem(this.storageKey, JSON.stringify(entries))
     } catch (error) {
       console.error('Failed to save alert history:', error)
     }
