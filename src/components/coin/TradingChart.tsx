@@ -82,7 +82,7 @@ const ALERT_MARKER_COLORS: Record<string, string> = {
 /**
  * Get alert marker color and position based on alert type
  */
-const getAlertMarkerStyle = (alertType: string): { color: string; position: 'aboveBar' | 'belowBar'; shape: 'circle' | 'arrowUp' | 'arrowDown' | 'diamond' } => {
+const getAlertMarkerStyle = (alertType: string): { color: string; position: 'aboveBar' | 'belowBar'; shape: 'circle' | 'arrowUp' | 'arrowDown' | 'square' } => {
   const cleanType = alertType.replace(/^futures_/, '')
   const normalizedKey = alertType.startsWith('futures_') ? alertType : `futures_${alertType}`
   const isBullish = cleanType.includes('bull') || cleanType === 'bottom_hunter'
@@ -99,11 +99,11 @@ const getAlertMarkerStyle = (alertType: string): { color: string; position: 'abo
     color,
     position: isBullish ? 'belowBar' : 'aboveBar',
     // Bottom/Top hunters should be circles to match timeline dots
-    // 15m big bull/bear use the smallest diamond shape for visual distinction
+    // 15m big bull/bear use a small square for visual distinction (diamond unsupported)
     shape: isHunter
       ? 'circle'
       : isFifteen
-        ? 'diamond'
+        ? 'square'
         : (isBullish ? 'arrowUp' : 'arrowDown'),
   }
 }
