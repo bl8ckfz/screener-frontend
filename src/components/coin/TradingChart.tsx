@@ -62,16 +62,16 @@ const getAlertMarkerSize = (alertType: string): 0 | 1 | 2 => {
 // Match alert marker colors with alert timeline legend
 const ALERT_MARKER_COLORS: Record<string, string> = {
   // Bullish
-  futures_big_bull_60: '#22c55e',
-  futures_pioneer_bull: '#10b981',
+  futures_big_bull_60: '#14532d',
+  futures_pioneer_bull: '#a7f3d0',
   futures_5_big_bull: '#84cc16',
-  futures_15_big_bull: '#4ade80',
+  futures_15_big_bull: '#16a34a',
   futures_bottom_hunter: '#34d399',
   // Bearish
-  futures_big_bear_60: '#ef4444',
-  futures_pioneer_bear: '#dc2626',
+  futures_big_bear_60: '#7f1d1d',
+  futures_pioneer_bear: '#fce7f3',
   futures_5_big_bear: '#f87171',
-  futures_15_big_bear: '#fb923c',
+  futures_15_big_bear: '#dc2626',
   futures_top_hunter: '#f97316',
 }
 
