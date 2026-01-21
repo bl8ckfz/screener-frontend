@@ -54,9 +54,9 @@ const getAlertMarkerSize = (alertType: string): 0 | 1 | 2 => {
     return 2
   }
 
-  // 15m big bull/bear → smallest size (diamond shape)
+  // 15m big bull/bear → small diamond for visibility
   if (cleanType === '15_big_bull' || cleanType === '15_big_bear') {
-    return 0
+    return 1
   }
 
   // Medium/low priority alerts - normal size

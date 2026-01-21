@@ -14,14 +14,14 @@ const ALERT_TYPE_COLORS: Record<string, string> = {
   futures_pioneer_bull: '#10b981', // green-500 (emerald)
   futures_5_big_bull: '#84cc16', // lime-500
   futures_15_big_bull: '#4ade80', // green-400
-  futures_bottom_hunter: '#34d399', // green-400 (emerald)
+  futures_bottom_hunter: '#a855f7', // purple for hunter alignment
   
   // Bearish alerts - red gamma
   futures_big_bear_60: '#ef4444', // red-500
   futures_pioneer_bear: '#dc2626', // red-600
   futures_5_big_bear: '#f87171', // red-400
   futures_15_big_bear: '#fb923c', // orange-400 (red-orange)
-  futures_top_hunter: '#f97316', // orange-500 (red-orange)
+  futures_top_hunter: '#a855f7', // purple for hunter alignment
 }
 
 // Display names for futures alert types - without "futures_" prefix
