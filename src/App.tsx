@@ -273,6 +273,15 @@ function App() {
     setSelectedAlert({ coin, alertStat })
   }
 
+  // Get live coin data for selected coin (syncs with updates from useBackendData)
+  const liveCoin = useMemo(() => {
+    if (!selectedAlert?.coin || !coins) return selectedAlert?.coin || null
+    
+    // Find the updated coin from the latest data
+    const updated = coins.find(c => c.symbol === selectedAlert.coin.symbol)
+    return updated || selectedAlert.coin
+  }, [selectedAlert?.coin, coins])
+
   return (
     <>
       {/* Handle localStorage → IndexedDB migration on first load */}
@@ -387,17 +396,17 @@ function App() {
           <div className={`lg:col-span-7 ${mobileSheetEnabled ? 'hidden md:block' : ''}`}>
             {/* Chart Section */}
             <ChartSection 
-              selectedCoin={selectedAlert?.coin || null}
+              selectedCoin={liveCoin}
               onClose={() => setSelectedAlert(null)}
             />
           </div>
         </div>
 
         {/* Mobile Chart Drawer */}
-        {mobileSheetEnabled && selectedAlert?.coin && (
+        {mobileSheetEnabled && liveCoin && (
           <MobileCoinDrawer
-            open={!!selectedAlert?.coin}
-            selectedCoin={selectedAlert.coin}
+            open={!!liveCoin}
+            selectedCoin={liveCoin}
             onClose={() => setSelectedAlert(null)}
           />
         )}
