@@ -30,6 +30,7 @@ export interface TradingChartProps {
   data: Candlestick[]
   symbol: string
   height?: number
+  livePrice?: number
   showVolume?: boolean
   showWeeklyVWAP?: boolean
   vwapData?: Candlestick[] // Separate VWAP data (15m interval for efficiency)
@@ -169,6 +170,7 @@ export function TradingChart({
   data,
   symbol,
   height = 400,
+  livePrice,
   showVolume = true,
   showWeeklyVWAP = false,
   vwapData = [],
@@ -362,6 +364,25 @@ export function TradingChart({
 
     setIsLoading(false)
   }, [data]) // Only data triggers main series recreation
+
+  // Live price update (update last candle close/high/low between interval closes)
+  useEffect(() => {
+    if (!chartRef.current || !mainSeriesRef.current || data.length === 0) return
+    if (typeof livePrice !== 'number' || Number.isNaN(livePrice)) return
+
+    const last = data[data.length - 1]
+    const lastTime = last.time as any
+    const updatedHigh = Math.max(last.high, livePrice)
+    const updatedLow = Math.min(last.low, livePrice)
+
+    mainSeriesRef.current.update({
+      time: lastTime,
+      open: last.open,
+      high: updatedHigh,
+      low: updatedLow,
+      close: livePrice,
+    })
+  }, [livePrice, data])
 
   // Update volume series when data or showVolume changes
   useEffect(() => {

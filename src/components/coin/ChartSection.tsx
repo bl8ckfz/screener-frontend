@@ -382,6 +382,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
             data={chartData}
             symbol={selectedCoin.fullSymbol}
             height={360} // Mobile: 300px, Desktop: 480px handled by responsive CSS (20% increase)
+            livePrice={selectedCoin.lastPrice}
             showVolume={true}
             showWeeklyVWAP={showWeeklyVWAP}
             vwapData={vwapData}
