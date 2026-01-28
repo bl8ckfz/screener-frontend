@@ -21,8 +21,8 @@ export function useAlertStats(coins: Coin[]): CoinAlertStats[] {
     queryKey: ['backendAlerts'],
     queryFn: () => alertHistory.getHistory(),
     enabled: USE_BACKEND_API,
-    staleTime: 30000,
-    refetchInterval: 30000,
+    staleTime: 5000,
+    refetchInterval: 5000,
     retry: 2,
   })
 

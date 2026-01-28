@@ -120,6 +120,20 @@ export const backendApi = {
   },
 
   /**
+   * Fetch 24h tickers from backend (proxy to Binance Futures)
+   * Optionally filter by symbols (comma-separated)
+   */
+  async getAllTickers(symbols?: string[]): Promise<any[]> {
+    const query = symbols && symbols.length > 0
+      ? `?symbols=${encodeURIComponent(symbols.join(','))}`
+      : ''
+    const response = await fetchWithTimeout(
+      `${BACKEND_CONFIG.baseUrl}/api/tickers${query}`
+    )
+    return response.json()
+  },
+
+  /**
    * Get user alert settings
    * 
    * Requires authentication (Supabase JWT in Authorization header)

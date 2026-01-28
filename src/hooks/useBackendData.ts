@@ -184,12 +184,49 @@ export function useBackendData() {
     queryKey: ['backendMetrics'],
     queryFn: async () => {
       const metrics = await backendApi.getAllMetrics()
-      return transformBackendToCoin(metrics)
+      const coins = transformBackendToCoin(metrics)
+
+      try {
+        const symbols = coins.map((coin) => coin.fullSymbol)
+        const tickers = await backendApi.getAllTickers(symbols)
+        const tickerMap = new Map<string, any>()
+        tickers.forEach((ticker) => {
+          if (ticker?.symbol) {
+            tickerMap.set(ticker.symbol, ticker)
+          }
+        })
+
+        return coins.map((coin) => {
+          const ticker = tickerMap.get(coin.fullSymbol)
+          if (!ticker) return coin
+
+          const lastPrice = Number(ticker.lastPrice ?? coin.lastPrice)
+          const openPrice = Number(ticker.openPrice ?? coin.openPrice)
+          const highPrice = Number(ticker.highPrice ?? coin.highPrice)
+          const lowPrice = Number(ticker.lowPrice ?? coin.lowPrice)
+          const quoteVolume = Number(ticker.quoteVolume ?? coin.quoteVolume)
+
+          return {
+            ...coin,
+            lastPrice,
+            openPrice,
+            highPrice,
+            lowPrice,
+            quoteVolume,
+            priceChange: Number(ticker.priceChange ?? coin.priceChange),
+            priceChangePercent: Number(ticker.priceChangePercent ?? coin.priceChangePercent),
+            weightedAvgPrice: Number(ticker.weightedAvgPrice ?? coin.weightedAvgPrice),
+          }
+        })
+      } catch (error) {
+        console.warn('Failed to merge tickers:', error)
+        return coins
+      }
     },
-    refetchInterval: 5000, // 5 second polling (backend has 1m candles, no need for faster)
+    refetchInterval: 2000, // 2 second polling for near-realtime price updates
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
-    staleTime: 3000, // Consider data stale after 3 seconds
+    staleTime: 1000, // Consider data stale after 1 second
     gcTime: 30000, // Keep in cache for 30 seconds (previously cacheTime)
   })
 }
