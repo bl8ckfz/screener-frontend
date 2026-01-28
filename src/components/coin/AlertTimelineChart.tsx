@@ -1,9 +1,15 @@
 import { useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useStore } from '@/hooks/useStore'
 import { alertHistoryService } from '@/services/alertHistoryService'
+import { alertHistory } from '@/services/alertHistory'
+import { USE_BACKEND_API } from '@/services/backendApi'
+import type { AlertHistoryEntry } from '@/types/alertHistory'
+import type { AlertHistoryItem, CombinedAlertType } from '@/types/alert'
 
 interface AlertTimelineChartProps {
   symbol: string
+  fullSymbol?: string
   height?: number
 }
 
@@ -57,18 +63,63 @@ const formatTime = (timestamp: number): string => {
   })
 }
 
-export function AlertTimelineChart({ symbol, height: _unusedHeight }: AlertTimelineChartProps) {
+function normalizeSymbol(symbol: string): string {
+  if (symbol.endsWith('USDT')) return symbol.replace('USDT', '')
+  if (symbol.endsWith('FDUSD')) return symbol.replace('FDUSD', '')
+  if (symbol.endsWith('TRY')) return symbol.replace('TRY', '')
+  return symbol
+}
+
+function toAlertHistoryEntry(alert: AlertHistoryItem): AlertHistoryEntry {
+  const normalizedSymbol = normalizeSymbol(alert.symbol)
+  return {
+    id: alert.id || `${alert.timestamp}-${normalizedSymbol}-${alert.type}`,
+    symbol: normalizedSymbol,
+    alertType: alert.type as CombinedAlertType,
+    timestamp: alert.timestamp,
+    priceAtTrigger: alert.value ?? 0,
+    changePercent: 0,
+    metadata: {
+      value: alert.value,
+      threshold: alert.threshold,
+    },
+  }
+}
+
+export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }: AlertTimelineChartProps) {
   // Watch for alert history changes
   const alertHistoryRefresh = useStore((state) => state.alertHistoryRefresh)
+
+  const querySymbol = fullSymbol || symbol
+
+  const backendAlertsQuery = useQuery({
+    queryKey: ['backendAlerts', querySymbol],
+    queryFn: () => alertHistory.getAllBySymbol(querySymbol),
+    enabled: USE_BACKEND_API && !!querySymbol,
+    staleTime: 30000,
+    refetchInterval: 30000,
+    retry: 2,
+  })
+
+  const backendEntries = useMemo(() => {
+    if (!USE_BACKEND_API) return []
+    const alerts = backendAlertsQuery.data || []
+    return alerts.map((alert) => toAlertHistoryEntry(alert))
+  }, [backendAlertsQuery.data])
+
+  const localEntries = useMemo(() => {
+    if (USE_BACKEND_API) return []
+    return alertHistoryService.getHistory()
+  }, [alertHistoryRefresh])
 
   // Filter alerts for this symbol in last 24 hours
   const filteredAlerts = useMemo(() => {
     const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000
-    const allAlerts = alertHistoryService.getHistory()
+    const allAlerts = USE_BACKEND_API ? backendEntries : localEntries
     return allAlerts.filter(
       (entry) => entry.symbol === symbol && entry.timestamp >= oneDayAgo
     ).sort((a, b) => a.timestamp - b.timestamp) // Sort by time ascending
-  }, [symbol, alertHistoryRefresh])
+  }, [symbol, backendEntries, localEntries])
 
   // Get unique alert types in chronological order; new types appear after existing ones
   const alertTypes = useMemo(() => {
