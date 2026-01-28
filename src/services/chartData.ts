@@ -12,7 +12,7 @@
 export type KlineInterval = '1m' | '3m' | '5m' | '15m' | '30m' | '1h' | '2h' | '4h' | '6h' | '8h' | '12h' | '1d' | '3d' | '1w' | '1M'
 
 export interface Candlestick {
-  time: number // Unix timestamp in milliseconds
+  time: number // Unix timestamp in seconds
   open: number
   high: number
   low: number
@@ -23,15 +23,8 @@ export interface Candlestick {
 }
 
 const BINANCE_FUTURES_API = 'https://fapi.binance.com/fapi/v1'
-
-// CORS proxy is currently failing (500 errors)
-// TODO: Either fix proxy or add backend /api/klines endpoint
-const CORS_PROXY_WORKING = false
-
-// Use CORS proxy in development (when it's working)
-const API_BASE = import.meta.env.DEV && CORS_PROXY_WORKING
-  ? `https://api.allorigins.win/raw?url=${encodeURIComponent(BINANCE_FUTURES_API)}`
-  : BINANCE_FUTURES_API
+const BACKEND_API_BASE = import.meta.env.VITE_BACKEND_API_URL
+const USE_BACKEND_API = import.meta.env.VITE_USE_BACKEND_API === 'true'
 
 /**
  * Fetch klines (candlestick data) from Binance Futures API
@@ -46,14 +39,13 @@ export async function fetchKlines(
   interval: KlineInterval,
   limit: number = 100
 ): Promise<Candlestick[]> {
-  // Temporarily return empty array - CORS proxy is down
-  if (import.meta.env.DEV && !CORS_PROXY_WORKING) {
-    console.warn('Chart data disabled - CORS proxy unavailable. Use production or enable backend /api/klines')
-    return []
-  }
-  
   try {
-    const url = `${API_BASE}/klines?symbol=${symbol}&interval=${interval}&limit=${Math.min(limit, 1500)}`
+    const safeLimit = Math.min(limit, 1500)
+    const base = USE_BACKEND_API && BACKEND_API_BASE
+      ? `${BACKEND_API_BASE}/api/klines`
+      : `${BINANCE_FUTURES_API}/klines`
+
+    const url = `${base}?symbol=${symbol}&interval=${interval}&limit=${safeLimit}`
     
     const response = await fetch(url, {
       headers: {
@@ -68,7 +60,7 @@ export async function fetchKlines(
     const data = await response.json()
     
     return data.map((kline: any[]) => ({
-      time: kline[0], // Open time (ms)
+      time: Math.floor(kline[0] / 1000), // Open time (seconds)
       open: parseFloat(kline[1]),
       high: parseFloat(kline[2]),
       low: parseFloat(kline[3]),
