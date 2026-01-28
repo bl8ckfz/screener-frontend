@@ -182,11 +182,21 @@ export default {
         'slide-up': 'slideUp 0.3s ease-out',
         'slide-down': 'slideDown 0.3s ease-out',
         'scale-in': 'scaleIn 0.2s ease-out',
+        'flash-green': 'flashGreen 0.5s ease-out',
+        'flash-red': 'flashRed 0.5s ease-out',
       },
       keyframes: {
         shimmer: {
           '0%': { backgroundPosition: '-1000px 0' },
           '100%': { backgroundPosition: '1000px 0' },
+        },
+        flashGreen: {
+          '0%': { backgroundColor: 'rgba(16, 185, 129, 0.3)' },
+          '100%': { backgroundColor: 'transparent' },
+        },
+        flashRed: {
+          '0%': { backgroundColor: 'rgba(239, 68, 68, 0.3)' },
+          '100%': { backgroundColor: 'transparent' },
         },
         fadeIn: {
           '0%': { opacity: '0' },

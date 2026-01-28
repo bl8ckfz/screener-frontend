@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { Coin } from '@/types/coin'
 import { useStore } from '@/hooks/useStore'
+import { usePriceFlash } from '@/hooks'
 import { sortCoins } from '@/utils/sort'
 import { TableRowSkeleton } from '@/components/ui'
 import { CoinTableRow } from './CoinTableRow'
@@ -21,11 +22,12 @@ interface CoinCardProps {
 
 const CoinCard = ({ coin, onClick }: CoinCardProps) => {
   const changeColor = coin.priceChangePercent > 0 ? 'text-green-400' : coin.priceChangePercent < 0 ? 'text-red-400' : 'text-gray-300'
+  const flash = usePriceFlash(coin.lastPrice)
 
   return (
     <button
       onClick={() => onClick?.(coin)}
-      className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-3 text-left shadow-sm transition hover:border-accent/60 hover:shadow-lg"
+      className={`w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-3 text-left shadow-sm transition hover:border-accent/60 hover:shadow-lg ${flash}`}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">

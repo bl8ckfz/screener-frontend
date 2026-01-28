@@ -9,6 +9,7 @@ import { memo } from 'react'
 import type { Coin } from '@/types/coin'
 import { formatPrice, formatPercent, formatVolume } from '@/utils/format'
 import { WatchlistStar } from './WatchlistStar'
+import { usePriceFlash } from '@/hooks'
 
 interface CoinTableRowProps {
   coin: Coin
@@ -23,10 +24,12 @@ const getChangeColor = (value: number) => {
 }
 
 function CoinTableRowComponent({ coin, index, onClick }: CoinTableRowProps) {
+  const flash = usePriceFlash(coin.lastPrice)
+  
   return (
     <tr
       onClick={() => onClick?.(coin)}
-      className="border-b border-gray-800 hover:bg-gray-900 cursor-pointer transition-all duration-150 hover:shadow-lg motion-reduce:transform-none hover:scale-[1.01] animate-in fade-in slide-in-from-left-2"
+      className={`border-b border-gray-800 hover:bg-gray-900 cursor-pointer transition-all duration-150 hover:shadow-lg motion-reduce:transform-none hover:scale-[1.01] animate-in fade-in slide-in-from-left-2 ${flash}`}
       style={{ animationDelay: `${index * 20}ms` }}
     >
       <td className="px-3 py-2.5 w-16">
