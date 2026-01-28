@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { BackendWebSocketClient, backendApi } from '@/services/backendApi'
+import { BackendWebSocketClient } from '@/services/backendApi'
 import { debug } from '@/utils/debug'
 import type { Alert } from '@/types/alert'
 
