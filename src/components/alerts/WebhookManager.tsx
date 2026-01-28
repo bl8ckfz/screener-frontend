@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { useStore } from '@/hooks/useStore'
-import { testDiscordWebhook, testTelegramWebhook, isValidDiscordWebhookUrl } from '@/services/webhookService'
+import { isValidDiscordWebhookUrl } from '@/services/backendApi'
 import type { WebhookConfig } from '@/types/alert'
 
 type WebhookSource = 'main' | 'watchlist'
@@ -125,23 +125,11 @@ export function WebhookManager() {
     setIsTesting(webhook.id)
     setError('')
 
-    let success = false
+    // TODO: Implement webhook testing via backend API when endpoint is ready
+    console.warn('Webhook testing not yet implemented - backend endpoint needed')
+    alert('Webhook testing will be available once backend webhook endpoints are implemented')
     
-    if (webhook.type === 'discord') {
-      success = await testDiscordWebhook(webhook.url)
-    } else if (webhook.type === 'telegram') {
-      const match = webhook.url.match(/^telegram:\/\/([^:]+):(.+)$/)
-      if (match) {
-        const [, botToken, chatId] = match
-        success = await testTelegramWebhook(botToken, chatId)
-      }
-    }
-
     setIsTesting(null)
-    
-    if (!success) {
-      setError(`Test failed for ${webhook.name}`)
-    }
   }
 
   return (

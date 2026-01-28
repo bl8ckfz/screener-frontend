@@ -1,4 +1,4 @@
-import { useMarketStats } from '@/hooks/useMarketData'
+import { useMarketStats } from '@/hooks/useMarketStats'
 import { useStore } from '@/hooks/useStore'
 import type { Coin } from '@/types/coin'
 

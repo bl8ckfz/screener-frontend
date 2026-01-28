@@ -11,10 +11,9 @@ import {
   type SeriesMarker,
   type Time,
 } from 'lightweight-charts'
-import type { Candlestick } from '@/services/chartData'
+import { calculateWeeklyVWAP, type IchimokuData, type Candlestick } from '@/services/chartData'
 import type { AlertHistoryEntry } from '@/types/alertHistory'
 import type { Bubble } from '@/types/bubble'
-import { calculateWeeklyVWAP, type IchimokuData } from '@/utils/indicators'
 import { debug } from '@/utils/debug'
 
 // Format epoch seconds to local time string for axis/crosshair consistency with timeline
@@ -507,8 +506,8 @@ export function TradingChart({
         
         senkouData.push({
           time: futureTime,
-          spanA: ichimokuData[i].senkouSpanA,
-          spanB: ichimokuData[i].senkouSpanB,
+          spanA: ichimokuData[i].senkouSpanA ?? 0,
+          spanB: ichimokuData[i].senkouSpanB ?? 0,
         })
       }
 
@@ -568,7 +567,7 @@ export function TradingChart({
       kijunSeries.setData(
         ichimokuData.map((d) => ({
           time: d.time as any,
-          value: d.kijunSen,
+          value: d.kijunSen ?? d.kijun,
         }))
       )
       kijunRef.current = kijunSeries
@@ -587,7 +586,7 @@ export function TradingChart({
       tenkanSeries.setData(
         ichimokuData.map((d) => ({
           time: d.time as any,
-          value: d.tenkanSen,
+          value: d.tenkanSen ?? d.tenkan,
         }))
       )
       tenkanRef.current = tenkanSeries
@@ -611,7 +610,7 @@ export function TradingChart({
         const pastIndex = i - displacement
         chikouData.push({
           time: ichimokuData[pastIndex].time,
-          value: ichimokuData[i].chikouSpan,
+          value: ichimokuData[i].chikouSpan ?? ichimokuData[i].chikou,
         })
       }
 

@@ -1,11 +1,3 @@
-// Technical Indicators
-export {
-  calculateVCP,
-  calculateFibonacci,
-  calculateTechnicalIndicators,
-  applyTechnicalIndicators,
-} from './indicators'
-
 // Formatting
 export {
   formatNumber,
@@ -47,3 +39,6 @@ export {
   requestIdleCallback,
   cancelIdleCallback,
 } from './performance'
+
+// Memory Profiler
+export { memoryProfiler } from './memoryProfiler'

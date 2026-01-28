@@ -1,9 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { TradingChart } from './TradingChart'
-import { fetchKlines, type KlineInterval, COMMON_INTERVALS, INTERVAL_LABELS } from '@/services/chartData'
+import { fetchKlines, calculateIchimoku, type KlineInterval, type IchimokuData, COMMON_INTERVALS, INTERVAL_LABELS } from '@/services/chartData'
 import { alertHistoryService } from '@/services/alertHistoryService'
 import { useBubbleStream } from '@/hooks/useBubbleStream'
-import { calculateIchimoku, type IchimokuData } from '@/utils/indicators'
 import type { Coin } from '@/types/coin'
 import { ChartSkeleton, ErrorState } from '@/components/ui'
 import { debug } from '@/utils/debug'
@@ -37,7 +36,8 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
   const [alertRefresh, setAlertRefresh] = useState(0)
 
   // Get bubbles for current coin (use fullSymbol to match futures symbol like PIEVERSEUSDT)
-  const { bubbles: allBubbles } = useBubbleStream({ symbolFilter: coin.fullSymbol })
+  // Bubble detection disabled - using stub
+  const { bubbles: allBubbles } = useBubbleStream(false)
   
   // Filter bubbles by timeframe and size
   const filteredBubbles = useMemo(() => {
@@ -85,10 +85,10 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
       setError(null)
 
       try {
-        const data = await fetchKlines(coin.symbol, coin.pair, interval, 100)
+        const data = await fetchKlines(coin.fullSymbol, interval, 100)
         
         if (!isCancelled) {
-          setChartData(data.candlesticks)
+          setChartData(data)
         }
       } catch (err) {
         if (!isCancelled) {
@@ -117,11 +117,11 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
     const refreshChartData = async () => {
       console.log('🔄 Chart refresh triggered')
       try {
-        const data = await fetchKlines(coin.symbol, coin.pair, interval, 100)
+        const data = await fetchKlines(coin.fullSymbol, interval, 100)
         
         if (!isCancelled) {
           // Force React to detect change by creating new array reference with timestamp
-          const candlesWithTimestamp = [...data.candlesticks]
+          const candlesWithTimestamp = [...data]
           console.log(`🔄 Chart refresh: ${candlesWithTimestamp.length} candles, last=${candlesWithTimestamp[candlesWithTimestamp.length-1]?.close}`)
           setChartData(candlesWithTimestamp)
         }
@@ -159,10 +159,10 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
       try {
         // Fetch 15m candles: 7 days × 24 hours × 4 candles/hour = 672 candles
         // This covers a full week with efficient data usage
-        const data = await fetchKlines(coin.symbol, coin.pair, '15m', 672)
+        const data = await fetchKlines(coin.fullSymbol, '15m', 672)
         
         if (!isCancelled) {
-          setVwapData(data.candlesticks)
+          setVwapData(data)
         }
       } catch (err) {
         debug.warn('VWAP data fetch failed:', err)
@@ -191,8 +191,12 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
 
     try {
       const calculated = calculateIchimoku(chartData)
-      setIchimokuData(calculated)
-      debug.log(`📊 Calculated Ichimoku: ${calculated.length} data points`)
+      if (calculated) {
+        setIchimokuData([calculated])
+        debug.log(`📊 Calculated Ichimoku data point`)
+      } else {
+        setIchimokuData([])
+      }
     } catch (err) {
       debug.error('Ichimoku calculation failed:', err)
       setIchimokuData([])

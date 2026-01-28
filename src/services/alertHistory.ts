@@ -1,216 +1,214 @@
-import { Alert, AlertHistoryItem } from '@/types/alert'
-import { storage } from './storage'
+/**
+ * Alert History Service
+ * 
+ * Fetches alert history from backend API (screener-backend)
+ * Backend stores alerts in TimescaleDB for 48-hour retention
+ */
 
-const ALERT_HISTORY_KEY = 'alert_history'
-const MAX_HISTORY_ITEMS = 1000 // Keep last 1000 alerts
+import { backendApi } from './backendApi'
+import type { AlertHistoryItem } from '@/types/alert'
 
 /**
- * Alert history service for IndexedDB persistence
+ * Backend Alert structure (from Go backend)
  */
-export class AlertHistoryService {
+interface BackendAlert {
+  id: string
+  symbol: string
+  rule_type: string
+  description: string
+  timestamp: string
+  price: number
+  metadata?: Record<string, any>
+}
+
+/**
+ * Alert History Service - Communicates with backend API
+ */
+export class AlertHistory {
   /**
-   * Add an alert to history
+   * Get alert history from backend (last 48 hours)
    */
-  static async addToHistory(alert: Alert): Promise<void> {
+  async getHistory(): Promise<AlertHistoryItem[]> {
     try {
-      const history = await this.getHistory()
-      const historyItem: AlertHistoryItem = {
-        ...alert,
-      }
+      const alerts = await backendApi.getAlertHistory({
+        limit: 500,
+      }) as unknown as BackendAlert[]
 
-      // Add new item at the beginning
-      history.unshift(historyItem)
-
-      // Keep only the most recent items
-      if (history.length > MAX_HISTORY_ITEMS) {
-        history.length = MAX_HISTORY_ITEMS
-      }
-
-      await storage.setItem(ALERT_HISTORY_KEY, JSON.stringify(history))
+      // Transform backend Alert format to AlertHistoryItem
+      return alerts.map(alert => this.transformBackendAlert(alert))
     } catch (error) {
-      console.error('Failed to add alert to history:', error)
-    }
-  }
-
-  /**
-   * Get all alert history
-   */
-  static async getHistory(): Promise<AlertHistoryItem[]> {
-    try {
-      const data = await storage.getItem(ALERT_HISTORY_KEY)
-      if (!data) return []
-      return JSON.parse(data) as AlertHistoryItem[]
-    } catch (error) {
-      console.error('Failed to get alert history:', error)
+      console.error('Failed to fetch alert history:', error)
       return []
     }
   }
 
   /**
-   * Get history filtered by symbol
+   * Get alerts for a specific symbol
    */
-  static async getHistoryBySymbol(symbol: string): Promise<AlertHistoryItem[]> {
-    const history = await this.getHistory()
-    return history.filter((item) => item.symbol === symbol)
-  }
-
-  /**
-   * Get history filtered by type
-   */
-  static async getHistoryByType(type: string): Promise<AlertHistoryItem[]> {
-    const history = await this.getHistory()
-    return history.filter((item) => item.type === type)
-  }
-
-  /**
-   * Get history within a time range
-   */
-  static async getHistoryByTimeRange(
-    startTime: number,
-    endTime: number
-  ): Promise<AlertHistoryItem[]> {
-    const history = await this.getHistory()
-    return history.filter(
-      (item) => item.timestamp >= startTime && item.timestamp <= endTime
-    )
-  }
-
-  /**
-   * Mark an alert as acknowledged
-   */
-  static async acknowledgeAlert(
-    alertId: string,
-    userId?: string
-  ): Promise<void> {
+  async getAllBySymbol(symbol: string): Promise<AlertHistoryItem[]> {
     try {
-      const history = await this.getHistory()
-      const item = history.find((h) => h.id === alertId)
-      if (item) {
-        item.acknowledgedAt = Date.now()
-        item.acknowledgedBy = userId
-        await storage.setItem(ALERT_HISTORY_KEY, JSON.stringify(history))
+      const alerts = await backendApi.getAlertHistory({
+        symbol,
+        limit: 100,
+      }) as unknown as BackendAlert[]
+      
+      return alerts.map(alert => this.transformBackendAlert(alert))
+    } catch (error) {
+      console.error(`Failed to fetch alerts for ${symbol}:`, error)
+      return []
+    }
+  }
+
+  /**
+   * Get alert statistics
+   */
+  async getStats(): Promise<any> {
+    try {
+      const alerts = await this.getHistory()
+      
+      // Calculate stats from fetched alerts
+      const totalAlerts = alerts.length
+      const byType: Record<string, number> = {}
+      const bySymbol: Record<string, number> = {}
+      const bySeverity: Record<string, number> = {}
+      
+      alerts.forEach(alert => {
+        byType[alert.type] = (byType[alert.type] || 0) + 1
+        bySymbol[alert.symbol] = (bySymbol[alert.symbol] || 0) + 1
+        bySeverity[alert.severity] = (bySeverity[alert.severity] || 0) + 1
+      })
+      
+      return {
+        totalAlerts,
+        byType,
+        bySymbol,
+        bySeverity,
+        lastUpdated: Date.now(),
       }
     } catch (error) {
-      console.error('Failed to acknowledge alert:', error)
+      console.error('Failed to calculate alert stats:', error)
+      return {
+        totalAlerts: 0,
+        byType: {},
+        bySymbol: {},
+        bySeverity: {},
+        lastUpdated: Date.now(),
+      }
     }
   }
 
   /**
-   * Clear all history
+   * Add alert to history (backend handles this via NATS)
+   * This is a no-op since backend automatically stores alerts
    */
-  static async clearHistory(): Promise<void> {
-    try {
-      await storage.removeItem(ALERT_HISTORY_KEY)
-    } catch (error) {
-      console.error('Failed to clear alert history:', error)
-    }
+  async addToHistory(_alert: any): Promise<void> {
+    // Backend automatically stores alerts from NATS stream
+    // No client-side action needed
   }
 
   /**
-   * Clear history older than specified days
+   * Export history as CSV (not yet implemented)
    */
-  static async clearOldHistory(days: number): Promise<void> {
-    try {
-      const cutoffTime = Date.now() - days * 24 * 60 * 60 * 1000
-      const history = await this.getHistory()
-      const filtered = history.filter((item) => item.timestamp >= cutoffTime)
-      await storage.setItem(ALERT_HISTORY_KEY, JSON.stringify(filtered))
-    } catch (error) {
-      console.error('Failed to clear old history:', error)
-    }
+  async exportHistoryAsCSV(): Promise<string> {
+    const alerts = await this.getHistory()
+    // TODO: Implement CSV export
+    const header = 'Symbol,Type,Price,Timestamp,Severity\n'
+    const rows = alerts.map(a => 
+      `${a.symbol},${a.type},${a.value},${new Date(a.timestamp).toISOString()},${a.severity}`
+    ).join('\n')
+    return header + rows
   }
 
   /**
    * Export history as JSON
    */
-  static async exportHistory(): Promise<string> {
-    const history = await this.getHistory()
-    return JSON.stringify(history, null, 2)
+  async exportHistory(): Promise<string> {
+    const alerts = await this.getHistory()
+    return JSON.stringify(alerts, null, 2)
   }
 
   /**
-   * Export history as CSV
+   * Clear alerts (not supported - backend has retention policy)
    */
-  static async exportHistoryAsCSV(): Promise<string> {
-    const history = await this.getHistory()
-    if (history.length === 0) return ''
-
-    // CSV header
-    const headers = [
-      'Timestamp',
-      'Symbol',
-      'Type',
-      'Severity',
-      'Title',
-      'Message',
-      'Value',
-      'Threshold',
-      'Timeframe',
-      'Read',
-      'Dismissed',
-      'Acknowledged At',
-      'Acknowledged By',
-    ]
-
-    // CSV rows
-    const rows = history.map((item) => [
-      new Date(item.timestamp).toISOString(),
-      item.symbol,
-      item.type,
-      item.severity,
-      `"${item.title.replace(/"/g, '""')}"`, // Escape quotes
-      `"${item.message.replace(/"/g, '""')}"`,
-      item.value,
-      item.threshold,
-      item.timeframe || '',
-      item.read,
-      item.dismissed,
-      item.acknowledgedAt ? new Date(item.acknowledgedAt).toISOString() : '',
-      item.acknowledgedBy || '',
-    ])
-
-    return [headers.join(','), ...rows.map((row) => row.join(','))].join('\n')
+  async clear(): Promise<void> {
+    console.warn('clear() not supported - backend has 48-hour retention policy')
   }
 
   /**
-   * Get statistics about alert history
+   * Clear alert history (not supported - backend has retention policy)
    */
-  static async getStats() {
-    const history = await this.getHistory()
-    const now = Date.now()
-    const oneDayAgo = now - 24 * 60 * 60 * 1000
-    const oneWeekAgo = now - 7 * 24 * 60 * 60 * 1000
+  async clearHistory(): Promise<void> {
+    console.warn('clearHistory() not supported - backend has 48-hour retention policy')
+  }
 
+  /**
+   * Clear old history (not needed - backend auto-deletes after 48h)
+   */
+  async clearOldHistory(_days: number): Promise<void> {
+    console.warn('clearOldHistory() not needed - backend auto-deletes after 48h')
+  }
+
+  /**
+   * Clear by type (not supported)
+   */
+  async clearByType(_type: string): Promise<void> {
+    console.warn('clearByType() not supported')
+  }
+
+  /**
+   * Clear by symbol (not supported)
+   */
+  async clearBySymbol(_symbol: string): Promise<void> {
+    console.warn('clearBySymbol() not supported')
+  }
+
+  /**
+   * Transform backend alert to AlertHistoryItem
+   */
+  private transformBackendAlert(alert: BackendAlert): AlertHistoryItem {
     return {
-      total: history.length,
-      last24h: history.filter((h) => h.timestamp >= oneDayAgo).length,
-      lastWeek: history.filter((h) => h.timestamp >= oneWeekAgo).length,
-      byType: history.reduce(
-        (acc, h) => {
-          acc[h.type] = (acc[h.type] || 0) + 1
-          return acc
-        },
-        {} as Record<string, number>
-      ),
-      bySeverity: history.reduce(
-        (acc, h) => {
-          acc[h.severity] = (acc[h.severity] || 0) + 1
-          return acc
-        },
-        {} as Record<string, number>
-      ),
-      mostActiveSymbol: Object.entries(
-        history.reduce(
-          (acc, h) => {
-            acc[h.symbol] = (acc[h.symbol] || 0) + 1
-            return acc
-          },
-          {} as Record<string, number>
-        )
-      ).sort(([, a], [, b]) => b - a)[0]?.[0] || '',
+      id: alert.id,
+      symbol: alert.symbol,
+      type: alert.rule_type as any, // Type will be validated by frontend
+      severity: this.determineSeverity(alert.rule_type),
+      title: this.generateTitle(alert.rule_type),
+      message: alert.description || `${alert.rule_type} alert`,
+      value: alert.price,
+      threshold: 0, // Not provided by backend
+      timestamp: new Date(alert.timestamp).getTime(),
+      read: false,
+      dismissed: false,
+      source: 'main',
     }
+  }
+
+  /**
+   * Generate human-readable title from rule type
+   */
+  private generateTitle(ruleType: string): string {
+    const titles: Record<string, string> = {
+      'big_bull_60m': 'Big Bull 60m',
+      'big_bear_60m': 'Big Bear 60m',
+      'pioneer_bull': 'Pioneer Bull',
+      'pioneer_bear': 'Pioneer Bear',
+      'whale': 'Whale Alert',
+      'volume_spike': 'Volume Spike',
+      'bubble_signal': 'Bubble Signal',
+    }
+    return titles[ruleType] || ruleType.replace(/_/g, ' ').toUpperCase()
+  }
+
+  /**
+   * Determine alert severity from rule type
+   */
+  private determineSeverity(ruleType: string): 'high' | 'medium' | 'low' {
+    const highSeverity = ['big_bull_60m', 'big_bear_60m', 'whale', 'bubble_signal']
+    const mediumSeverity = ['pioneer_bull', 'pioneer_bear', 'volume_spike']
+    
+    if (highSeverity.includes(ruleType)) return 'high'
+    if (mediumSeverity.includes(ruleType)) return 'medium'
+    return 'low'
   }
 }
 
-// Export singleton instance
-export const alertHistory = AlertHistoryService
+export const alertHistory = new AlertHistory()

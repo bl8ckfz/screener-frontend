@@ -17,10 +17,18 @@ export function WatchlistStar({ symbol, className = '' }: WatchlistStarProps) {
   }
 
   return (
-    <button
+    <div
       onClick={handleClick}
-      className={`text-2xl transition-transform hover:scale-110 motion-reduce:transform-none h-10 w-10 flex items-center justify-center ${className}`}
+      className={`text-2xl transition-transform hover:scale-110 motion-reduce:transform-none h-10 w-10 flex items-center justify-center cursor-pointer ${className}`}
       title={isInWatchlist ? 'Remove from watchlist' : 'Add to watchlist'}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          handleClick(e as any)
+        }
+      }}
       aria-label={isInWatchlist ? 'Remove from watchlist' : 'Add to watchlist'}
     >
       {isInWatchlist ? (
@@ -28,6 +36,6 @@ export function WatchlistStar({ symbol, className = '' }: WatchlistStarProps) {
       ) : (
         <span className="text-gray-600">☆</span>
       )}
-    </button>
+    </div>
   )
 }

@@ -1,10 +1,5 @@
 export { useStore } from './useStore'
-export {
-  useMarketData,
-  useMarketStats,
-  invalidateKlinesCache,
-  getKlinesCacheStats,
-} from './useMarketData'
+export { useMarketStats } from './useMarketStats'
 export {
   useKeyboardShortcuts,
   formatShortcut,
@@ -12,5 +7,6 @@ export {
   type ShortcutConfig,
 } from './useKeyboardShortcuts'
 export { useAlertStats } from './useAlertStats'
-export { useFuturesStreaming } from './useFuturesStreaming'
+export { useBackendAlerts } from './useBackendAlerts'
+export { useBackendData } from './useBackendData'
 export { useBubbleStream } from './useBubbleStream'

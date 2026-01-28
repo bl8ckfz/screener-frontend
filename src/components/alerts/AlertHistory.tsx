@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { AlertHistoryItem, CombinedAlertType, AlertSeverity } from '@/types/alert'
 import { alertHistory } from '@/services/alertHistory'
 import { Button } from '@/components/ui/Button'
@@ -35,12 +35,13 @@ export function AlertHistory() {
   const [severityFilter, setSeverityFilter] = useState<AlertSeverity | 'all'>('all')
   const [sortField, setSortField] = useState<SortField>('timestamp')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
-  const [stats, setStats] = useState<any>(null)
+  const didLoadRef = useRef(false)
 
-  // Load history on mount
+  // Load history on mount (guarded for React Strict Mode)
   useEffect(() => {
+    if (didLoadRef.current) return
+    didLoadRef.current = true
     loadHistory()
-    loadStats()
   }, [])
 
   const loadHistory = async () => {
@@ -55,14 +56,35 @@ export function AlertHistory() {
     }
   }
 
-  const loadStats = async () => {
-    try {
-      const data = await alertHistory.getStats()
-      setStats(data)
-    } catch (error) {
-      console.error('Failed to load stats:', error)
+  const stats = useMemo(() => {
+    if (history.length === 0) return null
+
+    const now = Date.now()
+    const last24hCutoff = now - 24 * 60 * 60 * 1000
+    const lastWeekCutoff = now - 7 * 24 * 60 * 60 * 1000
+
+    const totalsBySymbol: Record<string, number> = {}
+    let last24h = 0
+    let lastWeek = 0
+
+    history.forEach((alert) => {
+      totalsBySymbol[alert.symbol] = (totalsBySymbol[alert.symbol] || 0) + 1
+      if (alert.timestamp >= last24hCutoff) last24h += 1
+      if (alert.timestamp >= lastWeekCutoff) lastWeek += 1
+    })
+
+    const mostActiveSymbol = Object.entries(totalsBySymbol).reduce(
+      (best, [symbol, count]) => (count > best.count ? { symbol, count } : best),
+      { symbol: '', count: 0 }
+    ).symbol
+
+    return {
+      total: history.length,
+      last24h,
+      lastWeek,
+      mostActiveSymbol: mostActiveSymbol || null,
     }
-  }
+  }, [history])
 
   // Filter and sort history
   const filteredHistory = useMemo(() => {
@@ -165,7 +187,6 @@ export function AlertHistory() {
     if (confirm('Are you sure you want to clear all alert history?')) {
       await alertHistory.clearHistory()
       await loadHistory()
-      await loadStats()
     }
   }
 
@@ -173,7 +194,6 @@ export function AlertHistory() {
     if (confirm(`Clear alerts older than ${days} days?`)) {
       await alertHistory.clearOldHistory(days)
       await loadHistory()
-      await loadStats()
     }
   }
 
@@ -499,7 +519,6 @@ export function AlertHistory() {
           <Button
             onClick={() => {
               loadHistory()
-              loadStats()
             }}
             variant="secondary"
             size="sm"

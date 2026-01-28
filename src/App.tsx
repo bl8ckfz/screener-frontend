@@ -1,10 +1,8 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { debug } from '@/utils/debug'
 import { memoryProfiler } from '@/utils/memoryProfiler'
-import { useMarketData } from '@/hooks/useMarketData'
-import { useFuturesStreaming } from '@/hooks/useFuturesStreaming'
 import { useStore } from '@/hooks/useStore'
-import { useKeyboardShortcuts, useAlertStats } from '@/hooks'
+import { useKeyboardShortcuts, useAlertStats, useBackendAlerts, useBackendData } from '@/hooks'
 import { supabase } from '@/config'
 import { alertHistoryService } from '@/services'
 import { ALERT_HISTORY_CONFIG } from '@/types'
@@ -13,34 +11,42 @@ import { ChartSection, CoinTable } from '@/components/coin'
 import { MobileCoinDrawer } from '@/components/coin/MobileCoinDrawer'
 import { MarketSummary } from '@/components/market'
 import { SearchBar } from '@/components/controls'
-import { ShortcutHelp, LiveStatusBadge } from '@/components/ui'
+import { ShortcutHelp, BackendStatus } from '@/components/ui'
 import { StorageMigration } from '@/components/StorageMigration'
 import { AlertNotificationContainer, AlertHistoryTable } from '@/components/alerts'
 import { SettingsModal } from '@/components/settings'
 import { FEATURE_FLAGS } from '@/config'
-import type { FuturesTickerData } from '@/types/api'
 
 function App() {
-  // WebSocket streaming for futures data (real-time)
-  const {
-    isInitialized,
-    tickersReady, // true when initial REST ticker data is loaded
-    backfillProgress: _backfillProgress, // NEW: 0-100% background loading progress - available for loading indicator
-    backfillComplete: _backfillComplete, // NEW: true when historical data loaded - available for feature gating
-    error: wsError,
-    warmupStatus,
-    metricsMap,
-    getTickerData,
-    lastUpdate,
-  } = useFuturesStreaming()
+  // New simplified backend hook - polls backend every 5 seconds
+  // Replaces 978-line useMarketData.ts with ~120 lines
+  const { data: coins, isLoading, error } = useBackendData()
   
-  // Pass WebSocket metrics and ticker data to market data
-  const { data: coins, isLoading } = useMarketData(metricsMap, getTickerData, tickersReady, lastUpdate)
+  // Log mode on mount
+  useEffect(() => {
+    console.log('🚀 [App] Using BACKEND API (simplified hook)')
+    console.log('📊 Backend:', import.meta.env.VITE_BACKEND_API_URL)
+  }, [])
+  
+  // Log errors
+  useEffect(() => {
+    if (error) {
+      console.error('❌ Backend data error:', error)
+    }
+  }, [error])
   
   // Alert history state
   const clearAlertHistory = useStore((state) => state.clearAlertHistory)
   const sentimentFilter = useStore((state) => state.sentimentFilter)
   const alertStats = useAlertStats(coins || [])
+  
+  // Backend WebSocket alerts (re-enabled)
+  // Alert history is still loaded via AlertHistory component using HTTP API
+  const { isConnected: backendWsConnected } = useBackendAlerts({
+    enabled: true,
+    autoConnect: true,
+    onAlert: (alert) => debug.log('🚨 Backend alert:', alert.symbol, alert.type)
+  })
   
   // Auth state
   const setUser = useStore((state) => state.setUser)
@@ -145,12 +151,6 @@ function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'coins' | 'alerts'>('coins')
   const [isMobile, setIsMobile] = useState(false)
-  const liveTicker: FuturesTickerData | undefined = useMemo(() => {
-    if (!selectedAlert?.coin || !getTickerData) return undefined
-    const tickers = getTickerData()
-    const symbol = selectedAlert.coin.fullSymbol || selectedAlert.coin.symbol
-    return tickers?.find((t) => t.symbol === symbol)
-  }, [getTickerData, selectedAlert?.coin, lastUpdate])
   
   // Ref for search input
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -287,16 +287,12 @@ function App() {
         <div className="mb-4">
           <div className="bg-gray-700/40 backdrop-blur-sm rounded-lg px-4 py-2 border border-gray-600">
             <div className="flex items-center justify-between">
-              <MarketSummary coins={coins} isLoading={isLoading} />
+              <MarketSummary coins={coins ?? undefined} isLoading={isLoading} />
               <div className="flex items-center space-x-4">
-                <LiveStatusBadge
-                  connected={isInitialized}
-                  lastUpdate={lastUpdate}
-                  warmupStatus={warmupStatus}
-                />
-                {wsError && (
+                <BackendStatus wsConnected={backendWsConnected} />
+                {error && (
                   <div className="text-xs text-error-text bg-error-bg border border-error-border rounded px-2 py-1">
-                    WS Error: {wsError.message}
+                    Backend Error: {error instanceof Error ? error.message : 'Unknown error'}
                   </div>
                 )}
               </div>
@@ -393,7 +389,6 @@ function App() {
             <ChartSection 
               selectedCoin={selectedAlert?.coin || null}
               onClose={() => setSelectedAlert(null)}
-              liveTicker={liveTicker}
             />
           </div>
         </div>
@@ -404,7 +399,6 @@ function App() {
             open={!!selectedAlert?.coin}
             selectedCoin={selectedAlert.coin}
             onClose={() => setSelectedAlert(null)}
-            liveTicker={liveTicker}
           />
         )}
 

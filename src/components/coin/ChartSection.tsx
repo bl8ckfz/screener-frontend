@@ -2,13 +2,11 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { TradingChart } from './TradingChart'
 import { AlertTimelineChart } from './AlertTimelineChart'
 import { ExternalLinks } from './ExternalLinks'
-import { fetchKlines, type KlineInterval, COMMON_INTERVALS, INTERVAL_LABELS } from '@/services/chartData'
+import { fetchKlines, calculateIchimoku, type KlineInterval, type IchimokuData, COMMON_INTERVALS, INTERVAL_LABELS } from '@/services/chartData'
 import { alertHistoryService } from '@/services/alertHistoryService'
 import { useBubbleStream } from '@/hooks/useBubbleStream'
 import { useStore } from '@/hooks/useStore'
-import { calculateIchimoku, type IchimokuData } from '@/utils/indicators'
 import type { Coin } from '@/types/coin'
-import type { FuturesTickerData } from '@/types/api'
 import { ChartSkeleton, ErrorState, EmptyState } from '@/components/ui'
 import { debug } from '@/utils/debug'
 
@@ -16,7 +14,6 @@ export interface ChartSectionProps {
   selectedCoin: Coin | null
   onClose?: () => void
   className?: string
-  liveTicker?: FuturesTickerData
 }
 
 /**
@@ -28,7 +25,7 @@ export interface ChartSectionProps {
  * 
  * Phase 8.1.1: Extract Chart Section Component
  */
-export function ChartSection({ selectedCoin, onClose, className = '', liveTicker }: ChartSectionProps) {
+export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSectionProps) {
   const [interval, setInterval] = useState<KlineInterval>('5m')
   const [showWeeklyVWAP, setShowWeeklyVWAP] = useState(false)
   const [showIchimoku, setShowIchimoku] = useState(false)
@@ -46,7 +43,8 @@ export function ChartSection({ selectedCoin, onClose, className = '', liveTicker
   const driftTimerRef = useRef<number | null>(null)
 
   // Get bubbles for current coin (use fullSymbol to match futures symbol)
-  const { bubbles: allBubbles } = useBubbleStream({ symbolFilter: selectedCoin?.fullSymbol })
+  // Bubble detection disabled - using stub
+  const { bubbles: allBubbles } = useBubbleStream(false)
   
   // Filter bubbles by timeframe and size
   const filteredBubbles = useMemo(() => {
@@ -104,8 +102,8 @@ export function ChartSection({ selectedCoin, onClose, className = '', liveTicker
       setError(null)
 
       try {
-        const data = await fetchKlines(selectedCoin.symbol, selectedCoin.pair, interval, options?.limit ?? 100)
-        setChartData(data.candlesticks)
+        const data = await fetchKlines(selectedCoin.fullSymbol, interval, options?.limit ?? 100)
+        setChartData(data)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load chart data')
         debug.error('Chart data error:', err)
@@ -169,49 +167,6 @@ export function ChartSection({ selectedCoin, onClose, className = '', liveTicker
     }
   }, [loadChartData, selectedCoin])
 
-  // Live ticker integration: patch last candle and add live price line
-  useEffect(() => {
-    if (!selectedCoin || !liveTicker || chartData.length === 0) return
-    if (!visibilityRef.current) return
-
-    const price = liveTicker.close ?? liveTicker.lastPrice
-    const eventTimeSec = Math.floor((liveTicker.eventTime ?? Date.now()) / 1000)
-    if (!price || !eventTimeSec) return
-
-    const intervalSeconds = getIntervalSeconds(interval)
-
-    setChartData((prev) => {
-      if (!prev.length) return prev
-      const candles = [...prev]
-      const last = { ...candles[candles.length - 1] }
-      const barEnd = last.time + intervalSeconds
-
-      if (eventTimeSec < barEnd) {
-        last.close = price
-        last.high = Math.max(last.high, price)
-        last.low = Math.min(last.low, price)
-        candles[candles.length - 1] = last
-        return candles
-      }
-
-      // Bar closed; append a new bar seeded from last close and live price
-      const newBarTime = barEnd
-      const newBar = {
-        time: newBarTime,
-        open: last.close,
-        high: Math.max(last.close, price),
-        low: Math.min(last.close, price),
-        close: price,
-        volume: last.volume, // keep last known volume; refined on resync
-        quoteVolume: last.quoteVolume,
-        trades: last.trades,
-      }
-
-      const nextCandles = [...candles.slice(-99), newBar] // retain ~100 bars
-      return nextCandles
-    })
-  }, [chartData.length, getIntervalSeconds, interval, liveTicker, selectedCoin])
-
   // Fetch VWAP data (15m interval) when toggled on or coin changes
   useEffect(() => {
     if (!selectedCoin || !showWeeklyVWAP) {
@@ -224,10 +179,10 @@ export function ChartSection({ selectedCoin, onClose, className = '', liveTicker
     const loadVwapData = async () => {
       try {
         // Use 15m interval for VWAP calculation (more efficient than 1m)
-        const data = await fetchKlines(selectedCoin.symbol, selectedCoin.pair, '15m', 672) // 672 * 15m = 1 week
+        const data = await fetchKlines(selectedCoin.fullSymbol, '15m', 672) // 672 * 15m = 1 week
         
         if (!isCancelled) {
-          setVwapData(data.candlesticks)
+          setVwapData(data)
         }
       } catch (err) {
         debug.error('VWAP data error:', err)
@@ -250,7 +205,11 @@ export function ChartSection({ selectedCoin, onClose, className = '', liveTicker
 
     try {
       const ichimoku = calculateIchimoku(chartData)
-      setIchimokuData(ichimoku)
+      if (ichimoku) {
+        setIchimokuData([ichimoku])
+      } else {
+        setIchimokuData([])
+      }
     } catch (err) {
       debug.error('Ichimoku calculation error:', err)
     }
