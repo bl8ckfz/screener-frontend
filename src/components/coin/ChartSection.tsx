@@ -1,12 +1,17 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { TradingChart } from './TradingChart'
 import { AlertTimelineChart } from './AlertTimelineChart'
 import { ExternalLinks } from './ExternalLinks'
 import { fetchKlines, calculateIchimoku, type KlineInterval, type IchimokuData, COMMON_INTERVALS, INTERVAL_LABELS } from '@/services/chartData'
 import { alertHistoryService } from '@/services/alertHistoryService'
+import { alertHistory } from '@/services/alertHistory'
+import { USE_BACKEND_API } from '@/services/backendApi'
 import { useBubbleStream } from '@/hooks/useBubbleStream'
 import { useStore } from '@/hooks/useStore'
 import type { Coin } from '@/types/coin'
+import type { AlertHistoryEntry } from '@/types/alertHistory'
+import type { AlertHistoryItem, CombinedAlertType } from '@/types/alert'
 import { ChartSkeleton, ErrorState, EmptyState } from '@/components/ui'
 import { debug } from '@/utils/debug'
 
@@ -68,11 +73,31 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
   // Get alerts for current coin from history - updates reactively when alerts change
   const alertHistoryRefresh = useStore((state) => state.alertHistoryRefresh)
   
+  const backendAlertsQuery = useQuery({
+    queryKey: ['backendAlerts', selectedCoin?.fullSymbol],
+    queryFn: () => alertHistory.getAllBySymbol(selectedCoin!.fullSymbol),
+    enabled: USE_BACKEND_API && !!selectedCoin?.fullSymbol,
+    staleTime: 30000,
+    refetchInterval: 30000,
+    retry: 2,
+  })
+
+  const backendEntries = useMemo(() => {
+    if (!USE_BACKEND_API) return []
+    const alerts = backendAlertsQuery.data || []
+    return alerts.map((alert) => toAlertHistoryEntry(alert))
+  }, [backendAlertsQuery.data])
+
+  const localEntries = useMemo(() => {
+    if (USE_BACKEND_API) return []
+    return alertHistoryService.getHistory()
+  }, [alertHistoryRefresh])
+
   const coinAlerts = useMemo(() => {
     if (!selectedCoin) return []
-    const allAlerts = alertHistoryService.getHistory()
-    return allAlerts.filter(alert => alert.symbol === selectedCoin.symbol)
-  }, [selectedCoin?.symbol, alertHistoryRefresh])
+    const allAlerts = USE_BACKEND_API ? backendEntries : localEntries
+    return allAlerts.filter((alert) => alert.symbol === selectedCoin.symbol)
+  }, [selectedCoin?.symbol, backendEntries, localEntries])
 
   const getIntervalSeconds = useCallback((ivl: KlineInterval) => {
     const map: Record<KlineInterval, number> = {
@@ -386,4 +411,27 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
       </div>
     </div>
   )
+}
+
+function normalizeSymbol(symbol: string): string {
+  if (symbol.endsWith('USDT')) return symbol.replace('USDT', '')
+  if (symbol.endsWith('FDUSD')) return symbol.replace('FDUSD', '')
+  if (symbol.endsWith('TRY')) return symbol.replace('TRY', '')
+  return symbol
+}
+
+function toAlertHistoryEntry(alert: AlertHistoryItem): AlertHistoryEntry {
+  const symbol = normalizeSymbol(alert.symbol)
+  return {
+    id: alert.id || `${alert.timestamp}-${symbol}-${alert.type}`,
+    symbol,
+    alertType: alert.type as CombinedAlertType,
+    timestamp: alert.timestamp,
+    priceAtTrigger: alert.value ?? 0,
+    changePercent: 0,
+    metadata: {
+      value: alert.value,
+      threshold: alert.threshold,
+    },
+  }
 }
