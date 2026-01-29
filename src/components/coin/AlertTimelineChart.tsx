@@ -91,7 +91,7 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
   const alertHistoryRefresh = useStore((state) => state.alertHistoryRefresh)
   
   // Visible time range (in milliseconds from now)
-  const [visibleRange, setVisibleRange] = useState(24 * 60 * 60 * 1000) // Start at 24 hours
+  const [visibleRange, setVisibleRange] = useState(60 * 60 * 1000) // Start at 1 hour (max zoom)
   const chartRef = useRef<HTMLDivElement>(null)
 
   const querySymbol = fullSymbol || symbol
@@ -156,11 +156,9 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
     return { min, max }
   }, [visibleRange])
 
-  // TradingView-style wheel zoom handler
+  // TradingView-style wheel zoom handler - use ref callback for reliable attachment
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
-      if (!chartRef.current?.contains(e.target as Node)) return
-      
       e.preventDefault()
       e.stopPropagation()
       
@@ -180,11 +178,11 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
       chartElement.addEventListener('wheel', handleWheel, { passive: false, capture: true })
       return () => chartElement.removeEventListener('wheel', handleWheel, { capture: true })
     }
-  }, [symbol]) // Re-attach listener when symbol changes
+  }, []) // Empty deps - listener stays attached
 
   // Reset zoom when symbol changes
   useEffect(() => {
-    setVisibleRange(24 * 60 * 60 * 1000)
+    setVisibleRange(60 * 60 * 1000) // Reset to 1 hour
   }, [symbol])
 
   const handleResetZoom = () => {
