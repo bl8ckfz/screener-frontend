@@ -90,10 +90,8 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
   // Watch for alert history changes
   const alertHistoryRefresh = useStore((state) => state.alertHistoryRefresh)
   
-  // Zoom state: 1.0 = full 24 hours, higher values = zoomed in
-  const [zoomLevel, setZoomLevel] = useState(1.0)
-  // Pan offset in milliseconds
-  const [panOffset, setPanOffset] = useState(0)
+  // Visible time range (in milliseconds from now)
+  const [visibleRange, setVisibleRange] = useState(24 * 60 * 60 * 1000) // Start at 24 hours
   const chartRef = useRef<HTMLDivElement>(null)
 
   const querySymbol = fullSymbol || symbol
@@ -148,65 +146,29 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
     return Math.max(200, Math.min(calculatedHeight, 800))
   }, [alertTypes.length])
 
-  // Calculate base time range (full 24 hours)
-  const baseTimeRange = useMemo(() => {
-    if (filteredAlerts.length === 0) {
-      const now = Date.now()
-      return { min: now - 24 * 60 * 60 * 1000, max: now }
-    }
-    const timestamps = filteredAlerts.map(a => a.timestamp)
-    const min = Math.min(...timestamps)
-    const max = Math.max(...timestamps)
-    // Add 5% padding on each side
-    const padding = (max - min) * 0.05
-    return { 
-      min: min - padding, 
-      max: max + padding 
-    }
-  }, [filteredAlerts])
-
-  // Apply zoom and pan to get visible time range
+  // Calculate visible time range (always ending at now)
   const timeRange = useMemo(() => {
-    const baseWidth = baseTimeRange.max - baseTimeRange.min
-    const visibleWidth = baseWidth / zoomLevel
-    
-    // Calculate center point after pan
-    const center = (baseTimeRange.min + baseTimeRange.max) / 2 + panOffset
-    
-    // Constrain the visible range within base range
-    let min = center - visibleWidth / 2
-    let max = center + visibleWidth / 2
-    
-    // Don't allow panning beyond data boundaries
-    if (min < baseTimeRange.min) {
-      min = baseTimeRange.min
-      max = min + visibleWidth
-    }
-    if (max > baseTimeRange.max) {
-      max = baseTimeRange.max
-      min = max - visibleWidth
-    }
-    
+    const now = Date.now()
+    const min = now - visibleRange
+    const max = now
     return { min, max }
-  }, [baseTimeRange, zoomLevel, panOffset])
+  }, [visibleRange])
 
-  // Mouse wheel zoom handler
+  // TradingView-style wheel zoom handler
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
       if (!chartRef.current?.contains(e.target as Node)) return
       
-      // Check if Ctrl/Cmd key is held (standard zoom gesture)
-      if (e.ctrlKey || e.metaKey) {
-        e.preventDefault()
-        
-        const delta = -e.deltaY
-        const zoomFactor = delta > 0 ? 1.1 : 0.9
-        
-        setZoomLevel(prev => {
-          const newZoom = Math.max(1.0, Math.min(prev * zoomFactor, 20.0))
-          return newZoom
-        })
-      }
+      e.preventDefault()
+      
+      const delta = -e.deltaY
+      const zoomFactor = delta > 0 ? 0.9 : 1.1 // Scroll up = zoom in (decrease range)
+      
+      setVisibleRange(prev => {
+        const newRange = prev * zoomFactor
+        // Constrain between 1 hour and 24 hours
+        return Math.max(60 * 60 * 1000, Math.min(newRange, 24 * 60 * 60 * 1000))
+      })
     }
 
     const chartElement = chartRef.current
@@ -218,27 +180,19 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
 
   // Reset zoom when symbol changes
   useEffect(() => {
-    setZoomLevel(1.0)
-    setPanOffset(0)
+    setVisibleRange(24 * 60 * 60 * 1000)
   }, [symbol])
 
   const handleZoomIn = () => {
-    setZoomLevel(prev => Math.min(prev * 1.5, 20.0))
+    setVisibleRange(prev => Math.max(prev * 0.7, 60 * 60 * 1000))
   }
 
   const handleZoomOut = () => {
-    setZoomLevel(prev => {
-      const newZoom = Math.max(prev / 1.5, 1.0)
-      if (newZoom === 1.0) {
-        setPanOffset(0) // Reset pan when fully zoomed out
-      }
-      return newZoom
-    })
+    setVisibleRange(prev => Math.min(prev * 1.4, 24 * 60 * 60 * 1000))
   }
 
   const handleResetZoom = () => {
-    setZoomLevel(1.0)
-    setPanOffset(0)
+    setVisibleRange(24 * 60 * 60 * 1000)
   }
 
   if (filteredAlerts.length === 0) {
@@ -280,33 +234,30 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
             onClick={handleZoomIn}
-            disabled={zoomLevel >= 20}
-            className="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 rounded transition-colors"
-            title="Zoom In (Ctrl+Wheel)"
+            className="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+            title="Zoom In (Scroll Up)"
           >
             🔍+
           </button>
           <button
             onClick={handleZoomOut}
-            disabled={zoomLevel <= 1.0}
-            className="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 rounded transition-colors"
-            title="Zoom Out (Ctrl+Wheel)"
+            className="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+            title="Zoom Out (Scroll Down)"
           >
             🔍−
           </button>
           <button
             onClick={handleResetZoom}
-            disabled={zoomLevel === 1.0 && panOffset === 0}
-            className="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 rounded transition-colors"
-            title="Reset Zoom"
+            className="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+            title="Reset to 24h"
           >
-            Reset
+            24h
           </button>
-          {zoomLevel > 1.0 && (
-            <span className="text-xs text-gray-500">
-              {zoomLevel.toFixed(1)}x
-            </span>
-          )}
+          <span className="text-xs text-gray-500">
+            {visibleRange < 60 * 60 * 1000
+              ? `${Math.round(visibleRange / (60 * 1000))}m`
+              : `${Math.round(visibleRange / (60 * 60 * 1000))}h`}
+          </span>
         </div>
       </div>
 
