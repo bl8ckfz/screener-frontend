@@ -146,15 +146,19 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
     return Math.max(200, Math.min(calculatedHeight, 800))
   }, [alertTypes.length])
 
-  // Calculate visible time range (always ending at now)
+  // Calculate visible time range (anchored to latest alert or now)
   const timeRange = useMemo(() => {
-    const now = Date.now()
-    // Add 2% padding on the right so newest alerts aren't at the edge
-    const padding = visibleRange * 0.02
-    const min = now - visibleRange - padding
-    const max = now + padding
+    // Use the latest alert timestamp as anchor, or current time if no alerts
+    const latestTimestamp = filteredAlerts.length > 0 
+      ? Math.max(...filteredAlerts.map(a => a.timestamp))
+      : Date.now()
+    
+    // Add 5% padding on the right for better visibility
+    const padding = visibleRange * 0.05
+    const min = latestTimestamp - visibleRange
+    const max = latestTimestamp + padding
     return { min, max }
-  }, [visibleRange])
+  }, [visibleRange, filteredAlerts])
 
   // TradingView-style wheel zoom handler - attach directly to element
   useEffect(() => {
