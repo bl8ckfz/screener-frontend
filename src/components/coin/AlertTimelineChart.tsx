@@ -180,7 +180,7 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
       chartElement.addEventListener('wheel', handleWheel, { passive: false, capture: true })
       return () => chartElement.removeEventListener('wheel', handleWheel, { capture: true })
     }
-  }, [])
+  }, [symbol]) // Re-attach listener when symbol changes
 
   // Reset zoom when symbol changes
   useEffect(() => {
