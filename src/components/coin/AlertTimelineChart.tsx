@@ -148,14 +148,17 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
 
   // Calculate visible time range (anchored to latest alert or now)
   const timeRange = useMemo(() => {
+    const now = Date.now()
+    const oneDayAgo = now - 24 * 60 * 60 * 1000
+    
     // Use the latest alert timestamp as anchor, or current time if no alerts
     const latestTimestamp = filteredAlerts.length > 0 
       ? Math.max(...filteredAlerts.map(a => a.timestamp))
-      : Date.now()
+      : now
     
     // Add 5% padding on the right for better visibility
     const padding = visibleRange * 0.05
-    const min = latestTimestamp - visibleRange
+    const min = Math.max(latestTimestamp - visibleRange, oneDayAgo) // Never go beyond 24h
     const max = latestTimestamp + padding
     return { min, max }
   }, [visibleRange, filteredAlerts])
