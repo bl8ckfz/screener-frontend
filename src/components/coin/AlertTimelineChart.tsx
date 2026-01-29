@@ -149,8 +149,10 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
   // Calculate visible time range (always ending at now)
   const timeRange = useMemo(() => {
     const now = Date.now()
-    const min = now - visibleRange
-    const max = now
+    // Add 2% padding on the right so newest alerts aren't at the edge
+    const padding = visibleRange * 0.02
+    const min = now - visibleRange - padding
+    const max = now + padding
     return { min, max }
   }, [visibleRange])
 
@@ -261,7 +263,7 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
         </div>
 
         {/* Chart area with dots */}
-        <div className="absolute left-36 right-0 top-0 bottom-0 overflow-visible">
+        <div className="absolute left-36 right-0 top-0 bottom-0 overflow-hidden">
           {/* Grid lines */}
           {alertTypes.map((_, index) => (
             <div
