@@ -156,7 +156,7 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
     return { min, max }
   }, [visibleRange])
 
-  // TradingView-style wheel zoom handler - use ref callback for reliable attachment
+  // TradingView-style wheel zoom handler - attach directly to element
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault()
@@ -172,13 +172,15 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
       })
     }
 
+    // Re-attach listener when filteredAlerts changes (component re-renders)
     const chartElement = chartRef.current
     if (chartElement) {
-      // Use capture phase to intercept scroll before it bubbles
       chartElement.addEventListener('wheel', handleWheel, { passive: false, capture: true })
-      return () => chartElement.removeEventListener('wheel', handleWheel, { capture: true })
+      return () => {
+        chartElement.removeEventListener('wheel', handleWheel, { capture: true })
+      }
     }
-  }, []) // Empty deps - listener stays attached
+  }, [filteredAlerts.length]) // Re-attach when alerts change
 
   // Reset zoom when symbol changes
   useEffect(() => {
