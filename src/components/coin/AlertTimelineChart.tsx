@@ -160,6 +160,7 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
       if (!chartRef.current?.contains(e.target as Node)) return
       
       e.preventDefault()
+      e.stopPropagation()
       
       const delta = -e.deltaY
       const zoomFactor = delta > 0 ? 0.85 : 1.15 // Scroll up = zoom in (decrease range)
@@ -173,8 +174,9 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
 
     const chartElement = chartRef.current
     if (chartElement) {
-      chartElement.addEventListener('wheel', handleWheel, { passive: false })
-      return () => chartElement.removeEventListener('wheel', handleWheel)
+      // Use capture phase to intercept scroll before it bubbles
+      chartElement.addEventListener('wheel', handleWheel, { passive: false, capture: true })
+      return () => chartElement.removeEventListener('wheel', handleWheel, { capture: true })
     }
   }, [])
 
