@@ -162,7 +162,7 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
       e.preventDefault()
       
       const delta = -e.deltaY
-      const zoomFactor = delta > 0 ? 0.9 : 1.1 // Scroll up = zoom in (decrease range)
+      const zoomFactor = delta > 0 ? 0.85 : 1.15 // Scroll up = zoom in (decrease range)
       
       setVisibleRange(prev => {
         const newRange = prev * zoomFactor
@@ -182,14 +182,6 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
   useEffect(() => {
     setVisibleRange(24 * 60 * 60 * 1000)
   }, [symbol])
-
-  const handleZoomIn = () => {
-    setVisibleRange(prev => Math.max(prev * 0.7, 60 * 60 * 1000))
-  }
-
-  const handleZoomOut = () => {
-    setVisibleRange(prev => Math.min(prev * 1.4, 24 * 60 * 60 * 1000))
-  }
 
   const handleResetZoom = () => {
     setVisibleRange(24 * 60 * 60 * 1000)
@@ -212,7 +204,7 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
   const chartWidth = timeRange.max - timeRange.min
 
   return (
-    <div className="w-full overflow-x-auto overflow-y-visible">
+    <div className="w-full overflow-x-hidden overflow-y-visible">
       {/* Header with Legend and Zoom Controls */}
       <div className="flex items-center justify-between mb-4 px-2 gap-4">
         {/* Legend */}
@@ -232,20 +224,6 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
 
         {/* Zoom Controls */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          <button
-            onClick={handleZoomIn}
-            className="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
-            title="Zoom In (Scroll Up)"
-          >
-            🔍+
-          </button>
-          <button
-            onClick={handleZoomOut}
-            className="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
-            title="Zoom Out (Scroll Down)"
-          >
-            🔍−
-          </button>
           <button
             onClick={handleResetZoom}
             className="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
