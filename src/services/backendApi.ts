@@ -346,7 +346,7 @@ export class BackendWebSocketClient {
         const data = JSON.parse(event.data)
         
         // Handle alert messages (backend sends raw alert JSON from NATS)
-        console.log('[BackendWS] Received alert:', data)
+        // Silently forward to listeners (removed excessive logging)
         this.listeners.forEach(listener => listener(data))
       } catch (error) {
         console.error('[BackendWS] Failed to parse message:', error)
@@ -404,7 +404,7 @@ export class BackendWebSocketClient {
         try {
           // Send JSON ping - more likely to traverse proxies than empty message
           this.ws.send(JSON.stringify({ type: 'ping', timestamp: Date.now() }))
-          console.log('[BackendWS] Sent keepalive')
+          // Removed keepalive logging to reduce console spam
         } catch (error) {
           console.error('[BackendWS] Failed to send keepalive:', error)
         }

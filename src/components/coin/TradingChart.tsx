@@ -301,7 +301,7 @@ export function TradingChart({
   // Update main chart series when data or chart type changes
   // Separated from markers to avoid unnecessary series recreation
   useEffect(() => {
-    console.log(`📊 TradingChart effect triggered: ${data.length} candles, last=${data[data.length-1]?.close}`)
+    // Removed debug logging to reduce console spam
     
     if (!chartRef.current || data.length === 0) return
 
