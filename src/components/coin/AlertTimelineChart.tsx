@@ -183,10 +183,8 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
       max = min + visibleWidth
     }
     if (max > baseTimeRange.max) {
-      max Header with Legend and Zoom Controls */}
-      <div className="flex items-center justify-between mb-4 px-2 gap-4">
-        {/* Legend */}
-        <div className="flex flex-wrap gap-3
+      max = baseTimeRange.max
+      min = max - visibleWidth
     }
     
     return { min, max }
@@ -261,7 +259,11 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
 
   return (
     <div className="w-full overflow-x-auto overflow-y-visible">
-      {/  {alertTypes.map((type) => (
+      {/* Header with Legend and Zoom Controls */}
+      <div className="flex items-center justify-between mb-4 px-2 gap-4">
+        {/* Legend */}
+        <div className="flex flex-wrap gap-3">
+          {alertTypes.map((type) => (
             <div key={type} className="flex items-center gap-1.5">
               <div
                 className="w-2.5 h-2.5 rounded-full"
@@ -313,9 +315,7 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
         ref={chartRef}
         className="relative bg-gray-900/30 rounded border border-gray-700" 
         style={{ height: dynamicHeight, overflow: 'visible' }}
-      
-      {/* Dot Plot Chart */}
-      <div className="relative bg-gray-900/30 rounded border border-gray-700" style={{ height: dynamicHeight, overflow: 'visible' }}>
+      >
         {/* Y-axis labels */}
         <div className="absolute left-0 top-0 bottom-0 w-36 border-r border-gray-700 bg-gray-900/50">
           {alertTypes.map((type) => (
