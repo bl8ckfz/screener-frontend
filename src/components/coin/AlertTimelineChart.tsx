@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useRef, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useStore } from '@/hooks/useStore'
 import { alertHistoryService } from '@/services/alertHistoryService'
@@ -89,6 +89,12 @@ function toAlertHistoryEntry(alert: AlertHistoryItem): AlertHistoryEntry {
 export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }: AlertTimelineChartProps) {
   // Watch for alert history changes
   const alertHistoryRefresh = useStore((state) => state.alertHistoryRefresh)
+  
+  // Zoom state: 1.0 = full 24 hours, higher values = zoomed in
+  const [zoomLevel, setZoomLevel] = useState(1.0)
+  // Pan offset in milliseconds
+  const [panOffset, setPanOffset] = useState(0)
+  const chartRef = useRef<HTMLDivElement>(null)
 
   const querySymbol = fullSymbol || symbol
 
@@ -142,8 +148,8 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
     return Math.max(200, Math.min(calculatedHeight, 800))
   }, [alertTypes.length])
 
-  // Calculate time range for X-axis
-  const timeRange = useMemo(() => {
+  // Calculate base time range (full 24 hours)
+  const baseTimeRange = useMemo(() => {
     if (filteredAlerts.length === 0) {
       const now = Date.now()
       return { min: now - 24 * 60 * 60 * 1000, max: now }
@@ -158,6 +164,84 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
       max: max + padding 
     }
   }, [filteredAlerts])
+
+  // Apply zoom and pan to get visible time range
+  const timeRange = useMemo(() => {
+    const baseWidth = baseTimeRange.max - baseTimeRange.min
+    const visibleWidth = baseWidth / zoomLevel
+    
+    // Calculate center point after pan
+    const center = (baseTimeRange.min + baseTimeRange.max) / 2 + panOffset
+    
+    // Constrain the visible range within base range
+    let min = center - visibleWidth / 2
+    let max = center + visibleWidth / 2
+    
+    // Don't allow panning beyond data boundaries
+    if (min < baseTimeRange.min) {
+      min = baseTimeRange.min
+      max = min + visibleWidth
+    }
+    if (max > baseTimeRange.max) {
+      max Header with Legend and Zoom Controls */}
+      <div className="flex items-center justify-between mb-4 px-2 gap-4">
+        {/* Legend */}
+        <div className="flex flex-wrap gap-3
+    }
+    
+    return { min, max }
+  }, [baseTimeRange, zoomLevel, panOffset])
+
+  // Mouse wheel zoom handler
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      if (!chartRef.current?.contains(e.target as Node)) return
+      
+      // Check if Ctrl/Cmd key is held (standard zoom gesture)
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault()
+        
+        const delta = -e.deltaY
+        const zoomFactor = delta > 0 ? 1.1 : 0.9
+        
+        setZoomLevel(prev => {
+          const newZoom = Math.max(1.0, Math.min(prev * zoomFactor, 20.0))
+          return newZoom
+        })
+      }
+    }
+
+    const chartElement = chartRef.current
+    if (chartElement) {
+      chartElement.addEventListener('wheel', handleWheel, { passive: false })
+      return () => chartElement.removeEventListener('wheel', handleWheel)
+    }
+  }, [])
+
+  // Reset zoom when symbol changes
+  useEffect(() => {
+    setZoomLevel(1.0)
+    setPanOffset(0)
+  }, [symbol])
+
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev * 1.5, 20.0))
+  }
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => {
+      const newZoom = Math.max(prev / 1.5, 1.0)
+      if (newZoom === 1.0) {
+        setPanOffset(0) // Reset pan when fully zoomed out
+      }
+      return newZoom
+    })
+  }
+
+  const handleResetZoom = () => {
+    setZoomLevel(1.0)
+    setPanOffset(0)
+  }
 
   if (filteredAlerts.length === 0) {
     return (
@@ -177,21 +261,59 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
 
   return (
     <div className="w-full overflow-x-auto overflow-y-visible">
-      {/* Legend */}
-      <div className="flex flex-wrap gap-3 mb-4 px-2">
-        {alertTypes.map((type) => (
-          <div key={type} className="flex items-center gap-1.5">
-            <div
-              className="w-2.5 h-2.5 rounded-full"
-              style={{ backgroundColor: ALERT_TYPE_COLORS[type] || ALERT_TYPE_COLORS.custom }}
-            />
-            <span className="text-xs text-gray-400">
-              {getAlertTypeName(type)}
+      {/  {alertTypes.map((type) => (
+            <div key={type} className="flex items-center gap-1.5">
+              <div
+                className="w-2.5 h-2.5 rounded-full"
+                style={{ backgroundColor: ALERT_TYPE_COLORS[type] || ALERT_TYPE_COLORS.custom }}
+              />
+              <span className="text-xs text-gray-400">
+                {getAlertTypeName(type)}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Zoom Controls */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={handleZoomIn}
+            disabled={zoomLevel >= 20}
+            className="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 rounded transition-colors"
+            title="Zoom In (Ctrl+Wheel)"
+          >
+            🔍+
+          </button>
+          <button
+            onClick={handleZoomOut}
+            disabled={zoomLevel <= 1.0}
+            className="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 rounded transition-colors"
+            title="Zoom Out (Ctrl+Wheel)"
+          >
+            🔍−
+          </button>
+          <button
+            onClick={handleResetZoom}
+            disabled={zoomLevel === 1.0 && panOffset === 0}
+            className="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 rounded transition-colors"
+            title="Reset Zoom"
+          >
+            Reset
+          </button>
+          {zoomLevel > 1.0 && (
+            <span className="text-xs text-gray-500">
+              {zoomLevel.toFixed(1)}x
             </span>
-          </div>
-        ))}
+          )}
+        </div>
       </div>
 
+      {/* Dot Plot Chart */}
+      <div 
+        ref={chartRef}
+        className="relative bg-gray-900/30 rounded border border-gray-700" 
+        style={{ height: dynamicHeight, overflow: 'visible' }}
+      
       {/* Dot Plot Chart */}
       <div className="relative bg-gray-900/30 rounded border border-gray-700" style={{ height: dynamicHeight, overflow: 'visible' }}>
         {/* Y-axis labels */}
