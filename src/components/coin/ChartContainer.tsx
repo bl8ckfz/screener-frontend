@@ -85,7 +85,7 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
       setError(null)
 
       try {
-        const data = await fetchKlines(coin.fullSymbol, interval, 100)
+        const data = await fetchKlines(coin.fullSymbol, interval, 500)
         
         if (!isCancelled) {
           setChartData(data)
