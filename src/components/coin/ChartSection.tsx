@@ -127,7 +127,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
       setError(null)
 
       try {
-        const data = await fetchKlines(selectedCoin.fullSymbol, interval, options?.limit ?? 100)
+        const data = await fetchKlines(selectedCoin.fullSymbol, interval, options?.limit ?? 500)
         setChartData(data)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load chart data')
