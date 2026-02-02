@@ -227,7 +227,6 @@ export function AlertHistory() {
   const getAlertBadge = (type: CombinedAlertType): { text: string; color: string; bgColor: string } => {
     const cleanType = type.replace(/^futures_/, '')
     const isBullish = cleanType.includes('bull') || cleanType === 'bottom_hunter'
-    const isHunter = cleanType === 'bottom_hunter' || cleanType === 'top_hunter'
     
     // Get color from mapping, fallback to bull/bear default
     const color = ALERT_TYPE_COLORS[type] || (isBullish ? '#22c55e' : '#ef4444')
