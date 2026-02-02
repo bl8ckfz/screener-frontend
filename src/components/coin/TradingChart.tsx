@@ -306,6 +306,10 @@ export function TradingChart({
     setIsLoading(true)
 
     const chart = chartRef.current
+    const timeScale = chart.timeScale()
+
+    // CRITICAL: Save visible range BEFORE updating to preserve user's zoom/pan
+    const savedRange = timeScale.getVisibleLogicalRange()
 
     // Remove existing main series
     try {
@@ -360,6 +364,14 @@ export function TradingChart({
     mainSeries.setData(candlestickData)
     mainSeriesRef.current = mainSeries
 
+    // CRITICAL: Restore visible range AFTER updating to prevent zoom/pan reset
+    // Use requestAnimationFrame to ensure chart has processed the data
+    requestAnimationFrame(() => {
+      if (savedRange) {
+        timeScale.setVisibleLogicalRange(savedRange)
+      }
+    })
+
     setIsLoading(false)
   }, [data]) // Only data triggers main series recreation
 
@@ -387,6 +399,10 @@ export function TradingChart({
     if (!chartRef.current || !mainSeriesRef.current || data.length === 0) return
 
     const chart = chartRef.current
+    const timeScale = chart.timeScale()
+
+    // CRITICAL: Save visible range BEFORE updating to preserve user's zoom/pan
+    const savedRange = timeScale.getVisibleLogicalRange()
 
     // Remove existing volume series
     try {
@@ -433,6 +449,13 @@ export function TradingChart({
         },
       })
     }
+
+    // CRITICAL: Restore visible range AFTER updating to prevent zoom/pan reset
+    requestAnimationFrame(() => {
+      if (savedRange) {
+        timeScale.setVisibleLogicalRange(savedRange)
+      }
+    })
   }, [data, showVolume]) // Only data and showVolume trigger volume series update
 
   // Update VWAP series when enabled or data changes
@@ -440,6 +463,10 @@ export function TradingChart({
     if (!chartRef.current || !mainSeriesRef.current) return
 
     const chart = chartRef.current
+    const timeScale = chart.timeScale()
+
+    // CRITICAL: Save visible range BEFORE updating to preserve user's zoom/pan
+    const savedRange = timeScale.getVisibleLogicalRange()
 
     // Remove existing VWAP series
     try {
@@ -473,6 +500,13 @@ export function TradingChart({
 
       weeklyVWAPRef.current = weeklyVWAPSeries
     }
+
+    // CRITICAL: Restore visible range AFTER updating to prevent zoom/pan reset
+    requestAnimationFrame(() => {
+      if (savedRange) {
+        timeScale.setVisibleLogicalRange(savedRange)
+      }
+    })
   }, [showWeeklyVWAP, weeklyVWAPData]) // Only VWAP toggle and data trigger VWAP update
 
   // Update Ichimoku series when enabled or data changes
@@ -480,6 +514,10 @@ export function TradingChart({
     if (!chartRef.current || !mainSeriesRef.current) return
 
     const chart = chartRef.current
+    const timeScale = chart.timeScale()
+
+    // CRITICAL: Save visible range BEFORE updating to preserve user's zoom/pan
+    const savedRange = timeScale.getVisibleLogicalRange()
 
     // Remove existing Ichimoku series
     const refs = [tenkanRef, kijunRef, senkouARef, senkouBRef, chikouRef]
@@ -640,6 +678,13 @@ export function TradingChart({
 
       debug.log(`📊 Ichimoku Cloud rendered: ${senkouData.length} cloud points, ${chikouData.length} chikou points`)
     }
+
+    // CRITICAL: Restore visible range AFTER updating to prevent zoom/pan reset
+    requestAnimationFrame(() => {
+      if (savedRange) {
+        timeScale.setVisibleLogicalRange(savedRange)
+      }
+    })
   }, [showIchimoku, ichimokuData]) // Only Ichimoku toggle and data trigger update
 
   // Helper function to find closest candle to a timestamp
