@@ -299,8 +299,6 @@ export function TradingChart({
   // Update main chart series when data or chart type changes
   // Separated from markers to avoid unnecessary series recreation
   useEffect(() => {
-    console.log(`📊 TradingChart: Updating with ${data.length} candles`)
-    
     if (!chartRef.current || data.length === 0) return
 
     setIsLoading(true)
@@ -310,7 +308,6 @@ export function TradingChart({
 
     // CRITICAL: Save visible range BEFORE updating to preserve user's zoom/pan
     const savedRange = timeScale.getVisibleLogicalRange()
-    console.log(`💾 Saved zoom range:`, savedRange)
 
     // Remove existing main series
     try {
@@ -370,7 +367,6 @@ export function TradingChart({
     requestAnimationFrame(() => {
       if (savedRange) {
         timeScale.setVisibleLogicalRange(savedRange)
-        console.log(`🔄 Restored zoom range:`, savedRange)
       }
     })
 

@@ -46,9 +46,6 @@ export async function fetchKlines(
       : `${BINANCE_FUTURES_API}/klines`
 
     const url = `${base}?symbol=${symbol}&interval=${interval}&limit=${safeLimit}`
-    const apiSource = USE_BACKEND_API && BACKEND_API_BASE ? 'Backend' : 'Binance'
-    
-    console.log(`🌐 Fetching from ${apiSource}: ${symbol} ${interval} limit=${safeLimit}`)
     
     const response = await fetch(url, {
       headers: {
@@ -57,11 +54,11 @@ export async function fetchKlines(
     })
 
     if (!response.ok) {
+      const apiSource = USE_BACKEND_API && BACKEND_API_BASE ? 'Backend' : 'Binance'
       throw new Error(`${apiSource} API error: ${response.status} ${response.statusText}`)
     }
 
     const data = await response.json()
-    console.log(`✅ ${apiSource} returned ${data.length} candles for ${symbol} ${interval}`)
     
     return data.map((kline: any[]) => ({
       time: Math.floor(kline[0] / 1000), // Open time (seconds)
@@ -74,7 +71,7 @@ export async function fetchKlines(
       trades: parseInt(kline[8]), // Number of trades
     }))
   } catch (error) {
-    console.error('❌ Failed to fetch klines:', error)
+    console.error('Failed to fetch klines:', error)
     throw error
   }
 }

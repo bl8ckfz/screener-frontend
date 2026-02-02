@@ -83,13 +83,11 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
     const loadChartData = async () => {
       setIsLoading(true)
       setError(null)
-      console.log(`🔄 Initial load: ${coin.fullSymbol} ${interval} (requesting 200 candles)`)
 
       try {
         const data = await fetchKlines(coin.fullSymbol, interval, 200)
         
         if (!isCancelled) {
-          console.log(`📊 Initial load received: ${data.length} candles`)
           setChartData(data)
         }
       } catch (err) {
@@ -111,51 +109,52 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
     }
   }, [coin.fullSymbol, interval])
 
-  // Auto-refresh chart data periodically to update the latest candle
+  // Interval-close resync: fetch exactly when candle closes (no dependency loop)
   useEffect(() => {
-    console.log(`🚀 Starting chart auto-refresh for ${coin.fullSymbol} ${interval}`)
+    let timeoutId: NodeJS.Timeout | null = null
     let isCancelled = false
-    let isRefreshing = false
-    
-    const refreshChartData = async () => {
-      if (isRefreshing) {
-        console.log('⚠️ Skipping refresh - previous fetch still in progress')
-        return
+
+    const getIntervalSeconds = (ivl: string): number => {
+      const map: Record<string, number> = {
+        '1m': 60, '3m': 180, '5m': 300, '15m': 900, '30m': 1800,
+        '1h': 3600, '2h': 7200, '4h': 14400, '6h': 21600,
+        '8h': 28800, '12h': 43200, '1d': 86400, '3d': 259200,
+        '1w': 604800, '1M': 2592000
       }
-      
-      isRefreshing = true
-      console.log(`🔄 Auto-refresh: ${coin.fullSymbol} ${interval} (requesting 200 candles)`)
-      
-      try {
-        const data = await fetchKlines(coin.fullSymbol, interval, 200)
-        
-        if (!isCancelled) {
-          console.log(`📊 Auto-refresh received: ${data.length} candles (first: ${data[0]?.time}, last: ${data[data.length-1]?.time})`)
-          
-          // Only update if we have data
-          if (data.length > 0) {
-            setChartData(data)
-            console.log(`✅ Chart updated with ${data.length} candles, last price=${data[data.length-1]?.close}`)
-          } else {
-            console.warn('⚠️ Received 0 candles from API')
-          }
-        }
-      } catch (err) {
-        console.error('❌ Auto-refresh failed:', err)
-        debug.warn('Chart refresh failed:', err)
-      } finally {
-        isRefreshing = false
-      }
+      return map[ivl] || 300
     }
 
-    // Refresh every 30 seconds to update the current candle (reduced from 5s to minimize API calls)
-    const refreshInterval = window.setInterval(refreshChartData, 30000)
-    console.log(`✅ Auto-refresh interval created: every 30s for ${coin.fullSymbol} ${interval}`)
+    const scheduleNextFetch = async () => {
+      const intervalSeconds = getIntervalSeconds(interval)
+      const nowSec = Math.floor(Date.now() / 1000)
+      // Calculate next candle boundary (aligned to interval)
+      const nextClose = Math.ceil(nowSec / intervalSeconds) * intervalSeconds
+      const delayMs = Math.max(500, (nextClose - nowSec + 1) * 1000)
+
+      timeoutId = setTimeout(async () => {
+        if (isCancelled) return
+
+        try {
+          const data = await fetchKlines(coin.fullSymbol, interval, 200)
+          if (!isCancelled && data.length > 0) {
+            setChartData(data)
+          }
+        } catch (err) {
+          debug.warn('Chart refresh failed:', err)
+        }
+
+        // Recursively schedule next fetch
+        if (!isCancelled) {
+          scheduleNextFetch()
+        }
+      }, delayMs)
+    }
+
+    scheduleNextFetch()
 
     return () => {
-      console.log(`🛑 Cleaning up auto-refresh for ${coin.fullSymbol} ${interval}`)
       isCancelled = true
-      window.clearInterval(refreshInterval)
+      if (timeoutId) clearTimeout(timeoutId)
     }
   }, [coin.fullSymbol, interval])
 

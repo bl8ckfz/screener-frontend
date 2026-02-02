@@ -159,22 +159,32 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
     return () => document.removeEventListener('visibilitychange', handler)
   }, [])
 
-  // Interval-close resync: fetch a small window at candle close
+  // Interval-close resync: fetch exactly when candle closes (no dependency loop)
   useEffect(() => {
-    if (!selectedCoin || chartData.length === 0) return
-    const intervalSeconds = getIntervalSeconds(interval)
-    const last = chartData[chartData.length - 1]
-    const nowSec = Math.floor(Date.now() / 1000)
-    const nextClose = last.time + intervalSeconds
-    const delayMs = Math.max(500, (nextClose - nowSec + 1) * 1000)
+    if (!selectedCoin) return
 
-    const timer = window.setTimeout(() => {
-      // Resync to keep candles aligned - use consistent 200 limit
-      loadChartData({ limit: 200 })
-    }, delayMs)
+    let timeoutId: NodeJS.Timeout | null = null
 
-    return () => clearTimeout(timer)
-  }, [chartData, getIntervalSeconds, interval, loadChartData, selectedCoin])
+    const scheduleNextFetch = () => {
+      const intervalSeconds = getIntervalSeconds(interval)
+      const nowSec = Math.floor(Date.now() / 1000)
+      // Calculate next candle boundary (aligned to interval)
+      const nextClose = Math.ceil(nowSec / intervalSeconds) * intervalSeconds
+      const delayMs = Math.max(500, (nextClose - nowSec + 1) * 1000)
+
+      timeoutId = setTimeout(() => {
+        loadChartData({ limit: 200 })
+        // Recursively schedule next fetch after this one
+        scheduleNextFetch()
+      }, delayMs)
+    }
+
+    scheduleNextFetch()
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId)
+    }
+  }, [interval, loadChartData, selectedCoin, getIntervalSeconds])
 
   // Drift correction: infrequent full resync
   useEffect(() => {
