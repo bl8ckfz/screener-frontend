@@ -28,7 +28,6 @@ const formatLocalTimeLabel = (time: Time): string => {
 
 export interface TradingChartProps {
   data: Candlestick[]
-  symbol: string
   height?: number
   livePrice?: number
   showVolume?: boolean
@@ -168,7 +167,6 @@ const getBubbleMarkerStyle = (bubble: Bubble): {
  */
 export function TradingChart({
   data,
-  symbol,
   height = 400,
   livePrice,
   showVolume = true,

@@ -380,7 +380,6 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
         <div className="bg-gray-900 rounded-lg p-1 md:p-3 w-full max-w-full overflow-hidden">
           <TradingChart
             data={chartData}
-            symbol={selectedCoin.fullSymbol}
             height={260} // Increased from 220px (controls are smaller now)
             livePrice={selectedCoin.lastPrice}
             showVolume={true}

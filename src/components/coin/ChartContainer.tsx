@@ -347,7 +347,6 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
         ) : (
           <TradingChart
             data={chartData}
-            symbol={`${coin.symbol}/${coin.pair}`}
             height={400}
             showVolume={true}
             showWeeklyVWAP={showWeeklyVWAP}
