@@ -1,194 +1,225 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { useStore } from '@/hooks/useStore'
-import { isValidDiscordWebhookUrl } from '@/services/backendApi'
-import type { WebhookConfig } from '@/types/alert'
+import { webhookService } from '@/services/webhookService'
+import type { Webhook, WebhookType, WebhookScope, CreateWebhookRequest, UpdateWebhookRequest } from '@/services/webhookService'
+import { authService } from '@/services/authService'
 
-type WebhookSource = 'main' | 'watchlist'
-
+/**
+ * WebhookManager Component
+ * 
+ * Manages user webhooks with backend integration.
+ * Supports Discord, Telegram, Slack, and generic HTTP webhooks.
+ * Single checkbox for watchlist-only scope (simplified UI).
+ * 
+ * Phase 5: Frontend Webhook Integration
+ */
 export function WebhookManager() {
-  const alertSettings = useStore((state) => state.alertSettings)
-  const updateAlertSettings = useStore((state) => state.updateAlertSettings)
+  const webhooks = useStore((state) => state.webhooks)
+  const setWebhooks = useStore((state) => state.setWebhooks)
+  const addWebhook = useStore((state) => state.addWebhook)
+  const updateWebhook = useStore((state) => state.updateWebhook)
+  const deleteWebhook = useStore((state) => state.deleteWebhook)
+  const toggleWebhook = useStore((state) => state.toggleWebhook)
   
-  const [activeTab, setActiveTab] = useState<WebhookSource>('main')
   const [isAdding, setIsAdding] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string
+    webhook_type: WebhookType
+    webhook_url: string
+    scope: WebhookScope
+    max_alerts_per_minute: number
+    config: Record<string, any>
+  }>({
     name: '',
-    type: 'discord' as 'discord' | 'telegram',
-    url: '',
-    botToken: '',
-    chatId: '',
+    webhook_type: 'discord',
+    webhook_url: '',
+    scope: 'all',
+    max_alerts_per_minute: 10,
+    config: {},
   })
   const [isTesting, setIsTesting] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState<string | null>(null)
   const [error, setError] = useState<string>('')
+  const [isLoading, setIsLoading] = useState(false)
 
-  const currentWebhooks = activeTab === 'main' 
-    ? (alertSettings.webhooks || [])
-    : (alertSettings.watchlistWebhooks || [])
+  // Load webhooks on mount if authenticated
+  useEffect(() => {
+    if (authService.isAuthenticated()) {
+      loadWebhooks()
+    }
+  }, [])
+
+  const loadWebhooks = async () => {
+    try {
+      setIsLoading(true)
+      const webhooksData = await webhookService.getWebhooks()
+      setWebhooks(webhooksData)
+    } catch (err) {
+      console.error('Failed to load webhooks:', err)
+      setError('Failed to load webhooks')
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleAdd = () => {
     setIsAdding(true)
     setEditingId(null)
-    setFormData({ name: '', type: 'discord', url: '', botToken: '', chatId: '' })
+    setFormData({
+      name: '',
+      webhook_type: 'discord',
+      webhook_url: '',
+      scope: 'all',
+      max_alerts_per_minute: 10,
+      config: {},
+    })
     setError('')
   }
 
-  const handleEdit = (webhook: WebhookConfig) => {
+  const handleEdit = (webhook: Webhook) => {
     setIsAdding(true)
     setEditingId(webhook.id)
-    
-    if (webhook.type === 'telegram') {
-      const match = webhook.url.match(/^telegram:\/\/([^:]+):(.+)$/)
-      if (match) {
-        const [, botToken, chatId] = match
-        setFormData({ name: webhook.name, type: 'telegram', url: '', botToken, chatId })
-      }
-    } else {
-      setFormData({ name: webhook.name, type: webhook.type, url: webhook.url, botToken: '', chatId: '' })
-    }
+    setFormData({
+      name: webhook.name,
+      webhook_type: webhook.webhook_type,
+      webhook_url: webhook.webhook_url,
+      scope: webhook.scope,
+      max_alerts_per_minute: webhook.max_alerts_per_minute || 10,
+      config: webhook.config || {},
+    })
     setError('')
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.name.trim()) {
       setError('Please enter a name')
       return
     }
 
-    if (formData.type === 'discord') {
-      if (!formData.url || !isValidDiscordWebhookUrl(formData.url)) {
-        setError('Please enter a valid Discord webhook URL')
-        return
-      }
-    } else if (formData.type === 'telegram') {
-      if (!formData.botToken || !formData.chatId) {
-        setError('Please enter both bot token and chat ID')
-        return
-      }
+    if (!formData.webhook_url.trim()) {
+      setError('Please enter a webhook URL')
+      return
     }
 
-    const webhookKey = activeTab === 'main' ? 'webhooks' : 'watchlistWebhooks'
-    const webhooks = [...(activeTab === 'main' 
-      ? (alertSettings.webhooks || [])
-      : (alertSettings.watchlistWebhooks || [])
-    )]
-    
-    if (editingId) {
-      const index = webhooks.findIndex(w => w.id === editingId)
-      if (index >= 0) {
-        webhooks[index] = {
-          ...webhooks[index],
+    // Basic URL validation
+    try {
+      new URL(formData.webhook_url)
+    } catch {
+      setError('Please enter a valid URL')
+      return
+    }
+
+    try {
+      setIsLoading(true)
+      
+      if (editingId) {
+        // Update existing webhook
+        const request: UpdateWebhookRequest = {
           name: formData.name,
-          type: formData.type,
-          url: formData.type === 'telegram' 
-            ? `telegram://${formData.botToken}:${formData.chatId}`
-            : formData.url,
+          webhook_type: formData.webhook_type,
+          webhook_url: formData.webhook_url,
+          scope: formData.scope,
+          is_enabled: true,
+          max_alerts_per_minute: formData.max_alerts_per_minute,
+          config: formData.config,
         }
+        const updated = await webhookService.updateWebhook(editingId, request)
+        updateWebhook(editingId, updated)
+      } else {
+        // Create new webhook
+        const request: CreateWebhookRequest = {
+          name: formData.name,
+          webhook_type: formData.webhook_type,
+          webhook_url: formData.webhook_url,
+          scope: formData.scope,
+          max_alerts_per_minute: formData.max_alerts_per_minute,
+          config: formData.config,
+        }
+        const created = await webhookService.createWebhook(request)
+        addWebhook(created)
       }
-    } else {
-      const newWebhook: WebhookConfig = {
-        id: `webhook_${Date.now()}`,
-        name: formData.name,
-        type: formData.type,
-        url: formData.type === 'telegram' 
-          ? `telegram://${formData.botToken}:${formData.chatId}`
-          : formData.url,
-        enabled: true,
-        createdAt: Date.now(),
-      }
-      webhooks.push(newWebhook)
+
+      setIsAdding(false)
+      setEditingId(null)
+      setError('')
+    } catch (err: any) {
+      console.error('Failed to save webhook:', err)
+      setError(err.message || 'Failed to save webhook')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this webhook?')) {
+      return
     }
 
-    updateAlertSettings({ [webhookKey]: webhooks })
-    setIsAdding(false)
-    setEditingId(null)
-    setError('')
+    try {
+      setIsDeleting(id)
+      await webhookService.deleteWebhook(id)
+      deleteWebhook(id)
+    } catch (err: any) {
+      console.error('Failed to delete webhook:', err)
+      setError(err.message || 'Failed to delete webhook')
+    } finally {
+      setIsDeleting(null)
+    }
   }
 
-  const handleDelete = (id: string) => {
-    const webhookKey = activeTab === 'main' ? 'webhooks' : 'watchlistWebhooks'
-    const webhooks = currentWebhooks.filter(w => w.id !== id)
-    updateAlertSettings({ [webhookKey]: webhooks })
+  const handleToggle = async (id: string, enabled: boolean) => {
+    try {
+      await webhookService.toggleWebhook(id, !enabled)
+      toggleWebhook(id, !enabled)
+    } catch (err: any) {
+      console.error('Failed to toggle webhook:', err)
+      setError(err.message || 'Failed to toggle webhook')
+    }
   }
 
-  const handleToggle = (id: string) => {
-    const webhookKey = activeTab === 'main' ? 'webhooks' : 'watchlistWebhooks'
-    const webhooks = currentWebhooks.map(w =>
-      w.id === id ? { ...w, enabled: !w.enabled } : w
-    )
-    updateAlertSettings({ [webhookKey]: webhooks })
-  }
-
-  const handleTest = async (webhook: WebhookConfig) => {
+  const handleTest = async (webhook: Webhook) => {
     setIsTesting(webhook.id)
     setError('')
 
-    // TODO: Implement webhook testing via backend API when endpoint is ready
-    console.warn('Webhook testing not yet implemented - backend endpoint needed')
-    alert('Webhook testing will be available once backend webhook endpoints are implemented')
-    
-    setIsTesting(null)
+    try {
+      await webhookService.testWebhook(webhook.id)
+      alert(`Test alert sent to ${webhook.name}. Check your ${webhook.webhook_type} channel.`)
+    } catch (err: any) {
+      console.error('Failed to test webhook:', err)
+      setError(err.message || 'Failed to test webhook')
+    } finally {
+      setIsTesting(null)
+    }
+  }
+
+  if (!authService.isAuthenticated()) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-400 text-sm">Please log in to manage webhooks</p>
+      </div>
+    )
   }
 
   return (
     <div className="space-y-4">
-      {/* Global Webhook Toggle */}
-      <div className="rounded-lg border border-gray-700 bg-gray-800/50 p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h4 className="text-sm font-medium text-white">Webhook Notifications</h4>
-            <p className="text-xs text-gray-400 mt-0.5">
-              Send alerts to Discord, Telegram, and other services
-            </p>
-          </div>
-          <label className="relative inline-flex cursor-pointer items-center">
-            <input
-              type="checkbox"
-              checked={alertSettings.webhookEnabled}
-              onChange={(e) => updateAlertSettings({ webhookEnabled: e.target.checked })}
-              className="peer sr-only"
-            />
-            <div className="peer h-5 w-9 rounded-full bg-gray-700 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-gray-600 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-800"></div>
-          </label>
-        </div>
-      </div>
-
-      {/* Webhook Source Tabs */}
-      <div className="flex gap-2 border-b border-gray-700">
-        <button
-          onClick={() => setActiveTab('main')}
-          className={`px-4 py-2 text-sm font-medium transition-colors ${
-            activeTab === 'main'
-              ? 'border-b-2 border-blue-500 text-blue-400'
-              : 'text-gray-400 hover:text-gray-300'
-          }`}
-        >
-          Main Alerts
-        </button>
-        <button
-          onClick={() => setActiveTab('watchlist')}
-          className={`px-4 py-2 text-sm font-medium transition-colors ${
-            activeTab === 'watchlist'
-              ? 'border-b-2 border-blue-500 text-blue-400'
-              : 'text-gray-400 hover:text-gray-300'
-          }`}
-        >
-          Watchlist Alerts
-        </button>
-      </div>
-
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h4 className="text-sm font-medium text-white">
-            {activeTab === 'main' ? 'Main' : 'Watchlist'} Webhook Configurations
-          </h4>
+          <h4 className="text-sm font-medium text-white">Webhook Configurations</h4>
           <p className="text-xs text-gray-400">
-            {currentWebhooks.filter(w => w.enabled).length} of {currentWebhooks.length} webhooks active
+            {webhooks.filter((w) => w.is_enabled).length} of {webhooks.length} webhooks active
+            {webhooks.length >= 10 && ' (max 10 reached)'}
           </p>
         </div>
-        <Button onClick={handleAdd} variant="secondary" size="sm">
+        <Button
+          onClick={handleAdd}
+          variant="secondary"
+          size="sm"
+          disabled={isLoading || webhooks.length >= 10}
+        >
           + Add Webhook
         </Button>
       </div>
@@ -206,58 +237,84 @@ export function WebhookManager() {
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="My Discord Channel"
+              disabled={isLoading}
             />
           </div>
 
           <div>
             <label className="text-xs text-gray-400">Type</label>
             <select
-              value={formData.type}
-              onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+              value={formData.webhook_type}
+              onChange={(e) =>
+                setFormData({ ...formData, webhook_type: e.target.value as WebhookType })
+              }
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm"
+              disabled={isLoading}
             >
               <option value="discord">Discord</option>
               <option value="telegram">Telegram</option>
+              <option value="slack">Slack</option>
+              <option value="http">HTTP (Generic)</option>
             </select>
           </div>
 
-          {formData.type === 'discord' ? (
-            <div>
-              <label className="text-xs text-gray-400">Webhook URL</label>
-              <Input
-                type="url"
-                value={formData.url}
-                onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                placeholder="https://discord.com/api/webhooks/..."
-              />
-            </div>
-          ) : (
-            <>
-              <div>
-                <label className="text-xs text-gray-400">Bot Token</label>
-                <Input
-                  type="password"
-                  value={formData.botToken}
-                  onChange={(e) => setFormData({ ...formData, botToken: e.target.value })}
-                  placeholder="123456:ABC-DEF..."
-                />
-              </div>
-              <div>
-                <label className="text-xs text-gray-400">Chat ID</label>
-                <Input
-                  value={formData.chatId}
-                  onChange={(e) => setFormData({ ...formData, chatId: e.target.value })}
-                  placeholder="-1001234567890"
-                />
-              </div>
-            </>
-          )}
+          <div>
+            <label className="text-xs text-gray-400">Webhook URL</label>
+            <Input
+              type="url"
+              value={formData.webhook_url}
+              onChange={(e) => setFormData({ ...formData, webhook_url: e.target.value })}
+              placeholder={
+                formData.webhook_type === 'discord'
+                  ? 'https://discord.com/api/webhooks/...'
+                  : formData.webhook_type === 'telegram'
+                  ? 'https://api.telegram.org/bot<token>/sendMessage?chat_id=<chat_id>'
+                  : formData.webhook_type === 'slack'
+                  ? 'https://hooks.slack.com/services/...'
+                  : 'https://your-api.com/webhook'
+              }
+              disabled={isLoading}
+            />
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-400">Rate Limit (alerts/minute)</label>
+            <Input
+              type="number"
+              min={1}
+              max={60}
+              value={formData.max_alerts_per_minute}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  max_alerts_per_minute: parseInt(e.target.value) || 10,
+                })
+              }
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="watchlist-only"
+              checked={formData.scope === 'watchlist'}
+              onChange={(e) =>
+                setFormData({ ...formData, scope: e.target.checked ? 'watchlist' : 'all' })
+              }
+              className="rounded bg-gray-700 border-gray-600 text-blue-600 focus:ring-blue-500"
+              disabled={isLoading}
+            />
+            <label htmlFor="watchlist-only" className="text-xs text-gray-400">
+              Watchlist alerts only
+            </label>
+          </div>
 
           {error && <p className="text-xs text-red-400">{error}</p>}
 
           <div className="flex gap-2">
-            <Button onClick={handleSave} variant="primary" size="sm">
-              Save
+            <Button onClick={handleSave} variant="primary" size="sm" disabled={isLoading}>
+              {isLoading ? 'Saving...' : 'Save'}
             </Button>
             <Button
               onClick={() => {
@@ -267,6 +324,7 @@ export function WebhookManager() {
               }}
               variant="secondary"
               size="sm"
+              disabled={isLoading}
             >
               Cancel
             </Button>
@@ -275,33 +333,48 @@ export function WebhookManager() {
       )}
 
       {/* Webhook List */}
-      {currentWebhooks.length === 0 ? (
+      {isLoading && webhooks.length === 0 ? (
+        <div className="text-center py-8 text-gray-400 text-sm">Loading webhooks...</div>
+      ) : webhooks.length === 0 ? (
         <div className="text-center py-8 text-gray-400 text-sm">
-          No {activeTab} webhooks configured. Add one to get started.
+          No webhooks configured. Add one to get started.
         </div>
       ) : (
         <div className="space-y-2">
-          {currentWebhooks.map((webhook) => (
+          {webhooks.map((webhook) => (
             <div
               key={webhook.id}
               className="rounded-lg border border-gray-700 bg-gray-800/50 p-3"
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-1">
                   <label className="relative inline-flex cursor-pointer items-center">
                     <input
                       type="checkbox"
-                      checked={webhook.enabled}
-                      onChange={() => handleToggle(webhook.id)}
+                      checked={webhook.is_enabled}
+                      onChange={() => handleToggle(webhook.id, webhook.is_enabled)}
                       className="peer sr-only"
                     />
                     <div className="peer h-5 w-9 rounded-full bg-gray-700 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-gray-600 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
                   </label>
-                  
-                  <div>
-                    <div className="text-sm font-medium text-white">{webhook.name}</div>
-                    <div className="text-xs text-gray-400">
-                      {webhook.type === 'discord' ? '🔵 Discord' : '✈️ Telegram'}
+
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-white">{webhook.name}</span>
+                      <span className="text-xs px-2 py-0.5 rounded bg-gray-700 text-gray-300 uppercase">
+                        {webhook.webhook_type}
+                      </span>
+                      {webhook.scope === 'watchlist' && (
+                        <span className="text-xs px-2 py-0.5 rounded bg-blue-900/50 text-blue-300">
+                          Watchlist Only
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-gray-400 mt-0.5 truncate">
+                      {webhook.webhook_url}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-0.5">
+                      Max {webhook.max_alerts_per_minute || 10} alerts/min
                     </div>
                   </div>
                 </div>
@@ -311,7 +384,7 @@ export function WebhookManager() {
                     onClick={() => handleTest(webhook)}
                     variant="secondary"
                     size="sm"
-                    disabled={isTesting === webhook.id}
+                    disabled={isTesting === webhook.id || !webhook.is_enabled}
                   >
                     {isTesting === webhook.id ? 'Testing...' : 'Test'}
                   </Button>
@@ -319,20 +392,28 @@ export function WebhookManager() {
                     onClick={() => handleEdit(webhook)}
                     variant="secondary"
                     size="sm"
+                    disabled={isLoading}
                   >
                     Edit
                   </Button>
                   <Button
                     onClick={() => handleDelete(webhook.id)}
-                    variant="secondary"
+                    variant="danger"
                     size="sm"
+                    disabled={isDeleting === webhook.id}
                   >
-                    Delete
+                    {isDeleting === webhook.id ? 'Deleting...' : 'Delete'}
                   </Button>
                 </div>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {error && !isAdding && (
+        <div className="rounded-lg border border-red-900 bg-red-900/20 p-3">
+          <p className="text-xs text-red-400">{error}</p>
         </div>
       )}
     </div>

@@ -7,6 +7,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react'
 import { authService, type User } from '@/services/authService'
 import { watchlistService } from '@/services/watchlistService'
+import { webhookService } from '@/services/webhookService'
 import { useStore } from '@/hooks/useStore'
 
 interface AuthContextType {
@@ -18,6 +19,7 @@ interface AuthContextType {
   logout: () => void
   refreshToken: () => Promise<void>
   syncWatchlist: () => Promise<void>
+  syncWebhooks: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -62,24 +64,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const syncWebhooks = async () => {
+    try {
+      const webhooks = await webhookService.getWebhooks()
+      useStore.getState().setWebhooks(webhooks)
+    } catch (error) {
+      console.error('Failed to sync webhooks:', error)
+    }
+  }
+
   const login = async (email: string, password: string) => {
     const response = await authService.login(email, password)
     setUser(response.user)
-    // Sync watchlist after login
-    await syncWatchlist()
+    // Sync watchlist and webhooks after login
+    await Promise.all([syncWatchlist(), syncWebhooks()])
   }
 
   const register = async (email: string, password: string) => {
     const response = await authService.register(email, password)
     setUser(response.user)
-    // No need to sync on register - watchlist will be empty
+    // No need to sync on register - watchlist and webhooks will be empty
   }
 
   const logout = () => {
     authService.logout()
     setUser(null)
-    // Clear local watchlist
+    // Clear local watchlist and webhooks
     useStore.getState().setWatchlistSymbols([])
+    useStore.getState().setWebhooks([])
   }
 
   const refreshToken = async () => {
@@ -97,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         logout,
         refreshToken,
+        syncWebhooks,
         syncWatchlist,
       }}
     >

@@ -13,6 +13,7 @@ import { supabase } from '@/config'
 import type { User, Session } from '@supabase/supabase-js'
 import { watchlistService } from '@/services/watchlistService'
 import { authService } from '@/services/authService'
+import type { Webhook } from '@/services/webhookService'
 
 interface AppState {
   // Current selections
@@ -68,6 +69,9 @@ interface AppState {
   // Watchlist (simplified - single default watchlist)
   watchlistSymbols: string[]
 
+  // Webhooks
+  webhooks: Webhook[]
+
   // Auth
   user: User | null
   session: Session | null
@@ -109,6 +113,13 @@ interface AppState {
   toggleWatchlist: (symbol: string) => void
   setWatchlistSymbols: (symbols: string[]) => void
   setAlertRules: (rules: AlertRule[]) => void
+  
+  // Webhook actions
+  setWebhooks: (webhooks: Webhook[]) => void
+  addWebhook: (webhook: Webhook) => void
+  updateWebhook: (id: string, updates: Partial<Webhook>) => void
+  deleteWebhook: (id: string) => void
+  toggleWebhook: (id: string, enabled: boolean) => void
   
   // Auth actions
   setUser: (user: User | null) => void
@@ -172,6 +183,9 @@ const initialState = {
   
   // Watchlist defaults (simplified - single array)
   watchlistSymbols: [] as string[],
+  
+  // Webhook defaults
+  webhooks: [] as Webhook[],
   
   // Auth defaults
   user: null,
@@ -348,6 +362,34 @@ export const useStore = create<AppState>()(
       setAlertRules: (alertRules) =>
         set({ alertRules }),
 
+      // Webhook actions
+      setWebhooks: (webhooks) =>
+        set({ webhooks }),
+
+      addWebhook: (webhook) =>
+        set((state) => ({
+          webhooks: [...state.webhooks, webhook],
+        })),
+
+      updateWebhook: (id, updates) =>
+        set((state) => ({
+          webhooks: state.webhooks.map((webhook) =>
+            webhook.id === id ? { ...webhook, ...updates } : webhook
+          ),
+        })),
+
+      deleteWebhook: (id) =>
+        set((state) => ({
+          webhooks: state.webhooks.filter((webhook) => webhook.id !== id),
+        })),
+
+      toggleWebhook: (id, enabled) =>
+        set((state) => ({
+          webhooks: state.webhooks.map((webhook) =>
+            webhook.id === id ? { ...webhook, is_enabled: enabled } : webhook
+          ),
+        })),
+
       // Auth actions
       setUser: (user) =>
         set({ user, isAuthenticated: !!user }),
@@ -464,6 +506,7 @@ export const useStore = create<AppState>()(
         alertRules: state.alertRules,
         alertSettings: state.alertSettings,
         watchlistSymbols: state.watchlistSymbols, // Simplified watchlist
+        webhooks: state.webhooks, // Persist webhooks
         activeView: state.activeView,
         // Persist auth state
         user: state.user,
