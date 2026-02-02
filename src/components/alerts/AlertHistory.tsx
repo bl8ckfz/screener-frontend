@@ -225,11 +225,14 @@ export function AlertHistory() {
   }
 
   const getAlertBadge = (type: CombinedAlertType): { text: string; color: string; bgColor: string } => {
-    const cleanType = type.replace(/^futures_/, '')
+    const cleanType = type.replace(/^futures_/, '').replace(/^5m_/, '5_').replace(/^15m_/, '15_')
     const isBullish = cleanType.includes('bull') || cleanType === 'bottom_hunter'
     
+    // Normalize type for color lookup (ensure futures_ prefix)
+    const normalizedType = type.startsWith('futures_') ? type : `futures_${cleanType}`
+    
     // Get color from mapping, fallback to bull/bear default
-    const color = ALERT_TYPE_COLORS[type] || (isBullish ? '#22c55e' : '#ef4444')
+    const color = ALERT_TYPE_COLORS[normalizedType] || (isBullish ? '#22c55e' : '#ef4444')
     
     // Determine badge text
     let text = ''
@@ -509,7 +512,12 @@ export function AlertHistory() {
         <div className="space-y-2">
           {filteredHistory.map((alert) => {
             const badge = getAlertBadge(alert.type)
-            const isBullish = alert.type.includes('bull') || alert.type === 'futures_bottom_hunter'
+            const isBullish = alert.type.includes('bull') || alert.type.includes('bottom_hunter')
+            
+            // Determine text color based on background brightness
+            // Light backgrounds (Pioneer bull/bear) need dark text
+            const isLightBg = badge.bgColor === '#a7f3d0' || badge.bgColor === '#fce7f3'
+            const textColor = isLightBg ? '#000' : '#fff'
             
             return (
             <div
@@ -524,7 +532,7 @@ export function AlertHistory() {
                       className="flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold"
                       style={{ 
                         backgroundColor: badge.bgColor,
-                        color: badge.color.includes('f3d0') || badge.color.includes('fce7f3') ? '#000' : '#fff'
+                        color: textColor
                       }}
                       title={getAlertDisplayName(alert.type)}
                     >
