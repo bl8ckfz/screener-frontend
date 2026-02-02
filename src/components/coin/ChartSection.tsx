@@ -279,8 +279,8 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
 
   return (
     <div className={`bg-gray-800 rounded-lg transition-all duration-300 w-full max-w-full overflow-hidden ${className}`}>
-      {/* Header with coin info and close button */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-700">
+      {/* Header with coin info and close button - hidden on mobile */}
+      <div className="hidden md:flex items-center justify-between p-3 md:p-4 border-b border-gray-700">
         <div className="flex items-center space-x-3">
           <h3 className="text-lg font-semibold text-white">
             {selectedCoin.symbol}
@@ -312,7 +312,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
       </div>
 
       {/* Chart Controls */}
-      <div className="flex flex-wrap items-center gap-1.5 md:gap-2 p-2 md:p-4 border-b border-gray-700">
+      <div className="flex flex-wrap items-center gap-1 md:gap-2 p-1.5 md:p-4 border-b border-gray-700">
         {/* Interval Selector */}
         <div className="flex items-center gap-1">
           {COMMON_INTERVALS.map((int) => (
@@ -376,12 +376,12 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
       </div>
 
       {/* Trading Chart */}
-      <div className="px-2 md:px-4 pt-2 md:pt-4 w-full max-w-full overflow-hidden">
-        <div className="bg-gray-900 rounded-lg p-2 md:p-3 w-full max-w-full overflow-hidden">
+      <div className="px-1.5 md:px-4 pt-1.5 md:pt-4 w-full max-w-full overflow-hidden">
+        <div className="bg-gray-900 rounded-lg p-1.5 md:p-3 w-full max-w-full overflow-hidden">
           <TradingChart
             data={chartData}
             symbol={selectedCoin.fullSymbol}
-            height={280} // Reduced for mobile, responsive height
+            height={220} // Further reduced for mobile viewport
             livePrice={selectedCoin.lastPrice}
             showVolume={true}
             showWeeklyVWAP={showWeeklyVWAP}
@@ -397,17 +397,17 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
       </div>
 
       {/* Alert Timeline Chart */}
-      <div className="px-2 md:px-4 pt-2 md:pt-4 pb-2 md:pb-4 w-full max-w-full overflow-hidden">
-        <div className="bg-gray-900 rounded-lg p-2 md:p-3 w-full max-w-full overflow-hidden">
-          <h4 className="text-[10px] md:text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+      <div className="px-1.5 md:px-4 pt-1.5 md:pt-4 pb-1.5 md:pb-4 w-full max-w-full overflow-hidden">
+        <div className="bg-gray-900 rounded-lg p-1.5 md:p-3 w-full max-w-full overflow-hidden">
+          <h4 className="text-[10px] md:text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5 md:mb-2">
             Alert Timeline (24h)
           </h4>
-          <AlertTimelineChart symbol={selectedCoin.symbol} fullSymbol={selectedCoin.fullSymbol} height={120} />
+          <AlertTimelineChart symbol={selectedCoin.symbol} fullSymbol={selectedCoin.fullSymbol} height={100} />
         </div>
       </div>
 
       {/* External Links */}
-      <div className="px-2 md:px-4 pb-2 md:pb-4 w-full max-w-full">
+      <div className="px-1.5 md:px-4 pb-1.5 md:pb-4 w-full max-w-full">
         <ExternalLinks coin={selectedCoin} />
       </div>
     </div>
