@@ -6,6 +6,8 @@
 
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react'
 import { authService, type User } from '@/services/authService'
+import { watchlistService } from '@/services/watchlistService'
+import { useStore } from '@/hooks/useStore'
 
 interface AuthContextType {
   user: User | null
@@ -15,6 +17,7 @@ interface AuthContextType {
   register: (email: string, password: string) => Promise<void>
   logout: () => void
   refreshToken: () => Promise<void>
+  syncWatchlist: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -50,19 +53,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loadUser()
   }, [])
 
+  const syncWatchlist = async () => {
+    try {
+      const symbols = await watchlistService.getWatchlist()
+      useStore.getState().setWatchlistSymbols(symbols)
+    } catch (error) {
+      console.error('Failed to sync watchlist:', error)
+    }
+  }
+
   const login = async (email: string, password: string) => {
     const response = await authService.login(email, password)
     setUser(response.user)
+    // Sync watchlist after login
+    await syncWatchlist()
   }
 
   const register = async (email: string, password: string) => {
     const response = await authService.register(email, password)
     setUser(response.user)
+    // No need to sync on register - watchlist will be empty
   }
 
   const logout = () => {
     authService.logout()
     setUser(null)
+    // Clear local watchlist
+    useStore.getState().setWatchlistSymbols([])
   }
 
   const refreshToken = async () => {
@@ -80,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         logout,
         refreshToken,
+        syncWatchlist,
       }}
     >
       {children}

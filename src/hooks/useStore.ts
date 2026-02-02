@@ -11,6 +11,8 @@ import { alertHistory } from '@/services/alertHistory'
 import { alertHistoryService } from '@/services/alertHistoryService'
 import { supabase } from '@/config'
 import type { User, Session } from '@supabase/supabase-js'
+import { watchlistService } from '@/services/watchlistService'
+import { authService } from '@/services/authService'
 
 interface AppState {
   // Current selections
@@ -319,6 +321,23 @@ export const useStore = create<AppState>()(
           const newWatchlistSymbols = isInWatchlist
             ? state.watchlistSymbols.filter((s) => s !== symbol)
             : [...state.watchlistSymbols, symbol]
+          
+          // Sync to backend if authenticated
+          if (authService.isAuthenticated()) {
+            if (isInWatchlist) {
+              watchlistService.removeSymbol(symbol).catch((err) =>
+                console.error('Failed to remove symbol from backend:', err)
+              )
+            } else {
+              watchlistService.addSymbol(symbol).catch((err) => {
+                console.error('Failed to add symbol to backend:', err)
+                // Revert local state on error
+                set((state) => ({
+                  watchlistSymbols: state.watchlistSymbols.filter((s) => s !== symbol),
+                }))
+              })
+            }
+          }
           
           return { watchlistSymbols: newWatchlistSymbols }
         }),
