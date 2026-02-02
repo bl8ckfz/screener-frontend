@@ -145,19 +145,20 @@ export interface IchimokuData {
 }
 
 /**
- * Calculate Ichimoku Cloud indicator (stub - disabled for now)
- * TODO: Implement proper Ichimoku calculation or backend API
+ * Calculate Ichimoku Cloud indicator
+ * 
+ * Currently disabled - charts work without Ichimoku overlay.
+ * Backend implementation or external library needed for proper calculation.
  */
 export function calculateIchimoku(_candles: Candlestick[]): IchimokuData | null {
-  // Disabled during cleanup - charts will work without Ichimoku overlay
   return null
 }
 
 /**
  * Calculate Weekly VWAP (Volume Weighted Average Price)
- * TODO: Implement or backend API
+ * 
+ * Currently disabled - requires implementation or backend API.
  */
 export function calculateWeeklyVWAP(_candles: Candlestick[]): Array<{ time: number; vwap: number }> {
-  // Disabled during cleanup
   return []
 }

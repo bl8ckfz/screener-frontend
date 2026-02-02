@@ -13,8 +13,7 @@ export function useBubbleStream(_enabled: boolean = true) {
   const [isConnected] = useState(false)
 
   useEffect(() => {
-    // TODO: Implement when backend provides bubble detection
-    // Backend will analyze price action and send bubble signals via WebSocket
+    // Backend bubble detection not yet implemented
     console.debug('Bubble detection not yet implemented in backend')
   }, [])
 
