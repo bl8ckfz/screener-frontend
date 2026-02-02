@@ -306,8 +306,11 @@ export function TradingChart({
     const chart = chartRef.current
     const timeScale = chart.timeScale()
 
-    // CRITICAL: Save visible range BEFORE updating to preserve user's zoom/pan
-    const savedRange = timeScale.getVisibleLogicalRange()
+    // CRITICAL: Save visible range BEFORE updating to preserve user's zoom/pan (both axes)
+    const savedTimeRange = timeScale.getVisibleLogicalRange()
+    const savedPriceRange = mainSeriesRef.current 
+      ? mainSeriesRef.current.priceScale().getVisiblePriceRange()
+      : null
 
     // Remove existing main series
     try {
@@ -362,11 +365,17 @@ export function TradingChart({
     mainSeries.setData(candlestickData)
     mainSeriesRef.current = mainSeries
 
-    // CRITICAL: Restore visible range AFTER updating to prevent zoom/pan reset
+    // CRITICAL: Restore visible range AFTER updating to prevent zoom/pan reset (both axes)
     // Use requestAnimationFrame to ensure chart has processed the data
     requestAnimationFrame(() => {
-      if (savedRange) {
-        timeScale.setVisibleLogicalRange(savedRange)
+      if (savedTimeRange) {
+        timeScale.setVisibleLogicalRange(savedTimeRange)
+      }
+      if (savedPriceRange && mainSeriesRef.current) {
+        mainSeriesRef.current.priceScale().applyOptions({
+          autoScale: false,
+        })
+        mainSeriesRef.current.priceScale().setVisiblePriceRange(savedPriceRange)
       }
     })
 
@@ -399,8 +408,11 @@ export function TradingChart({
     const chart = chartRef.current
     const timeScale = chart.timeScale()
 
-    // CRITICAL: Save visible range BEFORE updating to preserve user's zoom/pan
-    const savedRange = timeScale.getVisibleLogicalRange()
+    // CRITICAL: Save visible range BEFORE updating to preserve user's zoom/pan (both axes)
+    const savedTimeRange = timeScale.getVisibleLogicalRange()
+    const savedPriceRange = mainSeriesRef.current
+      ? mainSeriesRef.current.priceScale().getVisiblePriceRange()
+      : null
 
     // Remove existing volume series
     try {
@@ -448,10 +460,16 @@ export function TradingChart({
       })
     }
 
-    // CRITICAL: Restore visible range AFTER updating to prevent zoom/pan reset
+    // CRITICAL: Restore visible range AFTER updating to prevent zoom/pan reset (both axes)
     requestAnimationFrame(() => {
-      if (savedRange) {
-        timeScale.setVisibleLogicalRange(savedRange)
+      if (savedTimeRange) {
+        timeScale.setVisibleLogicalRange(savedTimeRange)
+      }
+      if (savedPriceRange && mainSeriesRef.current) {
+        mainSeriesRef.current.priceScale().applyOptions({
+          autoScale: false,
+        })
+        mainSeriesRef.current.priceScale().setVisiblePriceRange(savedPriceRange)
       }
     })
   }, [data, showVolume]) // Only data and showVolume trigger volume series update
@@ -463,8 +481,11 @@ export function TradingChart({
     const chart = chartRef.current
     const timeScale = chart.timeScale()
 
-    // CRITICAL: Save visible range BEFORE updating to preserve user's zoom/pan
-    const savedRange = timeScale.getVisibleLogicalRange()
+    // CRITICAL: Save visible range BEFORE updating to preserve user's zoom/pan (both axes)
+    const savedTimeRange = timeScale.getVisibleLogicalRange()
+    const savedPriceRange = mainSeriesRef.current
+      ? mainSeriesRef.current.priceScale().getVisiblePriceRange()
+      : null
 
     // Remove existing VWAP series
     try {
@@ -499,10 +520,16 @@ export function TradingChart({
       weeklyVWAPRef.current = weeklyVWAPSeries
     }
 
-    // CRITICAL: Restore visible range AFTER updating to prevent zoom/pan reset
+    // CRITICAL: Restore visible range AFTER updating to prevent zoom/pan reset (both axes)
     requestAnimationFrame(() => {
-      if (savedRange) {
-        timeScale.setVisibleLogicalRange(savedRange)
+      if (savedTimeRange) {
+        timeScale.setVisibleLogicalRange(savedTimeRange)
+      }
+      if (savedPriceRange && mainSeriesRef.current) {
+        mainSeriesRef.current.priceScale().applyOptions({
+          autoScale: false,
+        })
+        mainSeriesRef.current.priceScale().setVisiblePriceRange(savedPriceRange)
       }
     })
   }, [showWeeklyVWAP, weeklyVWAPData]) // Only VWAP toggle and data trigger VWAP update
@@ -514,8 +541,11 @@ export function TradingChart({
     const chart = chartRef.current
     const timeScale = chart.timeScale()
 
-    // CRITICAL: Save visible range BEFORE updating to preserve user's zoom/pan
-    const savedRange = timeScale.getVisibleLogicalRange()
+    // CRITICAL: Save visible range BEFORE updating to preserve user's zoom/pan (both axes)
+    const savedTimeRange = timeScale.getVisibleLogicalRange()
+    const savedPriceRange = mainSeriesRef.current
+      ? mainSeriesRef.current.priceScale().getVisiblePriceRange()
+      : null
 
     // Remove existing Ichimoku series
     const refs = [tenkanRef, kijunRef, senkouARef, senkouBRef, chikouRef]
@@ -677,10 +707,16 @@ export function TradingChart({
       debug.log(`📊 Ichimoku Cloud rendered: ${senkouData.length} cloud points, ${chikouData.length} chikou points`)
     }
 
-    // CRITICAL: Restore visible range AFTER updating to prevent zoom/pan reset
+    // CRITICAL: Restore visible range AFTER updating to prevent zoom/pan reset (both axes)
     requestAnimationFrame(() => {
-      if (savedRange) {
-        timeScale.setVisibleLogicalRange(savedRange)
+      if (savedTimeRange) {
+        timeScale.setVisibleLogicalRange(savedTimeRange)
+      }
+      if (savedPriceRange && mainSeriesRef.current) {
+        mainSeriesRef.current.priceScale().applyOptions({
+          autoScale: false,
+        })
+        mainSeriesRef.current.priceScale().setVisiblePriceRange(savedPriceRange)
       }
     })
   }, [showIchimoku, ichimokuData]) // Only Ichimoku toggle and data trigger update
