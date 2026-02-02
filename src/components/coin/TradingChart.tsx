@@ -812,8 +812,8 @@ export function TradingChart({
       
       <div
         ref={chartContainerRef}
-        className="rounded-lg overflow-hidden"
-        style={{ height: `${height}px` }}
+        className="rounded-lg overflow-hidden w-full max-w-full"
+        style={{ height: `${height}px`, width: '100%' }}
       />
       
       {data.length === 0 && !isLoading && (

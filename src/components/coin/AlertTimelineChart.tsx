@@ -215,9 +215,9 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
   const chartWidth = timeRange.max - timeRange.min
 
   return (
-    <div className="w-full overflow-x-hidden overflow-y-visible">
+    <div className="w-full max-w-full overflow-x-hidden overflow-y-visible">
       {/* Header with Legend and Zoom Controls */}
-      <div className="flex items-center justify-between mb-4 px-2 gap-4">
+      <div className="flex items-center justify-between mb-2 md:mb-4 px-1 md:px-2 gap-2 md:gap-4">
         {/* Legend */}
         <div className="flex flex-wrap gap-3">
           {alertTypes.map((type) => (
@@ -234,15 +234,15 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
         </div>
 
         {/* Zoom Controls */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
           <button
             onClick={handleResetZoom}
-            className="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+            className="px-1.5 md:px-2 py-0.5 md:py-1 text-[10px] md:text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
             title="Reset to 24h"
           >
             24h
           </button>
-          <span className="text-xs text-gray-500">
+          <span className="text-[10px] md:text-xs text-gray-500">
             {visibleRange < 60 * 60 * 1000
               ? `${Math.round(visibleRange / (60 * 1000))}m`
               : `${Math.round(visibleRange / (60 * 60 * 1000))}h`}
@@ -257,11 +257,11 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
         style={{ height: dynamicHeight, overflow: 'visible' }}
       >
         {/* Y-axis labels */}
-        <div className="absolute left-0 top-0 bottom-0 w-36 border-r border-gray-700 bg-gray-900/50">
+        <div className="absolute left-0 top-0 bottom-0 w-24 md:w-36 border-r border-gray-700 bg-gray-900/50">
           {alertTypes.map((type) => (
             <div
               key={type}
-              className="flex items-center px-3 text-xs text-gray-400 border-b border-gray-800"
+              className="flex items-center px-1.5 md:px-3 text-[10px] md:text-xs text-gray-400 border-b border-gray-800"
               style={{ height: rowHeight, minHeight: '40px' }}
             >
               <span className="truncate">{getAlertTypeName(type)}</span>
@@ -270,7 +270,7 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
         </div>
 
         {/* Chart area with dots */}
-        <div className="absolute left-36 right-0 top-0 bottom-0 overflow-hidden">
+        <div className="absolute left-24 md:left-36 right-0 top-0 bottom-0 overflow-hidden">
           {/* Grid lines */}
           {alertTypes.map((_, index) => (
             <div

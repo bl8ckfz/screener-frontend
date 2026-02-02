@@ -278,7 +278,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
   }
 
   return (
-    <div className={`bg-gray-800 rounded-lg transition-all duration-300 w-full max-w-full overflow-hidden ${className}`}>
+    <div className={`bg-gray-800 rounded-lg transition-all duration-300 w-full max-w-full overflow-hidden ${className}`} style={{ maxWidth: '100vw' }}>
       {/* Header with coin info and close button - hidden on mobile */}
       <div className="hidden md:flex items-center justify-between p-3 md:p-4 border-b border-gray-700">
         <div className="flex items-center space-x-3">
