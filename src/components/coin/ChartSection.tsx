@@ -312,7 +312,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
       </div>
 
       {/* Chart Controls */}
-      <div className="flex flex-wrap items-center gap-2 p-4 border-b border-gray-700">
+      <div className="flex flex-wrap items-center gap-1.5 md:gap-2 p-2 md:p-4 border-b border-gray-700">
         {/* Interval Selector */}
         <div className="flex items-center gap-1">
           {COMMON_INTERVALS.map((int) => (
@@ -376,12 +376,12 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
       </div>
 
       {/* Trading Chart */}
-      <div className="px-4 pt-4">
-        <div className="bg-gray-900 rounded-lg p-3">
+      <div className="px-2 md:px-4 pt-2 md:pt-4">
+        <div className="bg-gray-900 rounded-lg p-2 md:p-3">
           <TradingChart
             data={chartData}
             symbol={selectedCoin.fullSymbol}
-            height={360} // Mobile: 300px, Desktop: 480px handled by responsive CSS (20% increase)
+            height={280} // Reduced for mobile, responsive height
             livePrice={selectedCoin.lastPrice}
             showVolume={true}
             showWeeklyVWAP={showWeeklyVWAP}
@@ -397,17 +397,17 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
       </div>
 
       {/* Alert Timeline Chart */}
-      <div className="px-4 pt-4 pb-4">
-        <div className="bg-gray-900 rounded-lg p-3">
-          <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+      <div className="px-2 md:px-4 pt-2 md:pt-4 pb-2 md:pb-4">
+        <div className="bg-gray-900 rounded-lg p-2 md:p-3">
+          <h4 className="text-[10px] md:text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
             Alert Timeline (24h)
           </h4>
-          <AlertTimelineChart symbol={selectedCoin.symbol} fullSymbol={selectedCoin.fullSymbol} height={150} />
+          <AlertTimelineChart symbol={selectedCoin.symbol} fullSymbol={selectedCoin.fullSymbol} height={120} />
         </div>
       </div>
 
       {/* External Links */}
-      <div className="px-4 pb-4">
+      <div className="px-2 md:px-4 pb-2 md:pb-4">
         <ExternalLinks coin={selectedCoin} />
       </div>
     </div>
