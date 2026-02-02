@@ -148,9 +148,9 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
       }
     }
 
-    // Refresh every 5 seconds to update the current candle
-    const refreshInterval = window.setInterval(refreshChartData, 5000)
-    console.log(`✅ Auto-refresh interval created: every 5s for ${coin.fullSymbol} ${interval}`)
+    // Refresh every 30 seconds to update the current candle (reduced from 5s to minimize API calls)
+    const refreshInterval = window.setInterval(refreshChartData, 30000)
+    console.log(`✅ Auto-refresh interval created: every 30s for ${coin.fullSymbol} ${interval}`)
 
     return () => {
       console.log(`🛑 Cleaning up auto-refresh for ${coin.fullSymbol} ${interval}`)
