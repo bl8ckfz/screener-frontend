@@ -169,8 +169,8 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
     const delayMs = Math.max(500, (nextClose - nowSec + 1) * 1000)
 
     const timer = window.setTimeout(() => {
-      // Small resync to keep candles aligned; limit fetch size
-      loadChartData({ limit: 120 })
+      // Resync to keep candles aligned - use consistent 200 limit
+      loadChartData({ limit: 200 })
     }, delayMs)
 
     return () => clearTimeout(timer)
@@ -180,7 +180,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
   useEffect(() => {
     if (!selectedCoin) return
     const intervalId = window.setInterval(() => {
-      loadChartData({ limit: 150 })
+      loadChartData({ limit: 200 }) // Use consistent 200 limit
     }, 120000) // every 2 minutes
 
     driftTimerRef.current = intervalId
