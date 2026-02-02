@@ -83,11 +83,13 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
     const loadChartData = async () => {
       setIsLoading(true)
       setError(null)
+      console.log(`🔄 Initial load: ${coin.fullSymbol} ${interval} (requesting 200 candles)`)
 
       try {
         const data = await fetchKlines(coin.fullSymbol, interval, 200)
         
         if (!isCancelled) {
+          console.log(`📊 Initial load received: ${data.length} candles`)
           setChartData(data)
         }
       } catch (err) {
@@ -107,45 +109,55 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
     return () => {
       isCancelled = true
     }
-  }, [coin.symbol, coin.pair, interval])
+  }, [coin.fullSymbol, interval])
 
   // Auto-refresh chart data periodically to update the latest candle
   useEffect(() => {
-    console.log('🚀 Starting chart auto-refresh interval')
+    console.log(`🚀 Starting chart auto-refresh for ${coin.fullSymbol} ${interval}`)
     let isCancelled = false
+    let isRefreshing = false
     
     const refreshChartData = async () => {
-      console.log('🔄 Chart refresh triggered')
+      if (isRefreshing) {
+        console.log('⚠️ Skipping refresh - previous fetch still in progress')
+        return
+      }
+      
+      isRefreshing = true
+      console.log(`🔄 Auto-refresh: ${coin.fullSymbol} ${interval} (requesting 200 candles)`)
+      
       try {
         const data = await fetchKlines(coin.fullSymbol, interval, 200)
         
         if (!isCancelled) {
-          console.log(`📊 Fetched ${data.length} candles from API (requested 200)`)
+          console.log(`📊 Auto-refresh received: ${data.length} candles (first: ${data[0]?.time}, last: ${data[data.length-1]?.time})`)
           
-          // Only update if data actually changed to avoid unnecessary re-renders
+          // Only update if we have data
           if (data.length > 0) {
             setChartData(data)
-            console.log(`✅ Chart updated: ${data.length} candles, last=${data[data.length-1]?.close}`)
+            console.log(`✅ Chart updated with ${data.length} candles, last price=${data[data.length-1]?.close}`)
+          } else {
+            console.warn('⚠️ Received 0 candles from API')
           }
         }
       } catch (err) {
-        // Silent fail on refresh - don't show error for background updates
-        console.error('❌ Chart refresh failed:', err)
+        console.error('❌ Auto-refresh failed:', err)
         debug.warn('Chart refresh failed:', err)
+      } finally {
+        isRefreshing = false
       }
     }
 
     // Refresh every 5 seconds to update the current candle
-    console.log('⏱️ Setting up 5-second interval')
     const refreshInterval = window.setInterval(refreshChartData, 5000)
-    console.log('✅ Interval created:', refreshInterval)
+    console.log(`✅ Auto-refresh interval created: every 5s for ${coin.fullSymbol} ${interval}`)
 
     return () => {
-      console.log('🛑 Cleaning up chart refresh interval')
+      console.log(`🛑 Cleaning up auto-refresh for ${coin.fullSymbol} ${interval}`)
       isCancelled = true
       window.clearInterval(refreshInterval)
     }
-  }, [coin.symbol, coin.pair, interval])
+  }, [coin.fullSymbol, interval])
 
   // Fetch VWAP data separately (only when enabled) with efficient caching
   // Uses 15m interval: 7 days = 672 candles (vs 10,080 for 1m)
