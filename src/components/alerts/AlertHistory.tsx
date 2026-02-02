@@ -207,14 +207,70 @@ export function AlertHistory() {
     return colors[severity]
   }
 
-  const getTypeIcon = (type: CombinedAlertType): string => {
-    if (type.includes('bull') || type === 'price_pump') return '📈'
-    if (type.includes('bear') || type === 'price_dump') return '📉'
-    if (type.includes('hunter')) return '🎣'
-    if (type.includes('volume')) return '📊'
-    if (type === 'vcp_signal') return '🎯'
-    if (type === 'fibonacci_break') return '🔢'
-    return '🔔'
+  // Match colors from AlertTimelineChart and TradingChart
+  const ALERT_TYPE_COLORS: Record<string, string> = {
+    // Bullish
+    futures_big_bull_60: '#14532d',
+    futures_pioneer_bull: '#a7f3d0',
+    futures_5_big_bull: '#84cc16',
+    futures_15_big_bull: '#16a34a',
+    futures_bottom_hunter: '#a855f7', // purple hunters
+    
+    // Bearish
+    futures_big_bear_60: '#7f1d1d',
+    futures_pioneer_bear: '#fce7f3',
+    futures_5_big_bear: '#f87171',
+    futures_15_big_bear: '#dc2626',
+    futures_top_hunter: '#a855f7', // purple hunters
+  }
+
+  const getAlertBadge = (type: CombinedAlertType): { text: string; color: string; bgColor: string } => {
+    const cleanType = type.replace(/^futures_/, '')
+    const isBullish = cleanType.includes('bull') || cleanType === 'bottom_hunter'
+    const isHunter = cleanType === 'bottom_hunter' || cleanType === 'top_hunter'
+    
+    // Get color from mapping, fallback to bull/bear default
+    const color = ALERT_TYPE_COLORS[type] || (isBullish ? '#22c55e' : '#ef4444')
+    
+    // Determine badge text
+    let text = ''
+    if (cleanType === 'pioneer_bull' || cleanType === 'pioneer_bear') {
+      text = 'P'
+    } else if (cleanType === '5_big_bull' || cleanType === '5_big_bear') {
+      text = '5'
+    } else if (cleanType === '15_big_bull' || cleanType === '15_big_bear') {
+      text = '15'
+    } else if (cleanType === 'big_bull_60' || cleanType === 'big_bear_60') {
+      text = '60'
+    } else if (cleanType === 'bottom_hunter') {
+      text = 'BH'
+    } else if (cleanType === 'top_hunter') {
+      text = 'TH'
+    } else {
+      // Fallback for legacy/other types
+      text = '?'
+    }
+    
+    return { text, color, bgColor: color }
+  }
+
+  const getAlertDisplayName = (type: CombinedAlertType): string => {
+    const cleanType = type.replace(/^futures_/, '')
+    const names: Record<string, string> = {
+      big_bull_60: '60 Big Bull',
+      big_bear_60: '60 Big Bear',
+      pioneer_bull: 'Pioneer Bull',
+      pioneer_bear: 'Pioneer Bear',
+      '5_big_bull': '5 Big Bull',
+      '5_big_bear': '5 Big Bear',
+      '15_big_bull': '15 Big Bull',
+      '15_big_bear': '15 Big Bear',
+      bottom_hunter: 'Bottom Hunter',
+      top_hunter: 'Top Hunter',
+    }
+    return names[cleanType] || cleanType.split('_').map(w => 
+      w.charAt(0).toUpperCase() + w.slice(1)
+    ).join(' ')
   }
 
   const formatTimestamp = (timestamp: number): string => {
@@ -452,7 +508,11 @@ export function AlertHistory() {
         />
       ) : (
         <div className="space-y-2">
-          {filteredHistory.map((alert) => (
+          {filteredHistory.map((alert) => {
+            const badge = getAlertBadge(alert.type)
+            const isBullish = alert.type.includes('bull') || alert.type === 'futures_bottom_hunter'
+            
+            return (
             <div
               key={alert.id}
               className="rounded-lg border border-gray-700 bg-gray-800/50 p-4 transition-colors hover:border-gray-600 hover:bg-gray-800"
@@ -460,7 +520,20 @@ export function AlertHistory() {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-xl">{getTypeIcon(alert.type)}</span>
+                    {/* Circular badge with symbol */}
+                    <div
+                      className="flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold"
+                      style={{ 
+                        backgroundColor: badge.bgColor,
+                        color: badge.color.includes('f3d0') || badge.color.includes('fce7f3') ? '#000' : '#fff'
+                      }}
+                      title={getAlertDisplayName(alert.type)}
+                    >
+                      <span className="flex items-center gap-0.5">
+                        {badge.text}
+                        {isBullish ? '▲' : '▼'}
+                      </span>
+                    </div>
                     <span className="font-mono font-semibold text-blue-400">
                       {alert.symbol}
                     </span>
@@ -494,7 +567,8 @@ export function AlertHistory() {
                 </div>
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
