@@ -78,7 +78,7 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
           <WatchlistStar symbol={stat.symbol} />
           <div>
             <div className="font-mono text-sm font-semibold text-white">{stat.symbol}</div>
-            <AlertBadges alertTypes={stat.alertTypes} maxVisible={2} latestAlertType={stat.alerts[0]?.alertType} />
+            <AlertBadges alertTypes={stat.alertTypes} maxVisible={4} latestAlertType={stat.alerts[0]?.alertType} />
           </div>
         </div>
         <div className="text-right">
