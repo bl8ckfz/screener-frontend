@@ -33,17 +33,20 @@ export function MobileCoinDrawer({ open, selectedCoin, onClose }: MobileCoinDraw
   if (!open || !selectedCoin) return null
 
   return (
-    <div className="fixed inset-0 z-50 md:hidden">
+    <div className="fixed inset-0 z-50 md:hidden" style={{ maxWidth: '100vw' }}>
       <div className="absolute inset-0 bg-black/80" onClick={onClose} aria-label="Close chart drawer" />
-      <div className="absolute inset-0 bg-gray-900 animate-in slide-in-from-bottom-6 overflow-hidden">
+      <div className="absolute inset-0 bg-gray-900 animate-in slide-in-from-bottom-6 overflow-hidden" style={{ maxWidth: '100vw' }}>
         {/* Header with drag handle */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-1.5 py-1.5 bg-gray-800/95 backdrop-blur-sm border-b border-gray-700 min-h-[40px] max-w-full overflow-hidden">
-          <h2 className="text-[11px] font-semibold text-white truncate flex-1 mr-1">
-            {selectedCoin.symbol}<span className="text-gray-400 text-[9px]">{selectedCoin.pair}</span>
-          </h2>
+        <div className="sticky top-0 z-10 flex items-center justify-between px-1.5 py-1.5 bg-gray-800/95 backdrop-blur-sm border-b border-gray-700 min-h-[40px] w-full" style={{ maxWidth: '100vw', boxSizing: 'border-box' }}>
+          <div className="flex items-center gap-1 min-w-0 flex-1">
+            <span className="text-[11px] font-semibold text-white truncate">
+              {selectedCoin.symbol}
+            </span>
+            <span className="text-gray-400 text-[9px] flex-shrink-0">{selectedCoin.pair}</span>
+          </div>
           <button
             onClick={onClose}
-            className="p-1 rounded bg-red-600 hover:bg-red-700 transition-colors flex-shrink-0"
+            className="p-1 rounded bg-red-600 hover:bg-red-700 transition-colors flex-shrink-0 ml-1"
             aria-label="Close"
           >
             <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -53,7 +56,7 @@ export function MobileCoinDrawer({ open, selectedCoin, onClose }: MobileCoinDraw
         </div>
         
         {/* Scrollable content */}
-        <div className="mobile-drawer-scroll h-[calc(100vh-40px)] overflow-y-auto overscroll-contain w-full max-w-full">
+        <div className="mobile-drawer-scroll h-[calc(100vh-40px)] overflow-y-auto overscroll-contain w-full" style={{ maxWidth: '100vw', boxSizing: 'border-box' }}>
           <ChartSection selectedCoin={selectedCoin} className="pb-safe" />
         </div>
       </div>
