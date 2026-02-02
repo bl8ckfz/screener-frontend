@@ -125,35 +125,6 @@ export async function syncAlertSettingsFromCloud(userId: string) {
 // Watchlists Sync (deprecated - moved to simplified watchlistSymbols array)
 // ============================================================================
 
-// OLD IMPLEMENTATION COMMENTED OUT - uses Watchlist[] type
-/*
-export async function syncWatchlistsToCloud(userId: string, watchlists: Watchlist[]) {
-  // Delete all existing watchlists for this user
-  await supabase.from('watchlists').delete().eq('user_id', userId)
-
-  // Insert all watchlists
-  if (watchlists.length === 0) return []
-
-  const { data, error } = await supabase
-    .from('watchlists')
-    .insert(
-      watchlists.map((wl) => ({
-        id: wl.id,
-        user_id: userId,
-        name: wl.name,
-        color: wl.color,
-        icon: wl.icon,
-        symbols: wl.symbols,
-        created_at: new Date(wl.createdAt).toISOString(),
-        updated_at: new Date(wl.updatedAt).toISOString(),
-      })) as any
-    )
-    .select()
-
-  if (error) throw error
-  return data
-}
-*/
 
 export async function syncWatchlistsFromCloud(_userId: string): Promise<string[]> {
   // TODO: Implement for simplified watchlist
