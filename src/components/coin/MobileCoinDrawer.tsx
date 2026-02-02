@@ -12,8 +12,19 @@ interface MobileCoinDrawerProps {
 export function MobileCoinDrawer({ open, selectedCoin, onClose }: MobileCoinDrawerProps) {
   useEffect(() => {
     if (!open) return
+    
+    // Prevent body scroll and scroll drawer to top
     const previous = document.body.style.overflow
     document.body.style.overflow = 'hidden'
+    
+    // Scroll to top when drawer opens
+    setTimeout(() => {
+      const scrollContainer = document.querySelector('.mobile-drawer-scroll')
+      if (scrollContainer) {
+        scrollContainer.scrollTop = 0
+      }
+    }, 0)
+    
     return () => {
       document.body.style.overflow = previous
     }
@@ -26,13 +37,13 @@ export function MobileCoinDrawer({ open, selectedCoin, onClose }: MobileCoinDraw
       <div className="absolute inset-0 bg-black/80" onClick={onClose} aria-label="Close chart drawer" />
       <div className="absolute inset-0 bg-gray-900 animate-in slide-in-from-bottom-6 overflow-hidden">
         {/* Header with drag handle */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-3 py-2.5 bg-gray-800/95 backdrop-blur-sm border-b border-gray-700 min-h-[48px]">
-          <h2 className="text-sm font-semibold text-white truncate flex-1 mr-2">
-            {selectedCoin.symbol} <span className="text-gray-400 text-xs">/ {selectedCoin.pair}</span>
+        <div className="sticky top-0 z-10 flex items-center justify-between px-2 py-2 bg-gray-800/95 backdrop-blur-sm border-b border-gray-700 min-h-[44px] max-w-full">
+          <h2 className="text-xs font-semibold text-white truncate flex-1 mr-1.5">
+            {selectedCoin.symbol}<span className="text-gray-400 text-[10px] ml-1">/{selectedCoin.pair}</span>
           </h2>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg bg-red-600 hover:bg-red-700 transition-colors flex-shrink-0"
+            className="p-1.5 rounded-lg bg-red-600 hover:bg-red-700 transition-colors flex-shrink-0"
             aria-label="Close"
           >
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -42,7 +53,7 @@ export function MobileCoinDrawer({ open, selectedCoin, onClose }: MobileCoinDraw
         </div>
         
         {/* Scrollable content */}
-        <div className="h-[calc(100vh-48px)] overflow-y-auto overscroll-contain w-full">
+        <div className="mobile-drawer-scroll h-[calc(100vh-44px)] overflow-y-auto overscroll-contain w-full max-w-full">
           <ChartSection selectedCoin={selectedCoin} className="pb-safe" />
         </div>
       </div>

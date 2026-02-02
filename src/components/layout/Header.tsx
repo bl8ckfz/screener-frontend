@@ -21,15 +21,15 @@ export function Header({ title = 'Screener', subtitle, onOpenSettings }: HeaderP
   return (
     <>
       <header className="sticky top-0 z-50 bg-gray-900/95 border-b border-gray-800 backdrop-blur-sm">
-        <div className="w-full max-w-[1920px] mx-auto px-4 py-3 sm:px-6 sm:py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-white">{title}</h1>
+        <div className="w-full max-w-full overflow-hidden px-2 py-2 sm:px-6 sm:py-4 sm:max-w-[1920px] sm:mx-auto">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-sm sm:text-2xl font-bold text-white truncate">{title}</h1>
               {subtitle && (
-                <p className="text-xs sm:text-sm text-gray-400 mt-0.5 sm:mt-1">{subtitle}</p>
+                <p className="text-[10px] sm:text-sm text-gray-400 mt-0.5 sm:mt-1 truncate">{subtitle}</p>
               )}
             </div>
-            <div className="flex items-center space-x-3 sm:space-x-4">
+            <div className="flex items-center space-x-1.5 sm:space-x-4 flex-shrink-0">
               <UserMenu onSignIn={handleOpenAuth} />
               {onOpenSettings && <SettingsButton onClick={onOpenSettings} />}
               <ThemeToggle />
