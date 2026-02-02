@@ -59,8 +59,6 @@ export interface AppConfig {
 
   // Advanced settings
   advanced: {
-    enableDebug: boolean
-    enableAnalytics: boolean
     maxHistoricalSnapshots: number
     cacheExpiration: number // in seconds
   }
@@ -131,8 +129,6 @@ export const DEFAULT_CONFIG: AppConfig = {
     autoRefreshOnFocus: true,
   },
   advanced: {
-    enableDebug: import.meta.env.VITE_ENABLE_DEBUG === 'true',
-    enableAnalytics: import.meta.env.VITE_ENABLE_ANALYTICS === 'true',
     maxHistoricalSnapshots: 10,
     cacheExpiration: 300, // 5 minutes
   },

@@ -5,8 +5,6 @@ interface ImportMetaEnv {
   readonly VITE_REFRESH_INTERVAL: string
   readonly VITE_DEFAULT_PAIR: string
   readonly VITE_DEFAULT_LIST: string
-  readonly VITE_ENABLE_ANALYTICS: string
-  readonly VITE_ENABLE_DEBUG: string
   readonly VITE_MARKETINOUT_URL: string
   readonly VITE_COINGLASS_URL: string
 }
