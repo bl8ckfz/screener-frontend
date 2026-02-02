@@ -295,7 +295,7 @@ function App() {
         {/* Compact Market Summary Bar */}
         <div className="mb-4">
           <div className="bg-gray-700/40 backdrop-blur-sm rounded-lg px-2 md:px-4 py-1.5 md:py-2 border border-gray-600 overflow-hidden">
-            <div className="flex flex-wrap items-center justify-between gap-2 w-full max-w-full">
+            <div className="flex flex-wrap md:flex-nowrap items-center justify-between gap-2 w-full max-w-full">
               <MarketSummary coins={coins ?? undefined} isLoading={isLoading} />
               <div className="flex items-center space-x-2 md:space-x-4 flex-shrink-0">
                 <BackendStatus wsConnected={backendWsConnected} />
