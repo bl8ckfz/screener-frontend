@@ -312,14 +312,14 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
       </div>
 
       {/* Chart Controls */}
-      <div className="flex items-center gap-1 md:gap-2 p-1.5 md:p-4 border-b border-gray-700 overflow-x-auto scrollbar-hide">
+      <div className="flex items-center gap-0.5 md:gap-2 p-1 md:p-4 border-b border-gray-700 overflow-x-auto scrollbar-hide">
         {/* Interval Selector */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           {COMMON_INTERVALS.map((int) => (
             <button
               key={int}
               onClick={() => setInterval(int)}
-              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+              className={`px-1.5 md:px-3 py-0.5 md:py-1 text-[10px] md:text-xs font-medium rounded transition-colors ${
                 interval === int
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
@@ -331,10 +331,10 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
         </div>
 
         {/* Indicator Toggles */}
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex items-center gap-0.5 md:gap-2 ml-auto">
           <button
             onClick={() => setShowWeeklyVWAP(!showWeeklyVWAP)}
-            className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+            className={`px-1.5 md:px-3 py-0.5 md:py-1 text-[10px] md:text-xs font-medium rounded transition-colors ${
               showWeeklyVWAP
                 ? 'bg-purple-600 text-white'
                 : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
@@ -344,7 +344,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
           </button>
           <button
             onClick={() => setShowIchimoku(!showIchimoku)}
-            className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+            className={`px-1.5 md:px-3 py-0.5 md:py-1 text-[10px] md:text-xs font-medium rounded transition-colors ${
               showIchimoku
                 ? 'bg-cyan-600 text-white'
                 : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
@@ -354,7 +354,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
           </button>
           <button
             onClick={() => setShowAlerts(!showAlerts)}
-            className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+            className={`px-1.5 md:px-3 py-0.5 md:py-1 text-[10px] md:text-xs font-medium rounded transition-colors ${
               showAlerts
                 ? 'bg-green-600 text-white'
                 : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
@@ -364,7 +364,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
           </button>
           <button
             onClick={() => setShowBubbles(!showBubbles)}
-            className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+            className={`px-1.5 md:px-3 py-0.5 md:py-1 text-[10px] md:text-xs font-medium rounded transition-colors ${
               showBubbles
                 ? 'bg-orange-600 text-white'
                 : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
@@ -376,8 +376,8 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
       </div>
 
       {/* Trading Chart */}
-      <div className="px-1.5 md:px-4 pt-1.5 md:pt-4 w-full max-w-full overflow-hidden">
-        <div className="bg-gray-900 rounded-lg p-1.5 md:p-3 w-full max-w-full overflow-hidden">
+      <div className="px-1 md:px-4 pt-1 md:pt-4 w-full max-w-full overflow-hidden">
+        <div className="bg-gray-900 rounded-lg p-1 md:p-3 w-full max-w-full overflow-hidden">
           <TradingChart
             data={chartData}
             symbol={selectedCoin.fullSymbol}
@@ -397,9 +397,9 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
       </div>
 
       {/* Alert Timeline Chart */}
-      <div className="px-1.5 md:px-4 pt-1.5 md:pt-4 pb-1.5 md:pb-4 w-full max-w-full overflow-hidden">
-        <div className="bg-gray-900 rounded-lg p-1.5 md:p-3 w-full max-w-full overflow-hidden">
-          <h4 className="text-[10px] md:text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5 md:mb-2">
+      <div className="px-1 md:px-4 pt-1 md:pt-4 pb-1 md:pb-4 w-full max-w-full overflow-hidden">
+        <div className="bg-gray-900 rounded-lg p-1 md:p-3 w-full max-w-full overflow-hidden">
+          <h4 className="text-[10px] md:text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 md:mb-2">
             Alert Timeline (24h)
           </h4>
           <AlertTimelineChart symbol={selectedCoin.symbol} fullSymbol={selectedCoin.fullSymbol} height={100} />
@@ -407,7 +407,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
       </div>
 
       {/* External Links */}
-      <div className="px-1.5 md:px-4 pb-1.5 md:pb-4 w-full max-w-full">
+      <div className="px-1 md:px-4 pb-1 md:pb-4 w-full max-w-full">
         <ExternalLinks coin={selectedCoin} />
       </div>
     </div>
