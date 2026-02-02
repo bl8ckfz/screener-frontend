@@ -7,6 +7,7 @@
  * Replaces direct Binance API calls when VITE_USE_BACKEND_API=true
  */
 
+import { authService } from './authService'
 import type { Alert } from '@/types/alert'
 
 interface UserSettings {
@@ -38,7 +39,7 @@ console.log('🔧 Backend Config:', {
 export const USE_BACKEND_API = import.meta.env.VITE_USE_BACKEND_API === 'true'
 
 /**
- * HTTP request helper with error handling
+ * HTTP request helper with error handling and JWT auth
  */
 async function fetchWithTimeout(
   url: string,
@@ -48,19 +49,38 @@ async function fetchWithTimeout(
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), timeout)
 
+  // Add JWT token if available
+  const token = authService.getToken()
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  }
+  
+  // Add existing headers
+  if (options.headers) {
+    Object.entries(options.headers).forEach(([key, value]) => {
+      headers[key] = String(value)
+    })
+  }
+  
+  // Add auth header if token exists
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
   try {
     const response = await fetch(url, {
       ...options,
       signal: controller.signal,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
+      headers,
     })
 
     clearTimeout(timeoutId)
 
     if (!response.ok) {
+      // If 401 Unauthorized, clear invalid token
+      if (response.status === 401) {
+        authService.logout()
+      }
       throw new Error(`HTTP ${response.status}: ${response.statusText}`)
     }
 

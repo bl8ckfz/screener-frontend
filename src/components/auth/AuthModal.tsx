@@ -1,172 +1,163 @@
-import { debug } from '@/utils/debug'
-import { useEffect, useState, memo } from 'react'
-import { Auth } from '@supabase/auth-ui-react'
-import { ThemeSupa } from '@supabase/auth-ui-shared'
-import { supabase } from '@/config'
-import { Button } from '@/components/ui'
+/**
+ * Login/Register Modal Component
+ * 
+ * Unified modal for user authentication with backend JWT
+ */
+
+import { useState } from 'react'
+import { useAuth } from '@/hooks/useAuth'
 
 interface AuthModalProps {
   isOpen: boolean
   onClose: () => void
+  defaultMode?: 'login' | 'register'
 }
 
-// Memoize appearance config to prevent re-creating on every render
-const authAppearance = {
-  theme: ThemeSupa,
-  variables: {
-    default: {
-      colors: {
-        brand: '#3b82f6',
-        brandAccent: '#2563eb',
-        brandButtonText: 'white',
-        defaultButtonBackground: '#1f2937',
-        defaultButtonBackgroundHover: '#374151',
-        defaultButtonBorder: '#4b5563',
-        defaultButtonText: 'white',
-        dividerBackground: '#4b5563',
-        inputBackground: '#1f2937',
-        inputBorder: '#4b5563',
-        inputBorderHover: '#6b7280',
-        inputBorderFocus: '#3b82f6',
-        inputText: 'white',
-        inputLabelText: '#d1d5db',
-        inputPlaceholder: '#9ca3af',
-        messageText: '#d1d5db',
-        messageTextDanger: '#ef4444',
-        anchorTextColor: '#3b82f6',
-        anchorTextHoverColor: '#2563eb',
-      },
-      space: {
-        spaceSmall: '4px',
-        spaceMedium: '8px',
-        spaceLarge: '16px',
-      },
-      fontSizes: {
-        baseBodySize: '14px',
-        baseInputSize: '14px',
-        baseLabelSize: '14px',
-        baseButtonSize: '14px',
-      },
-      borderWidths: {
-        buttonBorderWidth: '1px',
-        inputBorderWidth: '1px',
-      },
-      radii: {
-        borderRadiusButton: '6px',
-        buttonBorderRadius: '6px',
-        inputBorderRadius: '6px',
-      },
-    },
-  },
-  className: {
-    container: 'auth-container',
-    button: 'auth-button',
-    input: 'auth-input',
-    label: 'auth-label',
-  },
-} as const
+export function AuthModal({ isOpen, onClose, defaultMode = 'login' }: AuthModalProps) {
+  const [mode, setMode] = useState<'login' | 'register'>(defaultMode)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-/**
- * AuthModal - Authentication UI component
- * 
- * Features:
- * - Email/password sign up and sign in
- * - Magic link authentication
- * - Password reset
- * - Uses Supabase Auth UI for consistent experience
- * - Memoized to prevent form input loss during parent re-renders
- */
-function AuthModalComponent({ isOpen, onClose }: AuthModalProps) {
-  const [view, setView] = useState<'sign_in' | 'sign_up'>('sign_in')
+  const { login, register } = useAuth()
 
-  useEffect(() => {
-    // Listen for auth state changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      debug.log('🔐 Auth state change:', event, 'Session:', session?.user?.email || 'none')
-      
-      // Only close on successful sign in with valid session
-      if (event === 'SIGNED_IN' && session?.user) {
-        debug.log('✅ User signed in, closing modal')
-        onClose()
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+
+    try {
+      if (mode === 'login') {
+        await login(email, password)
+      } else {
+        await register(email, password)
       }
-    })
-
-    return () => {
-      subscription.unsubscribe()
+      
+      // Clear form and close on success
+      setEmail('')
+      setPassword('')
+      onClose()
+    } catch (err: any) {
+      setError(err.message || 'An error occurred')
+    } finally {
+      setLoading(false)
     }
-  }, []) // onClose is stable, no need to re-subscribe
+  }
+
+  const toggleMode = () => {
+    setMode(mode === 'login' ? 'register' : 'login')
+    setError('')
+  }
 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="relative w-full max-w-md rounded-lg border border-gray-700 bg-surface-dark p-6 shadow-2xl">
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute right-4 top-4 text-gray-400 hover:text-white transition-colors"
-          aria-label="Close"
-        >
-          <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-[#1a1a2e] border border-gray-700 rounded-lg shadow-2xl w-full max-w-md p-6">
         {/* Header */}
-        <div className="mb-6">
+        <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-white">
-            {view === 'sign_in' ? 'Sign In' : 'Create Account'}
+            {mode === 'login' ? 'Login' : 'Create Account'}
           </h2>
-          <p className="mt-1 text-sm text-gray-400">
-            {view === 'sign_in'
-              ? 'Sign in to sync your settings across devices'
-              : 'Create an account to backup your watchlists and alerts'}
-          </p>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-white transition-colors"
+            aria-label="Close"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
-        {/* Auth UI */}
-        <Auth
-          supabaseClient={supabase}
-          view={view}
-          appearance={authAppearance}
-          providers={[]}
-          redirectTo={`${window.location.origin}/`}
-        />
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Email */}
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full px-4 py-2 bg-[#0f0f23] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="you@example.com"
+              autoComplete="email"
+            />
+          </div>
 
-        {/* Toggle view */}
-        <div className="mt-4 text-center text-sm">
-          {view === 'sign_in' ? (
-            <p className="text-gray-400">
-              Don't have an account?{' '}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setView('sign_up')}
-                className="text-blue-400 hover:text-blue-300"
-              >
-                Sign up
-              </Button>
-            </p>
-          ) : (
-            <p className="text-gray-400">
-              Already have an account?{' '}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setView('sign_in')}
-                className="text-blue-400 hover:text-blue-300"
-              >
-                Sign in
-              </Button>
-            </p>
+          {/* Password */}
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={8}
+              className="w-full px-4 py-2 bg-[#0f0f23] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="••••••••"
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+            />
+            {mode === 'register' && (
+              <p className="mt-1 text-xs text-gray-400">Minimum 8 characters</p>
+            )}
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3 text-red-400 text-sm">
+              {error}
+            </div>
           )}
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors"
+          >
+            {loading ? (
+              <span className="flex items-center justify-center">
+                <svg className="animate-spin h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                {mode === 'login' ? 'Logging in...' : 'Creating account...'}
+              </span>
+            ) : (
+              mode === 'login' ? 'Login' : 'Create Account'
+            )}
+          </button>
+        </form>
+
+        {/* Toggle Mode */}
+        <div className="mt-6 text-center">
+          <button
+            type="button"
+            onClick={toggleMode}
+            className="text-sm text-gray-400 hover:text-white transition-colors"
+          >
+            {mode === 'login' ? (
+              <>
+                Don't have an account? <span className="text-blue-400 font-medium">Sign up</span>
+              </>
+            ) : (
+              <>
+                Already have an account? <span className="text-blue-400 font-medium">Login</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
     </div>
   )
 }
 
-// Export memoized version to prevent unnecessary re-renders
-export const AuthModal = memo(AuthModalComponent)

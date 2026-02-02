@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useStore } from '@/hooks/useStore'
+import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui'
 
 interface UserMenuProps {
@@ -12,12 +12,11 @@ interface UserMenuProps {
  * Features:
  * - Shows sign in button when logged out
  * - Shows user email and sign out button when logged in
- * - Displays sync status
+ * - Integrates with backend JWT authentication
  */
 export function UserMenu({ onSignIn }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const user = useStore((state) => state.user)
-  const signOut = useStore((state) => state.signOut)
+  const { user, logout, loading } = useAuth()
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -27,6 +26,12 @@ export function UserMenu({ onSignIn }: UserMenuProps) {
       return () => document.removeEventListener('click', handleClickOutside)
     }
   }, [isOpen])
+
+  if (loading) {
+    return (
+      <div className="h-9 w-20 bg-surface-dark rounded-lg animate-pulse" />
+    )
+  }
 
   if (!user) {
     return (
@@ -71,12 +76,17 @@ export function UserMenu({ onSignIn }: UserMenuProps) {
           <div className="border-b border-gray-700 p-3">
             <p className="text-xs text-gray-400">Signed in as</p>
             <p className="mt-1 text-sm font-medium text-white truncate">{user.email}</p>
+            {user.created_at && (
+              <p className="mt-1 text-xs text-gray-500">
+                Member since {new Date(user.created_at).toLocaleDateString()}
+              </p>
+            )}
           </div>
 
           <div className="p-2">
             <button
               onClick={() => {
-                signOut()
+                logout()
                 setIsOpen(false)
               }}
               className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-300 hover:bg-surface-light hover:text-white transition-colors"
