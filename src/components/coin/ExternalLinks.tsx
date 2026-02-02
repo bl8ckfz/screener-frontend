@@ -48,20 +48,20 @@ export function ExternalLinks({ coin }: ExternalLinksProps) {
   }
 
   return (
-    <div className="flex items-center gap-2 flex-wrap">
+    <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-safe">
       {links.map((link) => (
         <button
           key={link.name}
           onClick={() => handleLinkClick(link.url)}
-          className="flex items-center gap-1.5 bg-gray-700/50 hover:bg-gray-600 rounded-lg px-3 py-2 transition-colors group"
+          className="flex items-center gap-1 bg-gray-700/50 hover:bg-gray-600 rounded-lg px-2 py-1.5 md:px-3 md:py-2 transition-colors group flex-shrink-0"
           title={link.description}
         >
-          <span className="text-base">{link.icon}</span>
-          <span className="text-xs text-white group-hover:text-blue-400 transition-colors">
+          <span className="text-sm md:text-base">{link.icon}</span>
+          <span className="text-[10px] md:text-xs text-white group-hover:text-blue-400 transition-colors whitespace-nowrap">
             {link.name}
           </span>
           <svg
-            className="w-3 h-3 text-gray-400 group-hover:text-blue-400 transition-colors"
+            className="w-2.5 h-2.5 md:w-3 md:h-3 text-gray-400 group-hover:text-blue-400 transition-colors"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

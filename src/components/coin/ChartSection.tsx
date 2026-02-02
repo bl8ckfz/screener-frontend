@@ -312,7 +312,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
       </div>
 
       {/* Chart Controls */}
-      <div className="flex flex-wrap items-center gap-1 md:gap-2 p-1.5 md:p-4 border-b border-gray-700">
+      <div className="flex items-center gap-1 md:gap-2 p-1.5 md:p-4 border-b border-gray-700 overflow-x-auto scrollbar-hide">
         {/* Interval Selector */}
         <div className="flex items-center gap-1">
           {COMMON_INTERVALS.map((int) => (
