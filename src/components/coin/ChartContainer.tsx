@@ -85,7 +85,7 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
       setError(null)
 
       try {
-        const data = await fetchKlines(coin.fullSymbol, interval, 500)
+        const data = await fetchKlines(coin.fullSymbol, interval, 200)
         
         if (!isCancelled) {
           setChartData(data)
@@ -117,7 +117,7 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
     const refreshChartData = async () => {
       console.log('🔄 Chart refresh triggered')
       try {
-        const data = await fetchKlines(coin.fullSymbol, interval, 500)
+        const data = await fetchKlines(coin.fullSymbol, interval, 200)
         
         if (!isCancelled) {
           // Force React to detect change by creating new array reference with timestamp

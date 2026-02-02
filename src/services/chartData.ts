@@ -37,7 +37,7 @@ const USE_BACKEND_API = import.meta.env.VITE_USE_BACKEND_API === 'true'
 export async function fetchKlines(
   symbol: string,
   interval: KlineInterval,
-  limit: number = 500
+  limit: number = 200
 ): Promise<Candlestick[]> {
   try {
     const safeLimit = Math.min(limit, 1500)
