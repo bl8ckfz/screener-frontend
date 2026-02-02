@@ -72,7 +72,15 @@ export function UserMenu({ onSignIn }: UserMenuProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-64 rounded-lg border border-gray-700 bg-surface-dark shadow-2xl z-[1000]">
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-[100]"
+            onClick={() => setIsOpen(false)}
+          />
+
+          {/* Dropdown Menu */}
+          <div className="absolute right-0 top-full mt-2 w-64 rounded-lg border border-gray-700 bg-surface-dark shadow-2xl z-[200]">
           <div className="border-b border-gray-700 p-3">
             <p className="text-xs text-gray-400">Signed in as</p>
             <p className="mt-1 text-sm font-medium text-white truncate">{user.email}</p>
@@ -98,6 +106,7 @@ export function UserMenu({ onSignIn }: UserMenuProps) {
             </button>
           </div>
         </div>
+        </>
       )}
     </div>
   )
