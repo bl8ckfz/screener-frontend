@@ -263,7 +263,7 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
               <td className="py-1.5 px-2">
                 <AlertBadges 
                   alertTypes={stat.alertTypes} 
-                  maxVisible={2}
+                  maxVisible={4}
                   latestAlertType={stat.alerts[0]?.alertType}
                 />
               </td>
@@ -327,7 +327,7 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
               <td className="py-1.5 px-2">
                 <AlertBadges 
                   alertTypes={stat.alertTypes} 
-                  maxVisible={2}
+                  maxVisible={4}
                   latestAlertType={stat.alerts[0]?.alertType}
                 />
               </td>
