@@ -312,14 +312,14 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
       </div>
 
       {/* Chart Controls */}
-      <div className="flex items-center gap-0.5 md:gap-2 p-1 md:p-4 border-b border-gray-700 overflow-x-auto scrollbar-hide">
+      <div className="flex items-center gap-0.5 md:gap-2 px-1 md:px-4 py-0.5 md:py-2 border-b border-gray-700 overflow-x-auto scrollbar-hide">
         {/* Interval Selector */}
         <div className="flex items-center gap-0.5">
           {COMMON_INTERVALS.map((int) => (
             <button
               key={int}
               onClick={() => setInterval(int)}
-              className={`px-1.5 md:px-3 py-0.5 md:py-1 text-[10px] md:text-xs font-medium rounded transition-colors ${
+              className={`px-1.5 md:px-3 py-0 md:py-0.5 text-[10px] md:text-xs font-medium rounded transition-colors ${
                 interval === int
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
@@ -334,7 +334,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
         <div className="flex items-center gap-0.5 md:gap-2 ml-auto">
           <button
             onClick={() => setShowWeeklyVWAP(!showWeeklyVWAP)}
-            className={`px-1.5 md:px-3 py-0.5 md:py-1 text-[10px] md:text-xs font-medium rounded transition-colors ${
+            className={`px-1.5 md:px-3 py-0 md:py-0.5 text-[10px] md:text-xs font-medium rounded transition-colors ${
               showWeeklyVWAP
                 ? 'bg-purple-600 text-white'
                 : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
@@ -344,7 +344,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
           </button>
           <button
             onClick={() => setShowIchimoku(!showIchimoku)}
-            className={`px-1.5 md:px-3 py-0.5 md:py-1 text-[10px] md:text-xs font-medium rounded transition-colors ${
+            className={`px-1.5 md:px-3 py-0 md:py-0.5 text-[10px] md:text-xs font-medium rounded transition-colors ${
               showIchimoku
                 ? 'bg-cyan-600 text-white'
                 : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
@@ -354,7 +354,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
           </button>
           <button
             onClick={() => setShowAlerts(!showAlerts)}
-            className={`px-1.5 md:px-3 py-0.5 md:py-1 text-[10px] md:text-xs font-medium rounded transition-colors ${
+            className={`px-1.5 md:px-3 py-0 md:py-0.5 text-[10px] md:text-xs font-medium rounded transition-colors ${
               showAlerts
                 ? 'bg-green-600 text-white'
                 : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
@@ -364,7 +364,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
           </button>
           <button
             onClick={() => setShowBubbles(!showBubbles)}
-            className={`px-1.5 md:px-3 py-0.5 md:py-1 text-[10px] md:text-xs font-medium rounded transition-colors ${
+            className={`px-1.5 md:px-3 py-0 md:py-0.5 text-[10px] md:text-xs font-medium rounded transition-colors ${
               showBubbles
                 ? 'bg-orange-600 text-white'
                 : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
@@ -381,7 +381,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
           <TradingChart
             data={chartData}
             symbol={selectedCoin.fullSymbol}
-            height={220} // Further reduced for mobile viewport
+            height={260} // Increased from 220px (controls are smaller now)
             livePrice={selectedCoin.lastPrice}
             showVolume={true}
             showWeeklyVWAP={showWeeklyVWAP}

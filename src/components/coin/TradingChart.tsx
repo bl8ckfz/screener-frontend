@@ -824,43 +824,6 @@ export function TradingChart({
           </div>
         </div>
       )}
-      
-      {/* Chart Info */}
-      <div className="mt-2 flex items-center justify-between text-xs text-text-tertiary">
-        <div>{symbol} • {data.length} candles</div>
-        
-        {/* Indicator Legend */}
-        {(showWeeklyVWAP || showIchimoku) && (
-          <div className="flex items-center gap-3">
-            {showWeeklyVWAP && (
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-0.5 bg-amber-500"></div>
-                <span>Weekly VWAP</span>
-              </div>
-            )}
-            {showIchimoku && ichimokuData.length > 0 && (
-              <>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-0.5 bg-blue-500"></div>
-                  <span>Tenkan</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-0.5 bg-red-500"></div>
-                  <span>Kijun</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-0.5 bg-gray-400"></div>
-                  <span>Cloud</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-0.5 bg-purple-500 border-t border-dashed border-purple-500"></div>
-                  <span>Chikou</span>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-      </div>
     </div>
   )
 }
