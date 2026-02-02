@@ -294,13 +294,13 @@ function App() {
       >
         {/* Compact Market Summary Bar */}
         <div className="mb-4">
-          <div className="bg-gray-700/40 backdrop-blur-sm rounded-lg px-4 py-2 border border-gray-600">
-            <div className="flex items-center justify-between">
+          <div className="bg-gray-700/40 backdrop-blur-sm rounded-lg px-2 md:px-4 py-1.5 md:py-2 border border-gray-600 overflow-hidden">
+            <div className="flex flex-wrap items-center justify-between gap-2 w-full max-w-full">
               <MarketSummary coins={coins ?? undefined} isLoading={isLoading} />
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 md:space-x-4 flex-shrink-0">
                 <BackendStatus wsConnected={backendWsConnected} />
                 {error && (
-                  <div className="text-xs text-error-text bg-error-bg border border-error-border rounded px-2 py-1">
+                  <div className="text-[10px] md:text-xs text-error-text bg-error-bg border border-error-border rounded px-1.5 md:px-2 py-0.5 md:py-1 truncate max-w-[150px] md:max-w-none">
                     Backend Error: {error instanceof Error ? error.message : 'Unknown error'}
                   </div>
                 )}
