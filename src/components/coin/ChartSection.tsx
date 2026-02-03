@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { TradingChart } from './TradingChart'
 import { AlertTimelineChart } from './AlertTimelineChart'
+import { AlertHeatmapTimeline } from '@/components/alerts'
 import { ExternalLinks } from './ExternalLinks'
 import { fetchKlines, calculateIchimoku, type KlineInterval, type IchimokuData, COMMON_INTERVALS, INTERVAL_LABELS } from '@/services/chartData'
 import { alertHistoryService } from '@/services/alertHistoryService'
@@ -405,7 +406,18 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
         </div>
       </div>
 
-      {/* Alert Timeline Chart */}
+      {/* Alert Heatmap Timeline - NEW: Shows all alerts with intensity visualization */}
+      <div className="px-1 md:px-4 pt-1 md:pt-4 w-full max-w-full overflow-hidden">
+        <div className="bg-gray-900 rounded-lg p-1 md:p-3 w-full max-w-full overflow-hidden">
+          <AlertHeatmapTimeline 
+            symbol={selectedCoin.symbol} 
+            fullSymbol={selectedCoin.fullSymbol}
+            timeRange={60 * 60 * 1000} // 1 hour
+          />
+        </div>
+      </div>
+
+      {/* Alert Timeline Chart - Original dot visualization */}
       <div className="px-1 md:px-4 pt-1 md:pt-4 pb-1 md:pb-4 w-full max-w-full overflow-hidden">
         <div className="bg-gray-900 rounded-lg p-1 md:p-3 w-full max-w-full overflow-hidden">
           <h4 className="text-[10px] md:text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 md:mb-2">
