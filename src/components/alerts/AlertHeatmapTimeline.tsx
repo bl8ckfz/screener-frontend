@@ -1,15 +1,11 @@
 import { useState, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { alertHistory } from '@/services/alertHistory'
-import { alertHistoryService } from '@/services/alertHistoryService'
-import { USE_BACKEND_API } from '@/services/backendApi'
 import type { AlertHistoryEntry } from '@/types/alertHistory'
-import type { AlertHistoryItem, CombinedAlertType } from '@/types/alert'
-import { useStore } from '@/hooks/useStore'
+import type { Alert } from '@/types/alert'
 
 interface AlertHeatmapTimelineProps {
   symbol: string
   fullSymbol?: string
+  alerts?: Alert[] // Real-time WebSocket alerts (no HTTP polling)
   timeRange?: number // in milliseconds, default 60 minutes
 }
 
@@ -119,29 +115,6 @@ const formatTimeShort = (timestamp: number): string => {
   })
 }
 
-function normalizeSymbol(symbol: string): string {
-  if (symbol.endsWith('USDT')) return symbol.replace('USDT', '')
-  if (symbol.endsWith('FDUSD')) return symbol.replace('FDUSD', '')
-  if (symbol.endsWith('TRY')) return symbol.replace('TRY', '')
-  return symbol
-}
-
-function toAlertHistoryEntry(alert: AlertHistoryItem): AlertHistoryEntry {
-  const normalizedSymbol = normalizeSymbol(alert.symbol)
-  return {
-    id: alert.id || `${alert.timestamp}-${normalizedSymbol}-${alert.type}`,
-    symbol: normalizedSymbol,
-    alertType: alert.type as CombinedAlertType,
-    timestamp: alert.timestamp,
-    priceAtTrigger: alert.value ?? 0,
-    changePercent: 0,
-    metadata: {
-      value: alert.value,
-      threshold: alert.threshold,
-    },
-  }
-}
-
 /**
  * Get intensity color class based on alert count in bucket
  */
@@ -166,42 +139,39 @@ const getIntensityColor = (count: number, alertType: string): string => {
 export function AlertHeatmapTimeline({ 
   symbol, 
   fullSymbol,
+  alerts = [], // Real-time WebSocket alerts
   timeRange = 60 * 60 * 1000 // Default 1 hour
 }: AlertHeatmapTimelineProps) {
   const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set())
-  const alertHistoryRefresh = useStore((state) => state.alertHistoryRefresh)
   
   const querySymbol = fullSymbol || symbol
 
-  // Fetch backend alerts
-  const backendAlertsQuery = useQuery({
-    queryKey: ['backendAlerts', querySymbol],
-    queryFn: () => alertHistory.getAllBySymbol(querySymbol),
-    enabled: USE_BACKEND_API && !!querySymbol,
-    staleTime: 10000, // Refresh every 10s to catch new alerts
-    refetchInterval: 10000,
-    retry: 2,
-  })
-
-  const backendEntries = useMemo(() => {
-    if (!USE_BACKEND_API) return []
-    const alerts = backendAlertsQuery.data || []
-    return alerts.map((alert) => toAlertHistoryEntry(alert))
-  }, [backendAlertsQuery.data])
-
-  const localEntries = useMemo(() => {
-    if (USE_BACKEND_API) return []
-    return alertHistoryService.getHistory()
-  }, [alertHistoryRefresh])
+  // Use real-time WebSocket alerts (NO HTTP POLLING)
+  const realtimeEntries = useMemo(() => {
+    // Filter alerts for this symbol and convert to AlertHistoryEntry format
+    return alerts
+      .filter(alert => alert.symbol === querySymbol)
+      .map(alert => ({
+        id: alert.id,
+        symbol: alert.symbol,
+        alertType: alert.type,
+        timestamp: alert.timestamp,
+        priceAtTrigger: alert.value,
+        changePercent: 0, // Not available from WebSocket
+        metadata: {
+          value: alert.value,
+          threshold: alert.threshold,
+        },
+      }))
+  }, [alerts, querySymbol])
 
   // Filter alerts for this symbol in the time range
   const filteredAlerts = useMemo(() => {
     const cutoff = Date.now() - timeRange
-    const allAlerts = USE_BACKEND_API ? backendEntries : localEntries
-    return allAlerts.filter(
-      (entry) => entry.symbol === symbol && entry.timestamp >= cutoff
+    return realtimeEntries.filter(
+      (entry) => entry.timestamp >= cutoff
     ).sort((a, b) => b.timestamp - a.timestamp) // Sort by time descending (newest first)
-  }, [symbol, backendEntries, localEntries, timeRange])
+  }, [realtimeEntries, timeRange])
 
   // Group alerts by type and bucket into 1-minute intervals
   const groupedAlerts = useMemo(() => {

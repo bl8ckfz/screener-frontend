@@ -41,11 +41,16 @@ function App() {
   const alertStats = useAlertStats(coins || [])
   
   // Backend WebSocket alerts (re-enabled)
-  // Alert history is still loaded via AlertHistory component using HTTP API
+  // Alerts are added to global store in real-time
+  const addAlert = useStore((state) => state.addAlert)
   const { isConnected: backendWsConnected } = useBackendAlerts({
     enabled: true,
     autoConnect: true,
-    onAlert: (alert) => debug.log('🚨 Backend alert:', alert.symbol, alert.type)
+    onAlert: (alert) => {
+      debug.log('🚨 Backend alert (WebSocket):', alert.symbol, alert.type)
+      // Add to global store for real-time display (no cooldown, no deduplication)
+      addAlert(alert)
+    }
   })
   
   // Auth state

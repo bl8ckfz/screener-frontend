@@ -71,7 +71,9 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
     return filtered
   }, [allBubbles, bubbleTimeframe, bubbleSize])
   
-  // Get alerts for current coin from history - updates reactively when alerts change
+  // Get alerts for current coin from global store (WebSocket alerts)
+  // NO HTTP POLLING - using real-time WebSocket data
+  const activeAlerts = useStore((state) => state.activeAlerts)
   const alertHistoryRefresh = useStore((state) => state.alertHistoryRefresh)
   
   const backendAlertsQuery = useQuery({
@@ -412,6 +414,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
           <AlertHeatmapTimeline 
             symbol={selectedCoin.symbol} 
             fullSymbol={selectedCoin.fullSymbol}
+            alerts={activeAlerts} 
             timeRange={60 * 60 * 1000} // 1 hour
           />
         </div>
