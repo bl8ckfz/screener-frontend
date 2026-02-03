@@ -66,11 +66,10 @@ export function useBackendAlerts(
    * Transform backend alert to frontend Alert type
    */
   const transformBackendAlert = useCallback((backendAlert: BackendAlert): Alert => {
-    const isBearish = backendAlert.rule_type.toLowerCase().includes('bear')
     return {
       id: backendAlert.id,
       symbol: backendAlert.symbol,
-      type: isBearish ? 'futures_big_bear_60' : 'futures_big_bull_60',
+      type: backendAlert.rule_type as Alert['type'], // Use actual rule_type from backend
       severity: 'high' as const,
       title: backendAlert.description,
       message: `${backendAlert.symbol}: ${backendAlert.description}`,
