@@ -157,6 +157,14 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
     return map[ivl] || 300
   }, [])
 
+  // Calculate heatmap timeRange to match chart's visible time
+  // Chart shows 200 candles at current interval
+  const heatmapTimeRange = useMemo(() => {
+    const intervalSeconds = getIntervalSeconds(interval)
+    const chartTimeSpan = 200 * intervalSeconds * 1000 // 200 candles in milliseconds
+    return chartTimeSpan
+  }, [interval, getIntervalSeconds])
+
   const loadChartData = useCallback(
     async (options?: { limit?: number }) => {
       if (!selectedCoin) return
@@ -449,7 +457,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
             symbol={selectedCoin.symbol} 
             fullSymbol={selectedCoin.fullSymbol}
             alerts={combinedAlerts} 
-            timeRange={60 * 60 * 1000} // 1 hour
+            timeRange={heatmapTimeRange} // Match chart's visible time (200 candles)
           />
         </div>
       </div>
