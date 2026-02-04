@@ -107,6 +107,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
     if (!selectedCoin) return []
 
     // Transform historical AlertHistoryEntry to Alert type
+    // coinAlerts is already filtered for the selected symbol (normalized)
     const historicalAlerts: Alert[] = coinAlerts.map((entry) => ({
       id: entry.id,
       symbol: selectedCoin.fullSymbol, // Use fullSymbol for consistency with WebSocket
@@ -132,7 +133,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
     historicalAlerts.forEach((alert) => alertMap.set(alert.id, alert))
     realtimeAlerts.forEach((alert) => alertMap.set(alert.id, alert))
 
-    return Array.from(alertMap.values())
+    return Array.from(alertMap.values()).sort((a, b) => b.timestamp - a.timestamp)
   }, [selectedCoin, coinAlerts, activeAlerts])
 
   const getIntervalSeconds = useCallback((ivl: KlineInterval) => {
