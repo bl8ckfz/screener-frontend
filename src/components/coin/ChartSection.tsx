@@ -135,9 +135,14 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
 
     // Filter to last 60 minutes and sort
     const cutoff = Date.now() - (60 * 60 * 1000) // 60 minutes
-    return Array.from(alertMap.values())
+    const filtered = Array.from(alertMap.values())
       .filter(alert => alert.timestamp >= cutoff)
       .sort((a, b) => b.timestamp - a.timestamp)
+    
+    console.log(`🔍 ChartSection combinedAlerts: ${filtered.length} total alerts for ${selectedCoin.fullSymbol}`)
+    console.log('Alert types:', filtered.map(a => `${a.type} at ${new Date(a.timestamp).toLocaleTimeString()}`))
+    
+    return filtered
   }, [selectedCoin, coinAlerts, activeAlerts])
 
   const getIntervalSeconds = useCallback((ivl: KlineInterval) => {

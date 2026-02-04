@@ -149,7 +149,7 @@ export function AlertHeatmapTimeline({
   // Use real-time WebSocket alerts (NO HTTP POLLING)
   const realtimeEntries = useMemo(() => {
     // Filter alerts for this symbol and convert to AlertHistoryEntry format
-    return alerts
+    const entries = alerts
       .filter(alert => alert.symbol === querySymbol)
       .map(alert => ({
         id: alert.id,
@@ -163,6 +163,11 @@ export function AlertHeatmapTimeline({
           threshold: alert.threshold,
         },
       }))
+    
+    console.log(`🔍 AlertHeatmapTimeline: Received ${alerts.length} alerts, filtered to ${entries.length} for ${querySymbol}`)
+    console.log('Alert types:', entries.map(e => `${e.alertType} at ${new Date(e.timestamp).toLocaleTimeString()}`))
+    
+    return entries
   }, [alerts, querySymbol])
 
   // Filter alerts for this symbol in the time range
