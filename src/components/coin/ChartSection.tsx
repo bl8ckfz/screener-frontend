@@ -99,9 +99,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
   const coinAlerts = useMemo(() => {
     if (!selectedCoin) return []
     const allAlerts = USE_BACKEND_API ? backendEntries : localEntries
-    const filtered = allAlerts.filter((alert) => alert.symbol === selectedCoin.symbol)
-    console.log(`🔍 coinAlerts for ${selectedCoin.symbol}: ${filtered.length} from ${allAlerts.length} total`)
-    return filtered
+    return allAlerts.filter((alert) => alert.symbol === selectedCoin.symbol)
   }, [selectedCoin?.symbol, backendEntries, localEntries])
 
   // Merge ALL historical backend alerts with real-time WebSocket alerts (no time filter)
@@ -125,28 +123,18 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
       source: 'main' as const,
     }))
 
-    console.log(`🔍 Historical alerts from coinAlerts: ${historicalAlerts.length}`)
-    console.log('IDs:', historicalAlerts.map(a => a.id))
-    console.log('Timestamps:', historicalAlerts.map(a => new Date(a.timestamp).toLocaleTimeString()))
-
     // Filter WebSocket alerts for current symbol
     const realtimeAlerts = activeAlerts.filter(
       (alert) => alert.symbol === selectedCoin.fullSymbol
     )
-
-    console.log(`🔍 WebSocket alerts: ${realtimeAlerts.length}`)
 
     // Merge and deduplicate by ID (WebSocket alerts take precedence)
     const alertMap = new Map<string, Alert>()
     historicalAlerts.forEach((alert) => alertMap.set(alert.id, alert))
     realtimeAlerts.forEach((alert) => alertMap.set(alert.id, alert))
 
-    const combined = Array.from(alertMap.values()).sort((a, b) => b.timestamp - a.timestamp)
-    console.log(`🔍 After deduplication: ${combined.length} alerts`)
-    console.log('Final IDs:', combined.map(a => a.id))
-
     // Return ALL alerts (no time filter) sorted by timestamp
-    return combined
+    return Array.from(alertMap.values()).sort((a, b) => b.timestamp - a.timestamp)
   }, [selectedCoin, coinAlerts, activeAlerts])
 
   // Filter to last 60 minutes for heatmap (better visualization density)

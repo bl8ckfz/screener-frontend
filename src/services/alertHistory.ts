@@ -52,9 +52,6 @@ export class AlertHistory {
         limit: 100,
       }) as unknown as BackendAlert[]
       
-      console.log(`🔍 Backend returned ${alerts.length} alerts for ${symbol}`)
-      console.log('Backend IDs:', alerts.slice(0, 15).map(a => a.id))
-      
       return alerts.map(alert => this.transformBackendAlert(alert))
     } catch (error) {
       console.error(`Failed to fetch alerts for ${symbol}:`, error)
