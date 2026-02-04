@@ -711,25 +711,37 @@ export function TradingChart({
       debug.log(`🎯 Processing ${alerts.length} alerts for markers`)
       debug.log('Alert types:', alerts.map(a => a.alertType))
       
-      const markers: SeriesMarker<Time>[] = alerts
+      // Deduplicate alerts: one arrow per alert type per candle
+      // Key format: "time_alertType" to ensure unique markers
+      const uniqueAlertMap = new Map<string, AlertHistoryEntry>()
+      
+      alerts.forEach(alert => {
+        const alertTime = Math.floor(alert.timestamp / 1000)
+        const closestCandle = findClosestCandle(alertTime, data)
+        
+        if (!closestCandle) return
+        
+        const candleTime = typeof closestCandle.time === 'number' ? closestCandle.time : Number(closestCandle.time)
+        const timeDiff = Math.abs(candleTime - alertTime)
+        
+        // Skip if alert is more than 5 minutes away from any candle
+        if (timeDiff > 300) return
+        
+        // Deduplicate key: candle time + alert type
+        const key = `${candleTime}_${alert.alertType}`
+        
+        // Keep first occurrence of each alert type per candle
+        if (!uniqueAlertMap.has(key)) {
+          uniqueAlertMap.set(key, alert)
+        }
+      })
+      
+      debug.log(`🎯 Deduplicated ${alerts.length} alerts to ${uniqueAlertMap.size} unique markers`)
+      
+      const markers: SeriesMarker<Time>[] = Array.from(uniqueAlertMap.values())
         .map(alert => {
-          // Convert alert timestamp (ms) to candle time (seconds)
           const alertTime = Math.floor(alert.timestamp / 1000)
-          const closestCandle = findClosestCandle(alertTime, data)
-          
-          if (!closestCandle) {
-            debug.warn(`⚠️  No candle found for alert at ${new Date(alert.timestamp).toISOString()}`)
-            return null
-          }
-          
-          const candleTime = typeof closestCandle.time === 'number' ? closestCandle.time : Number(closestCandle.time)
-          const timeDiff = Math.abs(candleTime - alertTime)
-          
-          // Skip if alert is more than 5 minutes away from any candle
-          if (timeDiff > 300) {
-            debug.warn(`⚠️  Alert too far from candles (${Math.floor(timeDiff / 60)}m away)`)
-            return null
-          }
+          const closestCandle = findClosestCandle(alertTime, data)!
           
           const style = getAlertMarkerStyle(alert.alertType)
           const size = getAlertMarkerSize(alert.alertType)
@@ -745,7 +757,6 @@ export function TradingChart({
             size,
           } as SeriesMarker<Time>
         })
-        .filter((marker): marker is SeriesMarker<Time> => marker !== null)
 
       debug.log(`📍 Setting ${markers.length} alert markers on chart`)
       
@@ -803,18 +814,33 @@ export function TradingChart({
       
       // Combine alert and bubble markers
       if (showAlerts && alerts.length > 0) {
-        // Get existing alert markers
-        const alertMarkers: SeriesMarker<Time>[] = alerts
+        // Deduplicate alerts: one arrow per alert type per candle
+        const uniqueAlertMap = new Map<string, AlertHistoryEntry>()
+        
+        alerts.forEach(alert => {
+          const alertTime = Math.floor(alert.timestamp / 1000)
+          const closestCandle = findClosestCandle(alertTime, data)
+          
+          if (!closestCandle) return
+          
+          const candleTime = typeof closestCandle.time === 'number' ? closestCandle.time : Number(closestCandle.time)
+          const timeDiff = Math.abs(candleTime - alertTime)
+          
+          if (timeDiff > 300) return
+          
+          // Deduplicate key: candle time + alert type
+          const key = `${candleTime}_${alert.alertType}`
+          
+          if (!uniqueAlertMap.has(key)) {
+            uniqueAlertMap.set(key, alert)
+          }
+        })
+        
+        // Get deduplicated alert markers
+        const alertMarkers: SeriesMarker<Time>[] = Array.from(uniqueAlertMap.values())
           .map(alert => {
             const alertTime = Math.floor(alert.timestamp / 1000)
-            const closestCandle = findClosestCandle(alertTime, data)
-            
-            if (!closestCandle) return null
-            
-            const candleTime = typeof closestCandle.time === 'number' ? closestCandle.time : Number(closestCandle.time)
-            const timeDiff = Math.abs(candleTime - alertTime)
-            
-            if (timeDiff > 300) return null
+            const closestCandle = findClosestCandle(alertTime, data)!
             
             const style = getAlertMarkerStyle(alert.alertType)
             const size = getAlertMarkerSize(alert.alertType)
@@ -827,7 +853,6 @@ export function TradingChart({
               size,
             } as SeriesMarker<Time>
           })
-          .filter((marker): marker is SeriesMarker<Time> => marker !== null)
         
         // Combine both types of markers
         const combinedMarkers = [...alertMarkers, ...bubbleMarkers]
