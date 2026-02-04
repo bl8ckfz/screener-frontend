@@ -31,7 +31,7 @@ export class AlertHistory {
   async getHistory(): Promise<AlertHistoryItem[]> {
     try {
       const alerts = await backendApi.getAlertHistory({
-        limit: 500,
+        limit: 2000, // Increased from 500 to show more historical data
       }) as unknown as BackendAlert[]
 
       // Transform backend Alert format to AlertHistoryItem
