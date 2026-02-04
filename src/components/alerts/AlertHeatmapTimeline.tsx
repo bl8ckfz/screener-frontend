@@ -479,22 +479,29 @@ export function AlertHeatmapTimeline({
       </div>
 
       {/* Enhanced Time Axis with Tick Marks */}
-      <div className="relative w-full h-8 mt-2 border-t border-gray-700">
-        <div className="absolute left-0 right-0 top-0">
-          {timeLabels.map(({ position, label }, index) => (
-            <div
-              key={index}
-              className="absolute transform -translate-x-1/2"
-              style={{ left: `${position}%` }}
-            >
-              {/* Tick mark */}
-              <div className="w-px h-2 bg-gray-600 mx-auto" />
-              {/* Time label */}
-              <div className="text-xs text-gray-500 mt-1 whitespace-nowrap">
-                {label}
+      <div className="relative w-full h-8 mt-2 border-t border-gray-700 px-4">
+        <div className="absolute left-4 right-4 top-0">
+          {timeLabels.map(({ position, label }, index) => {
+            const isFirst = index === 0
+            const isLast = index === timeLabels.length - 1
+            
+            return (
+              <div
+                key={index}
+                className={`absolute ${
+                  isFirst ? '' : isLast ? 'transform -translate-x-full' : 'transform -translate-x-1/2'
+                }`}
+                style={{ left: `${position}%` }}
+              >
+                {/* Tick mark */}
+                <div className="w-px h-2 bg-gray-600 mx-auto" />
+                {/* Time label */}
+                <div className="text-xs text-gray-500 mt-1 whitespace-nowrap">
+                  {label}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
 
