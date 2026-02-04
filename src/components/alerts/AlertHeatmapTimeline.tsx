@@ -313,8 +313,11 @@ export function AlertHeatmapTimeline({
 
   return (
     <div className="w-full space-y-2" ref={chartRef}>
-      {/* Header with Zoom Controls */}
-      <div className="flex items-center justify-end mb-2 md:mb-4 px-1 md:px-2 gap-2 md:gap-4">
+      {/* Header */}
+      <div className="flex items-center justify-between px-1 md:px-2">
+        <h4 className="text-[10px] md:text-xs font-semibold text-gray-400 uppercase tracking-wider">
+          Alert Intensity Heatmap
+        </h4>
         {/* Zoom Controls */}
         <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
           <button

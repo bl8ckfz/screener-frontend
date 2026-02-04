@@ -480,7 +480,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
       <div className="px-1 md:px-4 pt-1 md:pt-4 pb-1 md:pb-4 w-full max-w-full overflow-hidden">
         <div className="bg-gray-900 rounded-lg p-1 md:p-3 w-full max-w-full overflow-hidden">
           <h4 className="text-[10px] md:text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 md:mb-2">
-            Alert Timeline (24h)
+            Alert Timeline
           </h4>
           <AlertTimelineChart symbol={selectedCoin.symbol} fullSymbol={selectedCoin.fullSymbol} height={100} />
         </div>

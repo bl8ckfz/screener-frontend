@@ -216,9 +216,8 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
 
   return (
     <div className="w-full max-w-full overflow-x-hidden overflow-y-visible">
-      {/* Header with Zoom Controls */}
-      <div className="flex items-center justify-end mb-2 md:mb-4 px-1 md:px-2 gap-2 md:gap-4">
-        {/* Zoom Controls */}
+      {/* Zoom Controls */}
+      <div className="flex items-center justify-end mb-1 md:mb-2 px-1 md:px-2">
         <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
           <button
             onClick={handleResetZoom}
