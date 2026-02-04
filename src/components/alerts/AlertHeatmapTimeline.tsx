@@ -314,26 +314,21 @@ export function AlertHeatmapTimeline({
   return (
     <div className="w-full space-y-2" ref={chartRef}>
       {/* Header with Zoom Controls */}
-      <div className="flex items-center justify-between px-2 py-1 border-b border-gray-700">
-        <h3 className="text-sm font-semibold text-gray-300">Alert Intensity Heatmap</h3>
-        <div className="flex items-center gap-3">
-          <div className="text-xs text-gray-500">
-            {filteredAlerts.length} total alerts
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleResetZoom}
-              className="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
-              title="Reset to 24h"
-            >
-              24h
-            </button>
-            <span className="text-xs text-gray-500 font-mono">
-              {visibleRange < 60 * 60 * 1000
-                ? `${Math.round(visibleRange / (60 * 1000))}m`
-                : `${Math.round(visibleRange / (60 * 60 * 1000))}h`}
-            </span>
-          </div>
+      <div className="flex items-center justify-end mb-2 md:mb-4 px-1 md:px-2 gap-2 md:gap-4">
+        {/* Zoom Controls */}
+        <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
+          <button
+            onClick={handleResetZoom}
+            className="px-1.5 md:px-2 py-0.5 md:py-1 text-[10px] md:text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+            title="Reset to 24h"
+          >
+            24h
+          </button>
+          <span className="text-[10px] md:text-xs text-gray-500">
+            {visibleRange < 60 * 60 * 1000
+              ? `${Math.round(visibleRange / (60 * 1000))}m`
+              : `${Math.round(visibleRange / (60 * 60 * 1000))}h`}
+          </span>
         </div>
       </div>
 
@@ -487,6 +482,12 @@ export function AlertHeatmapTimeline({
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Summary Stats */}
+      <div className="mt-8 px-2 text-xs text-gray-500">
+        <span>Total alerts: </span>
+        <span className="font-medium text-gray-300">{filteredAlerts.length}</span>
       </div>
     </div>
   )

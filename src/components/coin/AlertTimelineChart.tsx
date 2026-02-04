@@ -332,7 +332,7 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
 
       {/* Summary Stats */}
       <div className="mt-8 px-2 text-xs text-gray-500">
-        <span>Total alerts (24h): </span>
+        <span>Total alerts: </span>
         <span className="font-medium text-gray-300">{filteredAlerts.length}</span>
       </div>
     </div>
