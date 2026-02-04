@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import type { AlertHistoryEntry } from '@/types/alertHistory'
 import type { Alert } from '@/types/alert'
 
@@ -6,7 +6,6 @@ interface AlertHeatmapTimelineProps {
   symbol: string
   fullSymbol?: string
   alerts?: Alert[] // Real-time WebSocket alerts (no HTTP polling)
-  timeRange?: number // in milliseconds, default 60 minutes
 }
 
 interface AlertBucket {
@@ -139,10 +138,11 @@ const getIntensityColor = (count: number, alertType: string): string => {
 export function AlertHeatmapTimeline({ 
   symbol, 
   fullSymbol,
-  alerts = [], // Real-time WebSocket alerts
-  timeRange = 60 * 60 * 1000 // Default 1 hour
+  alerts = [] // Real-time WebSocket alerts
 }: AlertHeatmapTimelineProps) {
   const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set())
+  const [visibleRange, setVisibleRange] = useState(60 * 60 * 1000) // Start at 1 hour
+  const chartRef = useRef<HTMLDivElement>(null)
   
   const querySymbol = fullSymbol || symbol
 
@@ -167,11 +167,11 @@ export function AlertHeatmapTimeline({
 
   // Filter alerts for this symbol in the time range
   const filteredAlerts = useMemo(() => {
-    const cutoff = Date.now() - timeRange
+    const cutoff = Date.now() - visibleRange
     return realtimeEntries.filter(
       (entry) => entry.timestamp >= cutoff
     ).sort((a, b) => b.timestamp - a.timestamp) // Sort by time descending (newest first)
-  }, [realtimeEntries, timeRange])
+  }, [realtimeEntries, visibleRange])
 
   // Group alerts by type and bucket into 1-minute intervals
   const groupedAlerts = useMemo(() => {
@@ -188,7 +188,7 @@ export function AlertHeatmapTimeline({
     const result: GroupedAlerts[] = []
     const now = Date.now()
     const bucketSize = 60 * 1000 // 1 minute
-    const numBuckets = Math.ceil(timeRange / bucketSize)
+    const numBuckets = Math.ceil(visibleRange / bucketSize)
 
     groups.forEach((alerts, alertType) => {
       // Create buckets for the entire time range
@@ -215,7 +215,7 @@ export function AlertHeatmapTimeline({
       
       const totalCount = alerts.length
       const latestTimestamp = alerts[0]?.timestamp || 0
-      const timeRangeMinutes = timeRange / (60 * 1000)
+      const timeRangeMinutes = visibleRange / (60 * 1000)
       const alertsPerMinute = totalCount / timeRangeMinutes
 
       result.push({
@@ -229,7 +229,62 @@ export function AlertHeatmapTimeline({
 
     // Sort by total count descending
     return result.sort((a, b) => b.totalCount - a.totalCount)
-  }, [filteredAlerts, timeRange])
+  }, [filteredAlerts, visibleRange])
+
+  // TradingView-style wheel zoom handler
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      
+      const delta = -e.deltaY
+      const zoomFactor = delta > 0 ? 0.85 : 1.15 // Scroll up = zoom in
+      
+      setVisibleRange(prev => {
+        const newRange = prev * zoomFactor
+        // Constrain between 1 hour and 24 hours
+        return Math.max(60 * 60 * 1000, Math.min(newRange, 24 * 60 * 60 * 1000))
+      })
+    }
+
+    const chartElement = chartRef.current
+    if (chartElement) {
+      chartElement.addEventListener('wheel', handleWheel, { passive: false, capture: true })
+      return () => {
+        chartElement.removeEventListener('wheel', handleWheel, { capture: true })
+      }
+    }
+  }, [filteredAlerts.length])
+
+  // Reset zoom when symbol changes
+  useEffect(() => {
+    setVisibleRange(60 * 60 * 1000)
+  }, [symbol])
+
+  const handleResetZoom = () => {
+    setVisibleRange(24 * 60 * 60 * 1000)
+  }
+
+  // Generate dynamic time labels based on zoom level
+  const timeLabels = useMemo(() => {
+    const now = Date.now()
+    const min = now - visibleRange
+    const max = now
+    
+    // Adjust label count based on zoom level
+    const labelCount = visibleRange < 5 * 60 * 1000 ? 12 : // <5min: 12 labels
+                       visibleRange < 60 * 60 * 1000 ? 8 :  // <1h: 8 labels
+                       visibleRange < 6 * 60 * 60 * 1000 ? 6 : // <6h: 6 labels
+                       4 // else: 4 labels
+    
+    return Array.from({ length: labelCount }, (_, i) => {
+      const timestamp = min + (i / (labelCount - 1)) * (max - min)
+      return { 
+        position: (i / (labelCount - 1)) * 100, 
+        label: formatTimeShort(timestamp) 
+      }
+    })
+  }, [visibleRange])
 
   const toggleExpand = (alertType: string) => {
     setExpandedTypes((prev) => {
@@ -257,37 +312,28 @@ export function AlertHeatmapTimeline({
   }
 
   return (
-    <div className="w-full space-y-2">
-      {/* Header */}
+    <div className="w-full space-y-2" ref={chartRef}>
+      {/* Header with Zoom Controls */}
       <div className="flex items-center justify-between px-2 py-1 border-b border-gray-700">
         <h3 className="text-sm font-semibold text-gray-300">Alert Intensity Heatmap</h3>
-        <div className="text-xs text-gray-500">
-          {timeRange / (60 * 1000)}m view • {filteredAlerts.length} total alerts
-        </div>
-      </div>
-
-      {/* Legend */}
-      <div className="flex items-center gap-4 px-2 py-2 bg-gray-900/30 rounded text-xs">
-        <span className="text-gray-400 font-medium">Intensity:</span>
-        <div className="flex items-center gap-1">
-          <div className="w-4 h-4 bg-gray-900/5 border border-gray-700 rounded"></div>
-          <span className="text-gray-500">0</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-4 h-4 bg-gray-700/30 border border-gray-600 rounded"></div>
-          <span className="text-gray-500">1-3</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-4 h-4 bg-gray-600/50 border border-gray-500 rounded"></div>
-          <span className="text-gray-500">4-6</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-4 h-4 bg-gray-500/70 border border-gray-400 rounded"></div>
-          <span className="text-gray-500">7-10</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-4 h-4 bg-gray-400/90 border border-gray-300 rounded"></div>
-          <span className="text-gray-500">11+</span>
+        <div className="flex items-center gap-3">
+          <div className="text-xs text-gray-500">
+            {filteredAlerts.length} total alerts
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleResetZoom}
+              className="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+              title="Reset to 24h"
+            >
+              24h
+            </button>
+            <span className="text-xs text-gray-500 font-mono">
+              {visibleRange < 60 * 60 * 1000
+                ? `${Math.round(visibleRange / (60 * 1000))}m`
+                : `${Math.round(visibleRange / (60 * 60 * 1000))}h`}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -421,6 +467,26 @@ export function AlertHeatmapTimeline({
             </div>
           )
         })}
+      </div>
+
+      {/* Enhanced Time Axis with Tick Marks */}
+      <div className="relative w-full h-8 mt-2 border-t border-gray-700">
+        <div className="absolute left-0 right-0 top-0">
+          {timeLabels.map(({ position, label }, index) => (
+            <div
+              key={index}
+              className="absolute transform -translate-x-1/2"
+              style={{ left: `${position}%` }}
+            >
+              {/* Tick mark */}
+              <div className="w-px h-2 bg-gray-600 mx-auto" />
+              {/* Time label */}
+              <div className="text-xs text-gray-500 mt-1 whitespace-nowrap">
+                {label}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )

@@ -216,23 +216,8 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
 
   return (
     <div className="w-full max-w-full overflow-x-hidden overflow-y-visible">
-      {/* Header with Legend and Zoom Controls */}
-      <div className="flex items-center justify-between mb-2 md:mb-4 px-1 md:px-2 gap-2 md:gap-4">
-        {/* Legend */}
-        <div className="flex flex-wrap gap-3">
-          {alertTypes.map((type) => (
-            <div key={type} className="flex items-center gap-1.5">
-              <div
-                className="w-2.5 h-2.5 rounded-full"
-                style={{ backgroundColor: ALERT_TYPE_COLORS[type] || ALERT_TYPE_COLORS.custom }}
-              />
-              <span className="text-xs text-gray-400">
-                {getAlertTypeName(type)}
-              </span>
-            </div>
-          ))}
-        </div>
-
+      {/* Header with Zoom Controls */}
+      <div className="flex items-center justify-end mb-2 md:mb-4 px-1 md:px-2 gap-2 md:gap-4">
         {/* Zoom Controls */}
         <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
           <button

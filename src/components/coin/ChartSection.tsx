@@ -472,7 +472,6 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
             symbol={selectedCoin.symbol} 
             fullSymbol={selectedCoin.fullSymbol}
             alerts={recentAlerts} 
-            timeRange={60 * 60 * 1000} // 1 hour
           />
         </div>
       </div>
