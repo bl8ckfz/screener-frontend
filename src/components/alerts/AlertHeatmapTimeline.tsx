@@ -173,7 +173,7 @@ export function AlertHeatmapTimeline({
     ).sort((a, b) => b.timestamp - a.timestamp) // Sort by time descending (newest first)
   }, [realtimeEntries, visibleRange])
 
-  // Group alerts by type and bucket into 1-minute intervals
+  // Group alerts by type and bucket into adaptive intervals based on zoom level
   const groupedAlerts = useMemo(() => {
     const groups = new Map<string, AlertHistoryEntry[]>()
     
@@ -184,10 +184,16 @@ export function AlertHeatmapTimeline({
       groups.set(alert.alertType, existing)
     })
 
-    // Convert to GroupedAlerts with buckets
+    // Convert to GroupedAlerts with adaptive buckets
     const result: GroupedAlerts[] = []
     const now = Date.now()
-    const bucketSize = 60 * 1000 // 1 minute
+    
+    // Adaptive bucket size based on zoom level
+    // <2h: 1 minute buckets, 2-8h: 5 minute buckets, >8h: 15 minute buckets
+    const bucketSize = visibleRange < 2 * 60 * 60 * 1000 ? 60 * 1000 :
+                       visibleRange < 8 * 60 * 60 * 1000 ? 5 * 60 * 1000 :
+                       15 * 60 * 1000
+    
     const numBuckets = Math.ceil(visibleRange / bucketSize)
 
     groups.forEach((alerts, alertType) => {
@@ -393,24 +399,29 @@ export function AlertHeatmapTimeline({
 
                 {/* Heatmap Bar */}
                 <div className="flex gap-0.5 h-6 rounded overflow-hidden">
-                  {group.buckets.map((bucket, index) => (
-                    <div
-                      key={index}
-                      className={`flex-1 transition-all hover:ring-1 hover:ring-white/30 ${getIntensityColor(
-                        bucket.count,
-                        group.alertType
-                      )}`}
-                      title={`${formatTimeShort(bucket.timestamp)}: ${bucket.count} alert${
-                        bucket.count !== 1 ? 's' : ''
-                      }`}
-                    >
-                      {bucket.count > 0 && (
-                        <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-white/80">
-                          {bucket.count}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                  {group.buckets.map((bucket, index) => {
+                    // Only show numbers if buckets are wide enough (< 100 buckets = wide enough)
+                    const showNumbers = group.buckets.length < 100
+                    
+                    return (
+                      <div
+                        key={index}
+                        className={`flex-1 transition-all hover:ring-1 hover:ring-white/30 ${getIntensityColor(
+                          bucket.count,
+                          group.alertType
+                        )}`}
+                        title={`${formatTimeShort(bucket.timestamp)}: ${bucket.count} alert${
+                          bucket.count !== 1 ? 's' : ''
+                        }`}
+                      >
+                        {bucket.count > 0 && showNumbers && (
+                          <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-white/80">
+                            {bucket.count}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               </button>
 
