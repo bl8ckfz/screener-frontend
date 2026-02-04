@@ -2,8 +2,10 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { TradingChart } from './TradingChart'
 import { fetchKlines, calculateIchimoku, type KlineInterval, type IchimokuData, COMMON_INTERVALS, INTERVAL_LABELS } from '@/services/chartData'
 import { alertHistoryService } from '@/services/alertHistoryService'
+import { alertHistory } from '@/services/alertHistory'
 import { useBubbleStream } from '@/hooks/useBubbleStream'
 import type { Coin } from '@/types/coin'
+import type { AlertHistoryEntry } from '@/types/alertHistory'
 import { ChartSkeleton, ErrorState } from '@/components/ui'
 import { debug } from '@/utils/debug'
 
@@ -34,6 +36,7 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [alertRefresh, setAlertRefresh] = useState(0)
+  const [historicalAlerts, setHistoricalAlerts] = useState<AlertHistoryEntry[]>([])
 
   // Get bubbles for current coin (use fullSymbol to match futures symbol like PIEVERSEUSDT)
   // Bubble detection disabled - using stub
@@ -63,7 +66,7 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
     debug.log(`🫧 ChartContainer: ${coin.fullSymbol} has ${filteredBubbles.length}/${allBubbles.length} bubbles (timeframe=${bubbleTimeframe}, size=${bubbleSize})`, filteredBubbles.slice(0, 3))
   }, [filteredBubbles.length, allBubbles.length, coin.fullSymbol, bubbleTimeframe, bubbleSize])
 
-  // Get alerts for current coin from history - refresh every 3 seconds
+  // Timer for refreshing localStorage alerts (real-time)
   useEffect(() => {
     const timer = window.setInterval(() => {
       setAlertRefresh(prev => prev + 1)
@@ -71,10 +74,72 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
     return () => window.clearInterval(timer)
   }, [])
 
+  // Get alerts for current coin from backend API - fetch once and refresh every 10 seconds
+  useEffect(() => {
+    let isCancelled = false
+
+    const fetchHistoricalAlerts = async () => {
+      try {
+        // Fetch from backend API (up to 2000 alerts, 48h retention)
+        const backendAlerts = await alertHistory.getAllBySymbol(coin.symbol)
+        
+        if (!isCancelled) {
+          // Transform to AlertHistoryEntry format expected by chart
+          const transformed: AlertHistoryEntry[] = backendAlerts.map(alert => ({
+            id: alert.id,
+            symbol: alert.symbol,
+            alertType: alert.type as any,
+            timestamp: alert.timestamp,
+            priceAtTrigger: alert.value || 0,
+            changePercent: 0,
+            metadata: {
+              value: alert.value,
+              threshold: alert.threshold,
+            },
+          }))
+          
+          debug.log(`📊 Fetched ${transformed.length} historical alerts for ${coin.symbol} from backend`)
+          setHistoricalAlerts(transformed)
+        }
+      } catch (err) {
+        if (!isCancelled) {
+          debug.warn('Failed to fetch historical alerts:', err)
+          // Fallback to localStorage alerts
+          const localAlerts = alertHistoryService.getHistory().filter(alert => alert.symbol === coin.symbol)
+          setHistoricalAlerts(localAlerts)
+        }
+      }
+    }
+
+    fetchHistoricalAlerts()
+
+    // Refresh every 10 seconds
+    const timer = window.setInterval(fetchHistoricalAlerts, 10000)
+
+    return () => {
+      isCancelled = true
+      window.clearInterval(timer)
+    }
+  }, [coin.symbol])
+
+  // Merge backend alerts with real-time localStorage alerts for complete history
   const coinAlerts = useMemo(() => {
-    const allAlerts = alertHistoryService.getHistory()
-    return allAlerts.filter(alert => alert.symbol === coin.symbol)
-  }, [coin.symbol, alertRefresh])
+    // Get recent alerts from localStorage (last 3 seconds of real-time data)
+    const recentAlerts = alertHistoryService.getHistory()
+      .filter(alert => alert.symbol === coin.symbol && Date.now() - alert.timestamp < 3000)
+    
+    // Combine with historical alerts from backend, remove duplicates by ID
+    const alertMap = new Map<string, AlertHistoryEntry>()
+    
+    // Add historical alerts first
+    historicalAlerts.forEach(alert => alertMap.set(alert.id, alert))
+    
+    // Add/override with recent alerts
+    recentAlerts.forEach(alert => alertMap.set(alert.id, alert))
+    
+    // Return sorted by timestamp (newest first)
+    return Array.from(alertMap.values()).sort((a, b) => b.timestamp - a.timestamp)
+  }, [coin.symbol, historicalAlerts, alertRefresh])
 
   // Fetch chart data when coin or interval changes
   useEffect(() => {
