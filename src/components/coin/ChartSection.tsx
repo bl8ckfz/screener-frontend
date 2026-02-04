@@ -12,7 +12,7 @@ import { useBubbleStream } from '@/hooks/useBubbleStream'
 import { useStore } from '@/hooks/useStore'
 import type { Coin } from '@/types/coin'
 import type { AlertHistoryEntry } from '@/types/alertHistory'
-import type { AlertHistoryItem, CombinedAlertType } from '@/types/alert'
+import type { AlertHistoryItem, CombinedAlertType, Alert } from '@/types/alert'
 import { ChartSkeleton, ErrorState, EmptyState } from '@/components/ui'
 import { debug } from '@/utils/debug'
 
@@ -101,6 +101,39 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
     const allAlerts = USE_BACKEND_API ? backendEntries : localEntries
     return allAlerts.filter((alert) => alert.symbol === selectedCoin.symbol)
   }, [selectedCoin?.symbol, backendEntries, localEntries])
+
+  // Merge historical backend alerts with real-time WebSocket alerts for heatmap
+  const combinedAlerts = useMemo(() => {
+    if (!selectedCoin) return []
+
+    // Transform historical AlertHistoryEntry to Alert type
+    const historicalAlerts: Alert[] = coinAlerts.map((entry) => ({
+      id: entry.id,
+      symbol: selectedCoin.fullSymbol, // Use fullSymbol for consistency with WebSocket
+      type: entry.alertType as Alert['type'],
+      severity: 'high' as const,
+      title: entry.alertType,
+      message: `${selectedCoin.fullSymbol}: ${entry.alertType}`,
+      value: entry.priceAtTrigger,
+      threshold: entry.metadata?.threshold || 0,
+      timestamp: entry.timestamp,
+      read: false,
+      dismissed: false,
+      source: 'main' as const,
+    }))
+
+    // Filter WebSocket alerts for current symbol
+    const realtimeAlerts = activeAlerts.filter(
+      (alert) => alert.symbol === selectedCoin.fullSymbol
+    )
+
+    // Merge and deduplicate by ID (WebSocket alerts take precedence)
+    const alertMap = new Map<string, Alert>()
+    historicalAlerts.forEach((alert) => alertMap.set(alert.id, alert))
+    realtimeAlerts.forEach((alert) => alertMap.set(alert.id, alert))
+
+    return Array.from(alertMap.values())
+  }, [selectedCoin, coinAlerts, activeAlerts])
 
   const getIntervalSeconds = useCallback((ivl: KlineInterval) => {
     const map: Record<KlineInterval, number> = {
@@ -414,7 +447,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
           <AlertHeatmapTimeline 
             symbol={selectedCoin.symbol} 
             fullSymbol={selectedCoin.fullSymbol}
-            alerts={activeAlerts} 
+            alerts={combinedAlerts} 
             timeRange={60 * 60 * 1000} // 1 hour
           />
         </div>
