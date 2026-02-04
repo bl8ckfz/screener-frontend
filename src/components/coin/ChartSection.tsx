@@ -145,6 +145,22 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
     return filtered
   }, [selectedCoin, coinAlerts, activeAlerts])
 
+  // Transform combinedAlerts (Alert[]) to AlertHistoryEntry[] for TradingChart
+  const chartAlerts = useMemo(() => {
+    return combinedAlerts.map(alert => ({
+      id: alert.id,
+      symbol: alert.symbol,
+      alertType: alert.type,
+      timestamp: alert.timestamp,
+      priceAtTrigger: alert.value,
+      changePercent: 0,
+      metadata: {
+        value: alert.value,
+        threshold: alert.threshold,
+      },
+    }))
+  }, [combinedAlerts])
+
   const getIntervalSeconds = useCallback((ivl: KlineInterval) => {
     const map: Record<KlineInterval, number> = {
       '1m': 60,
@@ -444,7 +460,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
             showIchimoku={showIchimoku}
             ichimokuData={ichimokuData}
             showAlerts={showAlerts}
-            alerts={coinAlerts}
+            alerts={chartAlerts}
             showBubbles={showBubbles}
             bubbles={filteredBubbles}
           />
