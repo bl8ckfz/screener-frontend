@@ -137,9 +137,9 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
     return Array.from(alertMap.values()).sort((a, b) => b.timestamp - a.timestamp)
   }, [selectedCoin, coinAlerts, activeAlerts])
 
-  // Filter to last 60 minutes for heatmap (better visualization density)
+  // Filter to last 24 hours for heatmap (supports full zoom range)
   const recentAlerts = useMemo(() => {
-    const cutoff = Date.now() - (60 * 60 * 1000) // 60 minutes
+    const cutoff = Date.now() - (24 * 60 * 60 * 1000) // 24 hours
     return allCombinedAlerts.filter(alert => alert.timestamp >= cutoff)
   }, [allCombinedAlerts])
 
