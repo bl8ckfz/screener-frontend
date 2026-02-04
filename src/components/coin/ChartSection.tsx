@@ -133,7 +133,11 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
     historicalAlerts.forEach((alert) => alertMap.set(alert.id, alert))
     realtimeAlerts.forEach((alert) => alertMap.set(alert.id, alert))
 
-    return Array.from(alertMap.values()).sort((a, b) => b.timestamp - a.timestamp)
+    // Filter to last 60 minutes and sort
+    const cutoff = Date.now() - (60 * 60 * 1000) // 60 minutes
+    return Array.from(alertMap.values())
+      .filter(alert => alert.timestamp >= cutoff)
+      .sort((a, b) => b.timestamp - a.timestamp)
   }, [selectedCoin, coinAlerts, activeAlerts])
 
   const getIntervalSeconds = useCallback((ivl: KlineInterval) => {
