@@ -219,6 +219,10 @@ export function useBackendData() {
           }
         })
       } catch (error) {
+        // Silently return coins without ticker merge for timeout errors
+        if (error instanceof Error && error.message.includes('timeout')) {
+          return coins
+        }
         console.warn('Failed to merge tickers:', error)
         return coins
       }

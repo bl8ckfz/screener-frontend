@@ -54,6 +54,10 @@ export class AlertHistory {
       
       return alerts.map(alert => this.transformBackendAlert(alert))
     } catch (error) {
+      // Silently return empty array for timeout errors (common during network issues)
+      if (error instanceof Error && error.message.includes('timeout')) {
+        return []
+      }
       console.error(`Failed to fetch alerts for ${symbol}:`, error)
       return []
     }
