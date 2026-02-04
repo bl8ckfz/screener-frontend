@@ -102,8 +102,8 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
     return allAlerts.filter((alert) => alert.symbol === selectedCoin.symbol)
   }, [selectedCoin?.symbol, backendEntries, localEntries])
 
-  // Merge historical backend alerts with real-time WebSocket alerts for heatmap
-  const combinedAlerts = useMemo(() => {
+  // Merge ALL historical backend alerts with real-time WebSocket alerts (no time filter)
+  const allCombinedAlerts = useMemo(() => {
     if (!selectedCoin) return []
 
     // Transform historical AlertHistoryEntry to Alert type
@@ -133,21 +133,19 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
     historicalAlerts.forEach((alert) => alertMap.set(alert.id, alert))
     realtimeAlerts.forEach((alert) => alertMap.set(alert.id, alert))
 
-    // Filter to last 60 minutes and sort
-    const cutoff = Date.now() - (60 * 60 * 1000) // 60 minutes
-    const filtered = Array.from(alertMap.values())
-      .filter(alert => alert.timestamp >= cutoff)
-      .sort((a, b) => b.timestamp - a.timestamp)
-    
-    console.log(`🔍 ChartSection combinedAlerts: ${filtered.length} total alerts for ${selectedCoin.fullSymbol}`)
-    console.log('Alert types:', filtered.map(a => `${a.type} at ${new Date(a.timestamp).toLocaleTimeString()}`))
-    
-    return filtered
+    // Return ALL alerts (no time filter) sorted by timestamp
+    return Array.from(alertMap.values()).sort((a, b) => b.timestamp - a.timestamp)
   }, [selectedCoin, coinAlerts, activeAlerts])
 
-  // Transform combinedAlerts (Alert[]) to AlertHistoryEntry[] for TradingChart
+  // Filter to last 60 minutes for heatmap (better visualization density)
+  const recentAlerts = useMemo(() => {
+    const cutoff = Date.now() - (60 * 60 * 1000) // 60 minutes
+    return allCombinedAlerts.filter(alert => alert.timestamp >= cutoff)
+  }, [allCombinedAlerts])
+
+  // Transform ALL alerts (Alert[]) to AlertHistoryEntry[] for TradingChart
   const chartAlerts = useMemo(() => {
-    return combinedAlerts.map(alert => ({
+    return allCombinedAlerts.map(alert => ({
       id: alert.id,
       symbol: alert.symbol,
       alertType: alert.type,
@@ -159,7 +157,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
         threshold: alert.threshold,
       },
     }))
-  }, [combinedAlerts])
+  }, [allCombinedAlerts])
 
   const getIntervalSeconds = useCallback((ivl: KlineInterval) => {
     const map: Record<KlineInterval, number> = {
@@ -473,7 +471,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
           <AlertHeatmapTimeline 
             symbol={selectedCoin.symbol} 
             fullSymbol={selectedCoin.fullSymbol}
-            alerts={combinedAlerts} 
+            alerts={recentAlerts} 
             timeRange={60 * 60 * 1000} // 1 hour
           />
         </div>
