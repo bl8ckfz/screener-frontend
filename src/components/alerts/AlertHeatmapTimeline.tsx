@@ -300,22 +300,9 @@ export function AlertHeatmapTimeline({
     })
   }
 
-  if (filteredAlerts.length === 0) {
-    return (
-      <div className="flex items-center justify-center py-12 text-gray-500">
-        <div className="text-center">
-          <p className="text-sm font-medium">No alerts in the selected time range</p>
-          <p className="text-xs text-gray-600 mt-1">
-            Alerts for {symbol} will appear here
-          </p>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="w-full space-y-2" ref={chartRef}>
-      {/* Header */}
+      {/* Header - Always visible */}
       <div className="flex items-center justify-between px-1 md:px-2">
         <h4 className="text-[10px] md:text-xs font-semibold text-gray-400 uppercase tracking-wider">
           Alert Intensity Heatmap
@@ -351,8 +338,18 @@ export function AlertHeatmapTimeline({
         </div>
       </div>
 
-      {/* Grouped Alerts */}
-      <div className="space-y-2">
+      {/* Empty State or Grouped Alerts */}
+      {filteredAlerts.length === 0 ? (
+        <div className="flex items-center justify-center py-12 text-gray-500">
+          <div className="text-center">
+            <p className="text-sm font-medium">No alerts in the selected time range</p>
+            <p className="text-xs text-gray-600 mt-1">
+              Use 24H or 48H buttons to view older alerts
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-2">
         {groupedAlerts.map((group) => {
           const isExpanded = expandedTypes.has(group.alertType)
           const colors = ALERT_TYPE_COLORS[group.alertType] || {
@@ -487,8 +484,9 @@ export function AlertHeatmapTimeline({
           )
         })}
       </div>
+      )}
 
-      {/* Enhanced Time Axis with Tick Marks */}
+      {/* Enhanced Time Axis with Tick Marks - Always visible */}
       <div className="relative w-full h-8 mt-2 border-t border-gray-700 px-4">
         <div className="absolute left-4 right-4 top-0">
           {timeLabels.map(({ position, label }, index) => {
@@ -515,7 +513,7 @@ export function AlertHeatmapTimeline({
         </div>
       </div>
 
-      {/* Summary Stats */}
+      {/* Summary Stats - Always visible */}
       <div className="mt-8 px-2 text-xs text-gray-500">
         <span>Total alerts: </span>
         <span className="font-medium text-gray-300">{filteredAlerts.length}</span>
