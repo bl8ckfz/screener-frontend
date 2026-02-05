@@ -137,12 +137,6 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
     return Array.from(alertMap.values()).sort((a, b) => b.timestamp - a.timestamp)
   }, [selectedCoin, coinAlerts, activeAlerts])
 
-  // Filter to last 24 hours for heatmap (supports full zoom range)
-  const recentAlerts = useMemo(() => {
-    const cutoff = Date.now() - (24 * 60 * 60 * 1000) // 24 hours
-    return allCombinedAlerts.filter(alert => alert.timestamp >= cutoff)
-  }, [allCombinedAlerts])
-
   // Transform ALL alerts (Alert[]) to AlertHistoryEntry[] for TradingChart
   const chartAlerts = useMemo(() => {
     return allCombinedAlerts.map(alert => ({
@@ -471,7 +465,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
           <AlertHeatmapTimeline 
             symbol={selectedCoin.symbol} 
             fullSymbol={selectedCoin.fullSymbol}
-            alerts={recentAlerts} 
+            alerts={allCombinedAlerts} 
           />
         </div>
       </div>

@@ -141,7 +141,7 @@ export function AlertHeatmapTimeline({
   alerts = [] // Real-time WebSocket alerts
 }: AlertHeatmapTimelineProps) {
   const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set())
-  const [visibleRange, setVisibleRange] = useState(60 * 60 * 1000) // Start at 1 hour
+  const [visibleRange, setVisibleRange] = useState(24 * 60 * 60 * 1000) // Start at 24 hours to show historical alerts
   const chartRef = useRef<HTMLDivElement>(null)
   
   const querySymbol = fullSymbol || symbol
@@ -248,8 +248,8 @@ export function AlertHeatmapTimeline({
       
       setVisibleRange(prev => {
         const newRange = prev * zoomFactor
-        // Constrain between 1 hour and 24 hours
-        return Math.max(60 * 60 * 1000, Math.min(newRange, 24 * 60 * 60 * 1000))
+        // Constrain between 1 hour and 48 hours to show historical alerts
+        return Math.max(60 * 60 * 1000, Math.min(newRange, 48 * 60 * 60 * 1000))
       })
     }
 
@@ -262,13 +262,25 @@ export function AlertHeatmapTimeline({
     }
   }, [filteredAlerts.length])
 
-  // Reset zoom when symbol changes
+  // Reset zoom when symbol changes and auto-adjust to show most recent alert
   useEffect(() => {
-    setVisibleRange(60 * 60 * 1000)
-  }, [symbol])
+    setVisibleRange(24 * 60 * 60 * 1000)
+    
+    // If there are alerts, ensure visible range includes the most recent one
+    if (realtimeEntries.length > 0) {
+      const mostRecentTimestamp = Math.max(...realtimeEntries.map(a => a.timestamp))
+      const timeSinceAlert = Date.now() - mostRecentTimestamp
+      
+      // If most recent alert is older than current visible range, expand to show it
+      if (timeSinceAlert > 24 * 60 * 60 * 1000) {
+        // Expand to show alerts up to 48 hours ago
+        setVisibleRange(Math.min(timeSinceAlert * 1.2, 48 * 60 * 60 * 1000))
+      }
+    }
+  }, [symbol, realtimeEntries])
 
   const handleResetZoom = () => {
-    setVisibleRange(24 * 60 * 60 * 1000)
+    setVisibleRange(48 * 60 * 60 * 1000)
   }
 
   // Generate dynamic time labels based on zoom level
@@ -327,11 +339,18 @@ export function AlertHeatmapTimeline({
         {/* Zoom Controls */}
         <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
           <button
-            onClick={handleResetZoom}
+            onClick={() => setVisibleRange(24 * 60 * 60 * 1000)}
             className="px-1.5 md:px-2 py-0.5 md:py-1 text-[10px] md:text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
             title="Reset to 24h"
           >
             24h
+          </button>
+          <button
+            onClick={handleResetZoom}
+            className="px-1.5 md:px-2 py-0.5 md:py-1 text-[10px] md:text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+            title="Reset to 48h"
+          >
+            48h
           </button>
           <span className="text-[10px] md:text-xs text-gray-500">
             {visibleRange < 60 * 60 * 1000
