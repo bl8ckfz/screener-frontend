@@ -341,12 +341,13 @@ function App() {
             <div
               className={
                 mobileSheetEnabled
-                  ? 'sticky top-[124px] z-20 bg-gray-800 rounded-lg overflow-hidden border border-gray-700'
-                  : 'bg-gray-800 rounded-lg overflow-hidden border border-gray-700'
+                  ? 'sticky top-[124px] z-20 bg-gray-800 rounded-lg border border-gray-700 flex flex-col'
+                  : 'bg-gray-800 rounded-lg border border-gray-700 flex flex-col'
               }
+              style={{ maxHeight: 'calc(100vh - 140px)' }}
             >
               {/* Tab Buttons */}
-              <div className="flex items-center border-b border-gray-700 bg-gray-800">
+              <div className="flex items-center border-b border-gray-700 bg-gray-800 flex-shrink-0">
                 <button
                   onClick={() => setActiveTab('coins')}
                   className={`flex-1 px-4 py-3 text-sm font-semibold transition-colors ${
@@ -375,25 +376,27 @@ function App() {
                 </button>
               </div>
 
-              {/* Tab Content */}
-              {activeTab === 'coins' ? (
-                <CoinTable
-                  coins={filteredCoins}
-                  onCoinClick={handleCoinClick}
-                  isLoading={isLoading}
-                />
-              ) : (
-                <AlertHistoryTable
-                  stats={filteredAlertStats}
-                  selectedSymbol={selectedAlert?.coin?.symbol}
-                  onAlertClick={handleAlertClick}
-                  onClearHistory={() => {
-                    if (confirm('Clear all alert history? This cannot be undone.')) {
-                      clearAlertHistory()
-                    }
-                  }}
-                />
-              )}
+              {/* Tab Content - Scrollable */}
+              <div className="overflow-y-auto scrollbar-hide flex-1 min-h-0">
+                {activeTab === 'coins' ? (
+                  <CoinTable
+                    coins={filteredCoins}
+                    onCoinClick={handleCoinClick}
+                    isLoading={isLoading}
+                  />
+                ) : (
+                  <AlertHistoryTable
+                    stats={filteredAlertStats}
+                    selectedSymbol={selectedAlert?.coin?.symbol}
+                    onAlertClick={handleAlertClick}
+                    onClearHistory={() => {
+                      if (confirm('Clear all alert history? This cannot be undone.')) {
+                        clearAlertHistory()
+                      }
+                    }}
+                  />
+                )}
+              </div>
             </div>
           </div>
 
