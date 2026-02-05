@@ -142,7 +142,7 @@ export function AlertHeatmapTimeline({
   alerts = [] // Real-time WebSocket alerts
 }: AlertHeatmapTimelineProps) {
   const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set())
-  const [visibleRange, setVisibleRange] = useState(24 * 60 * 60 * 1000) // Start at 24 hours (was 1 hour)
+  const [visibleRange, setVisibleRange] = useState(60 * 60 * 1000) // Start at 1 hour
   const chartRef = useRef<HTMLDivElement>(null)
   
   const querySymbol = fullSymbol || symbol
@@ -291,7 +291,7 @@ export function AlertHeatmapTimeline({
 
   // Reset zoom when symbol changes
   useEffect(() => {
-    setVisibleRange(24 * 60 * 60 * 1000) // Reset to 24 hours (was 1 hour)
+    setVisibleRange(60 * 60 * 1000) // Reset to 1 hour
   }, [symbol])
 
   // Generate dynamic time labels based on zoom level
