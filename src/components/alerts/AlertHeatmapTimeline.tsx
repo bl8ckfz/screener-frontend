@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import type { AlertHistoryEntry } from '@/types/alertHistory'
 import type { Alert } from '@/types/alert'
+import { debug } from '@/utils/debug'
 
 interface AlertHeatmapTimelineProps {
   symbol: string
@@ -141,16 +142,23 @@ export function AlertHeatmapTimeline({
   alerts = [] // Real-time WebSocket alerts
 }: AlertHeatmapTimelineProps) {
   const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set())
-  const [visibleRange, setVisibleRange] = useState(60 * 60 * 1000) // Start at 1 hour
+  const [visibleRange, setVisibleRange] = useState(24 * 60 * 60 * 1000) // Start at 24 hours (was 1 hour)
   const chartRef = useRef<HTMLDivElement>(null)
   
   const querySymbol = fullSymbol || symbol
 
   // Use real-time WebSocket alerts (NO HTTP POLLING)
   const realtimeEntries = useMemo(() => {
-    // Filter alerts for this symbol and convert to AlertHistoryEntry format
-    return alerts
-      .filter(alert => alert.symbol === querySymbol)
+    // Filter alerts for this symbol - support both fullSymbol and normalized symbol matching
+    const normalizedSymbol = symbol.replace(/USDT$|FDUSD$|TRY$/, '')
+    
+    const filtered = alerts
+      .filter(alert => {
+        // Match against full symbol (e.g., ZAMAUSDT) or normalized (e.g., ZAMA)
+        return alert.symbol === querySymbol || 
+               alert.symbol === normalizedSymbol ||
+               alert.symbol.replace(/USDT$|FDUSD$|TRY$/, '') === normalizedSymbol
+      })
       .map(alert => ({
         id: alert.id,
         symbol: alert.symbol,
@@ -163,14 +171,33 @@ export function AlertHeatmapTimeline({
           threshold: alert.threshold,
         },
       }))
-  }, [alerts, querySymbol])
+    
+    // Debug: Log alert filtering for troubleshooting
+    if (filtered.length > 0) {
+      debug.log(`🔥 AlertHeatmap: Found ${filtered.length} alerts for ${symbol} (querySymbol: ${querySymbol})`)
+      debug.log(`   Total alerts passed: ${alerts.length}`)
+      debug.log(`   Sample alert symbols:`, alerts.slice(0, 5).map(a => a.symbol))
+    }
+    
+    return filtered
+  }, [alerts, querySymbol, symbol])
 
   // Filter alerts for this symbol in the time range
   const filteredAlerts = useMemo(() => {
     const cutoff = Date.now() - visibleRange
-    return realtimeEntries.filter(
+    const filtered = realtimeEntries.filter(
       (entry) => entry.timestamp >= cutoff
     ).sort((a, b) => b.timestamp - a.timestamp) // Sort by time descending (newest first)
+    
+    // Debug: Log time filtering
+    debug.log(`🕒 AlertHeatmap: Showing ${filtered.length}/${realtimeEntries.length} alerts within ${Math.round(visibleRange / (60 * 60 * 1000))}h range`)
+    if (realtimeEntries.length > filtered.length) {
+      const oldestFiltered = filtered.length > 0 ? new Date(filtered[filtered.length - 1].timestamp).toLocaleTimeString() : 'N/A'
+      const oldestAvailable = realtimeEntries.length > 0 ? new Date(realtimeEntries[realtimeEntries.length - 1].timestamp).toLocaleTimeString() : 'N/A'
+      debug.log(`   Oldest shown: ${oldestFiltered}, Oldest available: ${oldestAvailable}`)
+    }
+    
+    return filtered
   }, [realtimeEntries, visibleRange])
 
   // Group alerts by type and bucket into adaptive intervals based on zoom level
@@ -264,7 +291,7 @@ export function AlertHeatmapTimeline({
 
   // Reset zoom when symbol changes
   useEffect(() => {
-    setVisibleRange(60 * 60 * 1000) // Reset to 1 hour
+    setVisibleRange(24 * 60 * 60 * 1000) // Reset to 24 hours (was 1 hour)
   }, [symbol])
 
   // Generate dynamic time labels based on zoom level
@@ -311,21 +338,33 @@ export function AlertHeatmapTimeline({
         <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
           <button
             onClick={() => setVisibleRange(48 * 60 * 60 * 1000)}
-            className="px-1.5 md:px-2 py-0.5 md:py-1 text-[10px] md:text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+            className={`px-1.5 md:px-2 py-0.5 md:py-1 text-[10px] md:text-xs rounded transition-colors ${
+              visibleRange === 48 * 60 * 60 * 1000
+                ? 'bg-accent text-white'
+                : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+            }`}
             title="View 48 hours"
           >
             48H
           </button>
           <button
             onClick={() => setVisibleRange(24 * 60 * 60 * 1000)}
-            className="px-1.5 md:px-2 py-0.5 md:py-1 text-[10px] md:text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+            className={`px-1.5 md:px-2 py-0.5 md:py-1 text-[10px] md:text-xs rounded transition-colors ${
+              visibleRange === 24 * 60 * 60 * 1000
+                ? 'bg-accent text-white'
+                : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+            }`}
             title="View 24 hours"
           >
             24H
           </button>
           <button
             onClick={() => setVisibleRange(60 * 60 * 1000)}
-            className="px-1.5 md:px-2 py-0.5 md:py-1 text-[10px] md:text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+            className={`px-1.5 md:px-2 py-0.5 md:py-1 text-[10px] md:text-xs rounded transition-colors ${
+              visibleRange === 60 * 60 * 1000
+                ? 'bg-accent text-white'
+                : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+            }`}
             title="View 1 hour"
           >
             1H
