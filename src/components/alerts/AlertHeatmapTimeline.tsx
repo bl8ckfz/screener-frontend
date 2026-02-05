@@ -141,7 +141,7 @@ export function AlertHeatmapTimeline({
   alerts = [] // Real-time WebSocket alerts
 }: AlertHeatmapTimelineProps) {
   const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set())
-  const [visibleRange, setVisibleRange] = useState(24 * 60 * 60 * 1000) // Start at 24 hours to show historical alerts
+  const [visibleRange, setVisibleRange] = useState(60 * 60 * 1000) // Start at 1 hour
   const chartRef = useRef<HTMLDivElement>(null)
   
   const querySymbol = fullSymbol || symbol
@@ -262,26 +262,10 @@ export function AlertHeatmapTimeline({
     }
   }, [filteredAlerts.length])
 
-  // Reset zoom when symbol changes and auto-adjust to show most recent alert
+  // Reset zoom when symbol changes
   useEffect(() => {
-    setVisibleRange(24 * 60 * 60 * 1000)
-    
-    // If there are alerts, ensure visible range includes the most recent one
-    if (realtimeEntries.length > 0) {
-      const mostRecentTimestamp = Math.max(...realtimeEntries.map(a => a.timestamp))
-      const timeSinceAlert = Date.now() - mostRecentTimestamp
-      
-      // If most recent alert is older than current visible range, expand to show it
-      if (timeSinceAlert > 24 * 60 * 60 * 1000) {
-        // Expand to show alerts up to 48 hours ago
-        setVisibleRange(Math.min(timeSinceAlert * 1.2, 48 * 60 * 60 * 1000))
-      }
-    }
-  }, [symbol, realtimeEntries])
-
-  const handleResetZoom = () => {
-    setVisibleRange(48 * 60 * 60 * 1000)
-  }
+    setVisibleRange(60 * 60 * 1000) // Reset to 1 hour
+  }, [symbol])
 
   // Generate dynamic time labels based on zoom level
   const timeLabels = useMemo(() => {
@@ -339,18 +323,25 @@ export function AlertHeatmapTimeline({
         {/* Zoom Controls */}
         <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
           <button
-            onClick={() => setVisibleRange(24 * 60 * 60 * 1000)}
+            onClick={() => setVisibleRange(48 * 60 * 60 * 1000)}
             className="px-1.5 md:px-2 py-0.5 md:py-1 text-[10px] md:text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
-            title="Reset to 24h"
+            title="View 48 hours"
           >
-            24h
+            48H
           </button>
           <button
-            onClick={handleResetZoom}
+            onClick={() => setVisibleRange(24 * 60 * 60 * 1000)}
             className="px-1.5 md:px-2 py-0.5 md:py-1 text-[10px] md:text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
-            title="Reset to 48h"
+            title="View 24 hours"
           >
-            48h
+            24H
+          </button>
+          <button
+            onClick={() => setVisibleRange(60 * 60 * 1000)}
+            className="px-1.5 md:px-2 py-0.5 md:py-1 text-[10px] md:text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+            title="View 1 hour"
+          >
+            1H
           </button>
           <span className="text-[10px] md:text-xs text-gray-500">
             {visibleRange < 60 * 60 * 1000
