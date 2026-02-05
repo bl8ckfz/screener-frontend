@@ -13,21 +13,21 @@ interface AlertTimelineChartProps {
   height?: number
 }
 
-// Color scheme aligned with TradingChart markers
-const ALERT_TYPE_COLORS: Record<string, string> = {
+// Color scheme matching Heatmap
+const ALERT_TYPE_COLORS: Record<string, { text: string; dot: string }> = {
   // Bullish
-  futures_big_bull_60: '#14532d',
-  futures_pioneer_bull: '#a7f3d0',
-  futures_5_big_bull: '#84cc16',
-  futures_15_big_bull: '#16a34a',
-  futures_bottom_hunter: '#a855f7', // purple hunters match chart
+  futures_big_bull_60: { text: 'text-green-400', dot: '#14532d' },
+  futures_pioneer_bull: { text: 'text-emerald-300', dot: '#a7f3d0' },
+  futures_5_big_bull: { text: 'text-lime-400', dot: '#84cc16' },
+  futures_15_big_bull: { text: 'text-green-500', dot: '#16a34a' },
+  futures_bottom_hunter: { text: 'text-purple-400', dot: '#a855f7' },
   
   // Bearish
-  futures_big_bear_60: '#7f1d1d',
-  futures_pioneer_bear: '#fce7f3',
-  futures_5_big_bear: '#f87171',
-  futures_15_big_bear: '#dc2626',
-  futures_top_hunter: '#a855f7', // purple hunters match chart
+  futures_big_bear_60: { text: 'text-red-400', dot: '#7f1d1d' },
+  futures_pioneer_bear: { text: 'text-pink-300', dot: '#fce7f3' },
+  futures_5_big_bear: { text: 'text-orange-400', dot: '#f87171' },
+  futures_15_big_bear: { text: 'text-red-500', dot: '#dc2626' },
+  futures_top_hunter: { text: 'text-purple-400', dot: '#a855f7' },
 }
 
 // Display names for futures alert types - without "futures_" prefix
@@ -268,9 +268,9 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
       </div>
 
       {/* Alert Type Rows */}
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {alertsByType.map((group) => {
-          const bgColor = ALERT_TYPE_COLORS[group.alertType] || '#6b7280'
+          const colors = ALERT_TYPE_COLORS[group.alertType] || { text: 'text-gray-400', dot: '#6b7280' }
           
           return (
             <div
@@ -278,10 +278,10 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
               className="rounded-lg border border-gray-700 bg-gray-900/20 hover:bg-gray-900/40 overflow-hidden transition-all"
             >
               {/* Alert Type Header */}
-              <div className="px-3 py-2">
-                <div className="flex items-center justify-between mb-2">
+              <div className="px-2 py-1.5">
+                <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-gray-300">
+                    <span className={`text-sm font-semibold ${colors.text}`}>
                       {getAlertTypeName(group.alertType)}
                     </span>
                     <span className="text-xs text-gray-500">
@@ -291,7 +291,7 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
                 </div>
 
                 {/* Timeline Bar */}
-                <div className="relative h-12 bg-gray-900/30 rounded border border-gray-700/50">
+                <div className="relative h-10 bg-gray-900/30 rounded">
                   {/* Alert Dots */}
                   {group.alerts.map((entry, index) => {
                     const xPos = ((entry.timestamp - timeRange.min) / chartWidth) * 100
@@ -312,7 +312,7 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
                         <div
                           className="w-3 h-3 rounded-full transition-all hover:scale-150 hover:ring-2 hover:ring-white/50 cursor-pointer shadow-lg relative z-10"
                           style={{
-                            backgroundColor: bgColor,
+                            backgroundColor: colors.dot,
                           }}
                         />
                         
