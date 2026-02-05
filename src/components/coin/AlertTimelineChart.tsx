@@ -136,16 +136,6 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
     return types
   }, [filteredAlerts])
 
-  // Calculate dynamic height based on number of alert types
-  // Minimum 40px per row, with reasonable bounds
-  const dynamicHeight = useMemo(() => {
-    const rowCount = alertTypes.length || 1
-    const minRowHeight = 45
-    const calculatedHeight = rowCount * minRowHeight
-    // Min 200px, max 800px for reasonable display
-    return Math.max(200, Math.min(calculatedHeight, 800))
-  }, [alertTypes.length])
-
   // Calculate visible time range (anchored to latest alert or now)
   const timeRange = useMemo(() => {
     const now = Date.now()
@@ -163,7 +153,7 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
     return { min, max }
   }, [visibleRange, filteredAlerts])
 
-  // TradingView-style wheel zoom handler - attach directly to element
+  // TradingView-style wheel zoom handler
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault()
@@ -179,7 +169,6 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
       })
     }
 
-    // Re-attach listener when filteredAlerts changes (component re-renders)
     const chartElement = chartRef.current
     if (chartElement) {
       chartElement.addEventListener('wheel', handleWheel, { passive: false, capture: true })
@@ -187,7 +176,7 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
         chartElement.removeEventListener('wheel', handleWheel, { capture: true })
       }
     }
-  }, [filteredAlerts.length]) // Re-attach when alerts change
+  }, [filteredAlerts.length])
 
   // Reset zoom when symbol changes
   useEffect(() => {
@@ -232,13 +221,29 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
     )
   }
 
-  const rowHeight = dynamicHeight / alertTypes.length
   const chartWidth = timeRange.max - timeRange.min
 
+  // Group alerts by type for row display
+  const alertsByType = useMemo(() => {
+    const groups = new Map<string, AlertHistoryEntry[]>()
+    filteredAlerts.forEach((alert) => {
+      const existing = groups.get(alert.alertType) || []
+      existing.push(alert)
+      groups.set(alert.alertType, existing)
+    })
+    
+    // Convert to array with metadata
+    return alertTypes.map(type => ({
+      alertType: type,
+      alerts: groups.get(type) || [],
+      count: (groups.get(type) || []).length
+    }))
+  }, [filteredAlerts, alertTypes])
+
   return (
-    <div className="w-full max-w-full overflow-x-hidden overflow-y-visible">
+    <div className="w-full space-y-2" ref={chartRef}>
       {/* Header with Zoom Controls */}
-      <div className="flex items-center justify-between mb-1 md:mb-2 px-1 md:px-2">
+      <div className="flex items-center justify-between px-1 md:px-2">
         <h4 className="text-[10px] md:text-xs font-semibold text-gray-400 uppercase tracking-wider">
           Alert Timeline
         </h4>
@@ -259,123 +264,115 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
         </div>
       </div>
 
-      {/* Dot Plot Chart */}
-      <div 
-        ref={chartRef}
-        className="relative bg-gray-900/30 rounded border border-gray-700" 
-        style={{ height: dynamicHeight, overflow: 'visible' }}
-      >
-        {/* Y-axis labels */}
-        <div className="absolute left-0 top-0 bottom-0 w-24 md:w-36 border-r border-gray-700 bg-gray-900/50">
-          {alertTypes.map((type) => (
+      {/* Alert Type Rows */}
+      <div className="space-y-2">
+        {alertsByType.map((group) => {
+          const bgColor = ALERT_TYPE_COLORS[group.alertType] || '#6b7280'
+          
+          return (
             <div
-              key={type}
-              className="flex items-center px-1.5 md:px-3 text-[10px] md:text-xs text-gray-400 border-b border-gray-800"
-              style={{ height: rowHeight, minHeight: '40px' }}
+              key={group.alertType}
+              className="rounded-lg border border-gray-700 bg-gray-900/20 hover:bg-gray-900/40 overflow-hidden transition-all"
             >
-              <span className="truncate">{getAlertTypeName(type)}</span>
+              {/* Alert Type Header */}
+              <div className="px-3 py-2">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-gray-300">
+                      {getAlertTypeName(group.alertType)}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      [{group.count} alerts]
+                    </span>
+                  </div>
+                </div>
+
+                {/* Timeline Bar */}
+                <div className="relative h-12 bg-gray-900/30 rounded border border-gray-700/50">
+                  {/* Alert Dots */}
+                  {group.alerts.map((entry, index) => {
+                    const xPos = ((entry.timestamp - timeRange.min) / chartWidth) * 100
+                    const isNearLeft = xPos < 30
+                    const isNearRight = xPos > 70
+
+                    return (
+                      <div
+                        key={`${entry.id}-${index}`}
+                        className="absolute group z-10"
+                        style={{
+                          left: `${xPos}%`,
+                          top: '50%',
+                          transform: 'translate(-50%, -50%)',
+                        }}
+                      >
+                        {/* Dot */}
+                        <div
+                          className="w-3 h-3 rounded-full transition-all hover:scale-150 hover:ring-2 hover:ring-white/50 cursor-pointer shadow-lg relative z-10"
+                          style={{
+                            backgroundColor: bgColor,
+                          }}
+                        />
+                        
+                        {/* Tooltip - positioned dynamically to stay within bounds */}
+                        <div 
+                          className={`absolute hidden group-hover:block z-50 pointer-events-none top-full mt-2 ${
+                            isNearLeft ? 'left-0' : isNearRight ? 'right-0' : 'left-1/2 -translate-x-1/2'
+                          }`}
+                        >
+                          <div className="bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-xs whitespace-nowrap shadow-xl z-50">
+                            <div className="font-medium text-white">
+                              {getAlertTypeName(entry.alertType)}
+                            </div>
+                            <div className="text-gray-400 mt-0.5">
+                              {formatTime(entry.timestamp)}
+                            </div>
+                            <div className="text-gray-400">
+                              Price: ${entry.priceAtTrigger.toFixed(2)}
+                            </div>
+                            <div className={entry.changePercent >= 0 ? 'text-green-400' : 'text-red-400'}>
+                              {entry.changePercent >= 0 ? '+' : ''}{entry.changePercent.toFixed(2)}%
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
+          )
+        })}
+      </div>
 
-        {/* Chart area with dots */}
-        <div className="absolute left-24 md:left-36 right-0 top-0 bottom-0 overflow-hidden">
-          {/* Grid lines */}
-          {alertTypes.map((_, index) => (
-            <div
-              key={index}
-              className="absolute left-0 right-0 border-b border-gray-800 z-0"
-              style={{ top: (index + 1) * rowHeight }}
-            />
-          ))}
-
-          {/* Alert dots */}
-          {filteredAlerts.map((entry, index) => {
-            const typeIndex = alertTypes.indexOf(entry.alertType)
-            const xPos = ((entry.timestamp - timeRange.min) / chartWidth) * 100
-            const yPos = typeIndex * rowHeight + rowHeight / 2
+      {/* Enhanced Time Axis with Tick Marks */}
+      <div className="relative h-8 px-6 mt-1">
+        <div className="absolute left-6 right-6 top-0">
+          {timeLabels.map(({ position, label }, index) => {
+            const isFirst = index === 0
+            const isLast = index === timeLabels.length - 1
             
-            // Determine tooltip position based on location in chart
-            const isNearTop = typeIndex < alertTypes.length / 2
-            const isNearLeft = xPos < 30
-            const isNearRight = xPos > 70
-
             return (
               <div
-                key={`${entry.id}-${index}`}
-                className="absolute group z-10"
-                style={{
-                  left: `${xPos}%`,
-                  top: yPos,
-                  transform: 'translate(-50%, -50%)',
-                }}
+                key={index}
+                className={`absolute ${
+                  isFirst ? '' : isLast ? 'transform -translate-x-full' : 'transform -translate-x-1/2'
+                }`}
+                style={{ left: `${position}%` }}
               >
-                {/* Dot */}
-                <div
-                  className="w-3 h-3 rounded-full transition-all hover:scale-150 hover:ring-2 hover:ring-white/50 cursor-pointer shadow-lg relative z-10"
-                  style={{
-                    backgroundColor: ALERT_TYPE_COLORS[entry.alertType] || ALERT_TYPE_COLORS.custom,
-                  }}
-                />
-                
-                {/* Tooltip - positioned dynamically to stay within bounds */}
-                <div 
-                  className={`absolute hidden group-hover:block z-50 pointer-events-none ${
-                    isNearTop ? 'top-full mt-2' : 'bottom-full mb-2'
-                  } ${
-                    isNearLeft ? 'left-0' : isNearRight ? 'right-0' : 'left-1/2 -translate-x-1/2'
-                  }`}
-                >
-                  <div className="bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-xs whitespace-nowrap shadow-xl z-50">
-                    <div className="font-medium text-white">
-                      {getAlertTypeName(entry.alertType)}
-                    </div>
-                    <div className="text-gray-400 mt-0.5">
-                      {formatTime(entry.timestamp)}
-                    </div>
-                    <div className="text-gray-400">
-                      Price: ${entry.priceAtTrigger.toFixed(2)}
-                    </div>
-                    <div className={entry.changePercent >= 0 ? 'text-green-400' : 'text-red-400'}>
-                      {entry.changePercent >= 0 ? '+' : ''}{entry.changePercent.toFixed(2)}%
-                    </div>
-                  </div>
+                {/* Tick mark */}
+                <div className="w-px h-2 bg-gray-600 mx-auto" />
+                {/* Time label */}
+                <div className="text-xs text-gray-500 mt-1 whitespace-nowrap">
+                  {label}
                 </div>
               </div>
             )
           })}
         </div>
-
-        {/* Enhanced Time Axis with Tick Marks */}
-        <div className="absolute left-36 right-0 -bottom-8 h-8 px-4">
-          <div className="absolute left-4 right-4 top-0">
-            {timeLabels.map(({ position, label }, index) => {
-              const isFirst = index === 0
-              const isLast = index === timeLabels.length - 1
-              
-              return (
-                <div
-                  key={index}
-                  className={`absolute ${
-                    isFirst ? '' : isLast ? 'transform -translate-x-full' : 'transform -translate-x-1/2'
-                  }`}
-                  style={{ left: `${position}%` }}
-                >
-                  {/* Tick mark */}
-                  <div className="w-px h-2 bg-gray-600 mx-auto" />
-                  {/* Time label */}
-                  <div className="text-xs text-gray-500 mt-1 whitespace-nowrap">
-                    {label}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
       </div>
 
       {/* Summary Stats */}
-      <div className="mt-8 px-2 text-xs text-gray-500">
+      <div className="px-2 text-xs text-gray-500">
         <span>Total alerts: </span>
         <span className="font-medium text-gray-300">{filteredAlerts.length}</span>
       </div>
