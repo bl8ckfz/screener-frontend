@@ -306,13 +306,27 @@ export const useStore = create<AppState>()(
       setActiveView: (view) => set({ activeView: view }),
 
       addAlert: (alert) => {
-        // Save to history asynchronously
+        // Save to backend history asynchronously (no-op - backend handles this)
         alertHistory.addToHistory(alert).catch((err) =>
           console.error('Failed to save alert to history:', err)
         )
-        set((state) => ({
-          activeAlerts: [...state.activeAlerts, alert],
-        }))
+        
+        // Also add to local alert history service for immediate UI display
+        set((state) => {
+          const coin = state.coins.find((c: Coin) => c.symbol === alert.symbol)
+          if (coin) {
+            alertHistoryService.addAlert(alert, coin)
+            // Return updated state with refresh trigger
+            return {
+              activeAlerts: [...state.activeAlerts, alert],
+              alertHistoryRefresh: Date.now(),
+            }
+          }
+          
+          return {
+            activeAlerts: [...state.activeAlerts, alert],
+          }
+        })
       },
 
       dismissAlert: (alertId) =>
