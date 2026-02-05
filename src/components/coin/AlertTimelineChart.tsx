@@ -198,6 +198,27 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
     setVisibleRange(24 * 60 * 60 * 1000)
   }
 
+  // Generate dynamic time labels based on zoom level (matching Heatmap)
+  const timeLabels = useMemo(() => {
+    const now = Date.now()
+    const min = now - visibleRange
+    const max = now
+    
+    // Adjust label count based on zoom level
+    const labelCount = visibleRange < 5 * 60 * 1000 ? 12 : // <5min: 12 labels
+                       visibleRange < 60 * 60 * 1000 ? 8 :  // <1h: 8 labels
+                       visibleRange < 6 * 60 * 60 * 1000 ? 6 : // <6h: 6 labels
+                       4 // else: 4 labels
+    
+    return Array.from({ length: labelCount }, (_, i) => {
+      const timestamp = min + (i / (labelCount - 1)) * (max - min)
+      return { 
+        position: (i / (labelCount - 1)) * 100, 
+        label: formatTime(timestamp) 
+      }
+    })
+  }, [visibleRange])
+
   if (filteredAlerts.length === 0) {
     return (
       <div className="flex items-center justify-center text-gray-500" style={{ height: 200 }}>
@@ -325,11 +346,31 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
           })}
         </div>
 
-        {/* Time axis labels (approximate) */}
-        <div className="absolute left-36 right-0 -bottom-6 flex justify-between text-xs text-gray-500 px-2">
-          <span>{formatTime(timeRange.min)}</span>
-          <span>{formatTime((timeRange.min + timeRange.max) / 2)}</span>
-          <span>{formatTime(timeRange.max)}</span>
+        {/* Enhanced Time Axis with Tick Marks */}
+        <div className="absolute left-36 right-0 -bottom-8 h-8 px-4">
+          <div className="absolute left-4 right-4 top-0">
+            {timeLabels.map(({ position, label }, index) => {
+              const isFirst = index === 0
+              const isLast = index === timeLabels.length - 1
+              
+              return (
+                <div
+                  key={index}
+                  className={`absolute ${
+                    isFirst ? '' : isLast ? 'transform -translate-x-full' : 'transform -translate-x-1/2'
+                  }`}
+                  style={{ left: `${position}%` }}
+                >
+                  {/* Tick mark */}
+                  <div className="w-px h-2 bg-gray-600 mx-auto" />
+                  {/* Time label */}
+                  <div className="text-xs text-gray-500 mt-1 whitespace-nowrap">
+                    {label}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       </div>
 
