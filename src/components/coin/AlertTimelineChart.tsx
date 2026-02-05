@@ -136,22 +136,13 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
     return types
   }, [filteredAlerts])
 
-  // Calculate visible time range (anchored to latest alert or now)
+  // Calculate visible time range (anchored to current time like Heatmap)
   const timeRange = useMemo(() => {
     const now = Date.now()
-    const oneDayAgo = now - 24 * 60 * 60 * 1000
-    
-    // Use the latest alert timestamp as anchor, or current time if no alerts
-    const latestTimestamp = filteredAlerts.length > 0 
-      ? Math.max(...filteredAlerts.map(a => a.timestamp))
-      : now
-    
-    // Add 5% padding on the right for better visibility
-    const padding = visibleRange * 0.05
-    const min = Math.max(latestTimestamp - visibleRange, oneDayAgo) // Never go beyond 24h
-    const max = latestTimestamp + padding
+    const min = now - visibleRange
+    const max = now
     return { min, max }
-  }, [visibleRange, filteredAlerts])
+  }, [visibleRange])
 
   // TradingView-style wheel zoom handler
   useEffect(() => {
@@ -216,19 +207,25 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
   // Group alerts by type for row display (must be before early return)
   const alertsByType = useMemo(() => {
     const groups = new Map<string, AlertHistoryEntry[]>()
+    
+    // Only include alerts within the visible time range
     filteredAlerts.forEach((alert) => {
-      const existing = groups.get(alert.alertType) || []
-      existing.push(alert)
-      groups.set(alert.alertType, existing)
+      if (alert.timestamp >= timeRange.min && alert.timestamp <= timeRange.max) {
+        const existing = groups.get(alert.alertType) || []
+        existing.push(alert)
+        groups.set(alert.alertType, existing)
+      }
     })
     
-    // Convert to array with metadata
-    return alertTypes.map(type => ({
-      alertType: type,
-      alerts: groups.get(type) || [],
-      count: (groups.get(type) || []).length
-    }))
-  }, [filteredAlerts, alertTypes])
+    // Convert to array with metadata, only including types with alerts in visible range
+    return alertTypes
+      .map(type => ({
+        alertType: type,
+        alerts: groups.get(type) || [],
+        count: (groups.get(type) || []).length
+      }))
+      .filter(group => group.count > 0) // Hide rows with no alerts in visible range
+  }, [filteredAlerts, alertTypes, timeRange])
 
   if (filteredAlerts.length === 0) {
     return (
@@ -275,7 +272,8 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
           return (
             <div
               key={group.alertType}
-              className="rounded-lg border border-gray-700 bg-gray-900/20 hover:bg-gray-900/40 overflow-hidden transition-all"
+              className="rounded-lg border border-gray-700 bg-gray-900/20 hover:bg-gray-900/40 transition-all"
+              style={{ overflow: 'visible' }}
             >
               {/* Alert Type Header */}
               <div className="px-2 py-1.5">
@@ -291,7 +289,7 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
                 </div>
 
                 {/* Timeline Bar */}
-                <div className="relative h-10 bg-gray-900/30 rounded">
+                <div className="relative h-10 bg-gray-900/30 rounded" style={{ overflow: 'visible' }}>
                   {/* Alert Dots */}
                   {group.alerts.map((entry, index) => {
                     const xPos = ((entry.timestamp - timeRange.min) / chartWidth) * 100
