@@ -208,25 +208,12 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
     })
   }, [visibleRange])
 
-  if (filteredAlerts.length === 0) {
-    return (
-      <div className="flex items-center justify-center text-gray-500" style={{ height: 200 }}>
-        <div className="text-center">
-          <p className="text-sm font-medium">No alerts in the last 24 hours</p>
-          <p className="text-xs text-gray-600 mt-1">
-            Alerts for {symbol} will appear here
-          </p>
-        </div>
-      </div>
-    )
-  }
-
-  // Calculate chart width
+  // Calculate chart width (must be before early return)
   const chartWidth = useMemo(() => {
     return timeRange.max - timeRange.min
   }, [timeRange])
 
-  // Group alerts by type for row display
+  // Group alerts by type for row display (must be before early return)
   const alertsByType = useMemo(() => {
     const groups = new Map<string, AlertHistoryEntry[]>()
     filteredAlerts.forEach((alert) => {
@@ -242,6 +229,19 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
       count: (groups.get(type) || []).length
     }))
   }, [filteredAlerts, alertTypes])
+
+  if (filteredAlerts.length === 0) {
+    return (
+      <div className="flex items-center justify-center text-gray-500" style={{ height: 200 }}>
+        <div className="text-center">
+          <p className="text-sm font-medium">No alerts in the last 24 hours</p>
+          <p className="text-xs text-gray-600 mt-1">
+            Alerts for {symbol} will appear here
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="w-full space-y-2" ref={chartRef}>
