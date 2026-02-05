@@ -221,7 +221,10 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
     )
   }
 
-  const chartWidth = timeRange.max - timeRange.min
+  // Calculate chart width
+  const chartWidth = useMemo(() => {
+    return timeRange.max - timeRange.min
+  }, [timeRange])
 
   // Group alerts by type for row display
   const alertsByType = useMemo(() => {
