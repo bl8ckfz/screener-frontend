@@ -40,6 +40,9 @@ function App() {
   const sentimentFilter = useStore((state) => state.sentimentFilter)
   const alertStats = useAlertStats(coins || [])
   
+  // Get config for auto-hide header
+  const autoHideHeader = useStore((state) => state.config.display.autoHideHeader)
+  
   // Backend WebSocket alerts (re-enabled)
   // Alerts are added to global store in real-time
   const addAlert = useStore((state) => state.addAlert)
@@ -296,6 +299,7 @@ function App() {
         title="Screener"
         subtitle="Real-time USDT market analysis"
         onOpenSettings={() => setIsSettingsOpen(true)}
+        autoHideHeader={autoHideHeader}
       >
         {/* Compact Market Summary Bar */}
         <div className="mb-4">

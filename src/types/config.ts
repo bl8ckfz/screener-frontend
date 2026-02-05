@@ -40,6 +40,7 @@ export interface AppConfig {
     showCharts: boolean
     compactMode: boolean
     fontSize: number // 10-16px
+    autoHideHeader: boolean // Auto-hide toolbar on scroll
   }
 
   // Data settings
@@ -116,6 +117,7 @@ export const DEFAULT_CONFIG: AppConfig = {
     showCharts: true,
     compactMode: false,
     fontSize: 10,
+    autoHideHeader: true, // Enable auto-hide by default
   },
   data: {
     currentPair: (import.meta.env.VITE_DEFAULT_PAIR as CurrencyPair) || 'USDT',

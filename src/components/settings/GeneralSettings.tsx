@@ -1,3 +1,5 @@
+import { useStore } from '@/hooks/useStore'
+
 /**
  * GeneralSettings Component
  * 
@@ -7,17 +9,56 @@
  * Phase 8.1.4: Create Settings Modal
  */
 export function GeneralSettings() {
+  const config = useStore((state) => state.config)
+  const updateConfig = useStore((state) => state.updateConfig)
+
+  const handleToggleAutoHide = () => {
+    updateConfig({
+      display: {
+        ...config.display,
+        autoHideHeader: !config.display.autoHideHeader,
+      },
+    })
+  }
+
   return (
     <div className="space-y-6">
-      <div className="text-center py-12">
-        <div className="text-6xl mb-4">⚙️</div>
-        <h3 className="text-xl font-semibold text-white mb-2">
-          General Settings
-        </h3>
-        <p className="text-gray-400 max-w-md mx-auto">
-          Additional settings will be available here in future updates.
-          This includes theme preferences, language selection, and more.
-        </p>
+      {/* UI Preferences */}
+      <div className="bg-gray-800 rounded-lg p-6 space-y-4">
+        <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
+          User Interface
+        </h4>
+        <div className="space-y-4">
+          {/* Auto-hide Header Toggle */}
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <label htmlFor="auto-hide-header" className="text-white font-medium cursor-pointer">
+                Auto-hide Toolbar
+              </label>
+              <p className="text-sm text-gray-400 mt-1">
+                Hide toolbar on scroll down, show on scroll up or hover
+              </p>
+            </div>
+            <button
+              id="auto-hide-header"
+              onClick={handleToggleAutoHide}
+              className={`
+                relative inline-flex h-6 w-11 items-center rounded-full
+                transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-gray-800
+                ${config.display.autoHideHeader ? 'bg-accent' : 'bg-gray-600'}
+              `}
+              role="switch"
+              aria-checked={config.display.autoHideHeader}
+            >
+              <span
+                className={`
+                  inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ease-in-out
+                  ${config.display.autoHideHeader ? 'translate-x-6' : 'translate-x-1'}
+                `}
+              />
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* About Section */}

@@ -8,9 +8,20 @@ interface HeaderProps {
   title?: string
   subtitle?: string
   onOpenSettings?: () => void
+  /** Auto-hide behavior props */
+  isVisible?: boolean
+  onMouseEnter?: () => void
+  onMouseLeave?: () => void
 }
 
-export function Header({ title = 'Screener', subtitle, onOpenSettings }: HeaderProps) {
+export function Header({ 
+  title = 'Screener', 
+  subtitle, 
+  onOpenSettings,
+  isVisible = true,
+  onMouseEnter,
+  onMouseLeave,
+}: HeaderProps) {
   const isAuthModalOpen = useStore((state) => state.isAuthModalOpen)
   const setAuthModalOpen = useStore((state) => state.setAuthModalOpen)
 
@@ -20,7 +31,16 @@ export function Header({ title = 'Screener', subtitle, onOpenSettings }: HeaderP
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-gray-900/95 border-b border-gray-800 backdrop-blur-sm">
+      <header 
+        className={`
+          fixed top-0 left-0 right-0 z-50 
+          bg-gray-900/95 border-b border-gray-800 backdrop-blur-sm
+          transition-transform duration-300 ease-in-out
+          ${isVisible ? 'translate-y-0' : '-translate-y-full'}
+        `}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+      >
         <div className="w-full max-w-full px-2 py-2 sm:px-6 sm:py-4 sm:max-w-[1920px] sm:mx-auto">
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0 flex-1">
