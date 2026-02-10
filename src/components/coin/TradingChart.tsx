@@ -363,6 +363,10 @@ export function TradingChart({
     mainSeries.setData(candlestickData)
     mainSeriesRef.current = mainSeries
 
+    if (markersRef.current.length > 0) {
+      mainSeries.setMarkers(markersRef.current)
+    }
+
     // CRITICAL: Restore visible range AFTER updating to prevent zoom/pan reset
     // Use requestAnimationFrame to ensure chart has processed the data
     requestAnimationFrame(() => {
@@ -757,6 +761,7 @@ export function TradingChart({
             size,
           } as SeriesMarker<Time>
         })
+        .sort((a, b) => (a.time as number) - (b.time as number))
 
       debug.log(`📍 Setting ${markers.length} alert markers on chart`)
       
@@ -853,9 +858,11 @@ export function TradingChart({
               size,
             } as SeriesMarker<Time>
           })
+          .sort((a, b) => (a.time as number) - (b.time as number))
         
         // Combine both types of markers
         const combinedMarkers = [...alertMarkers, ...bubbleMarkers]
+          .sort((a, b) => (a.time as number) - (b.time as number))
         markersRef.current = combinedMarkers // Store for re-application
         mainSeries.setMarkers(combinedMarkers)
         debug.log(`📍 Set ${combinedMarkers.length} total markers (${alertMarkers.length} alerts + ${bubbleMarkers.length} bubbles)`)
