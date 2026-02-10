@@ -175,6 +175,14 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
     return map[ivl] || 300
   }, [])
 
+  const getLimitForInterval = useCallback((ivl: KlineInterval) => {
+    const intervalSeconds = getIntervalSeconds(ivl)
+    const targetSeconds = 48 * 60 * 60
+    const buffer = 5
+    const rawLimit = Math.ceil(targetSeconds / intervalSeconds) + buffer
+    return Math.min(Math.max(rawLimit, 200), 1500)
+  }, [getIntervalSeconds])
+
   const loadChartData = useCallback(
     async (options?: { limit?: number }) => {
       if (!selectedCoin) return
@@ -182,7 +190,8 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
       setError(null)
 
       try {
-        const data = await fetchKlines(selectedCoin.fullSymbol, interval, options?.limit ?? 200)
+        const limit = options?.limit ?? getLimitForInterval(interval)
+        const data = await fetchKlines(selectedCoin.fullSymbol, interval, limit)
         setChartData(data)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load chart data')
@@ -228,7 +237,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
       const delayMs = Math.max(500, (nextClose - nowSec + 1) * 1000)
 
       timeoutId = setTimeout(() => {
-        loadChartData({ limit: 200 })
+        loadChartData({ limit: getLimitForInterval(interval) })
         // Recursively schedule next fetch after this one
         scheduleNextFetch()
       }, delayMs)
@@ -245,7 +254,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
   useEffect(() => {
     if (!selectedCoin) return
     const intervalId = window.setInterval(() => {
-      loadChartData({ limit: 200 }) // Use consistent 200 limit
+      loadChartData({ limit: getLimitForInterval(interval) })
     }, 120000) // every 2 minutes
 
     driftTimerRef.current = intervalId
