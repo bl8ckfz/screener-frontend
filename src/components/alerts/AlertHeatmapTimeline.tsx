@@ -115,6 +115,18 @@ const formatTimeShort = (timestamp: number): string => {
   })
 }
 
+const formatDate = (timestamp: number): string => {
+  const date = new Date(timestamp)
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: '2-digit',
+  })
+}
+
+const formatDateTimeShort = (timestamp: number): string => {
+  return `${formatDate(timestamp)} ${formatTimeShort(timestamp)}`
+}
+
 /**
  * Get intensity color class based on alert count in bucket
  */
@@ -144,6 +156,7 @@ export function AlertHeatmapTimeline({
   const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set())
   const [visibleRange, setVisibleRange] = useState(60 * 60 * 1000) // Start at 1 hour
   const chartRef = useRef<HTMLDivElement>(null)
+  const showDate = visibleRange >= 24 * 60 * 60 * 1000
   
   const querySymbol = fullSymbol || symbol
 
@@ -310,10 +323,10 @@ export function AlertHeatmapTimeline({
       const timestamp = min + (i / (labelCount - 1)) * (max - min)
       return { 
         position: (i / (labelCount - 1)) * 100, 
-        label: formatTimeShort(timestamp) 
+        label: showDate ? formatDateTimeShort(timestamp) : formatTimeShort(timestamp)
       }
     })
-  }, [visibleRange])
+  }, [visibleRange, showDate])
 
   const toggleExpand = (alertType: string) => {
     setExpandedTypes((prev) => {
@@ -423,7 +436,7 @@ export function AlertHeatmapTimeline({
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-500">
-                      Last: {formatTimeShort(group.latestTimestamp)}
+                      Last: {showDate ? formatDateTimeShort(group.latestTimestamp) : formatTimeShort(group.latestTimestamp)}
                     </span>
                     <svg
                       className={`w-4 h-4 text-gray-400 transition-transform ${
@@ -456,7 +469,7 @@ export function AlertHeatmapTimeline({
                           bucket.count,
                           group.alertType
                         )}`}
-                        title={`${formatTimeShort(bucket.timestamp)}: ${bucket.count} alert${
+                        title={`${showDate ? formatDateTimeShort(bucket.timestamp) : formatTimeShort(bucket.timestamp)}: ${bucket.count} alert${
                           bucket.count !== 1 ? 's' : ''
                         }`}
                       >
