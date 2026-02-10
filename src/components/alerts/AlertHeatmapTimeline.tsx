@@ -143,7 +143,6 @@ export function AlertHeatmapTimeline({
 }: AlertHeatmapTimelineProps) {
   const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set())
   const [visibleRange, setVisibleRange] = useState(60 * 60 * 1000) // Start at 1 hour
-  const [rangeEnd, setRangeEnd] = useState(() => Date.now())
   const chartRef = useRef<HTMLDivElement>(null)
   
   const querySymbol = fullSymbol || symbol
@@ -185,9 +184,9 @@ export function AlertHeatmapTimeline({
 
   // Filter alerts for this symbol in the time range
   const filteredAlerts = useMemo(() => {
-    const cutoff = rangeEnd - visibleRange
+    const cutoff = Date.now() - visibleRange
     const filtered = realtimeEntries.filter(
-      (entry) => entry.timestamp >= cutoff && entry.timestamp <= rangeEnd
+      (entry) => entry.timestamp >= cutoff
     ).sort((a, b) => b.timestamp - a.timestamp) // Sort by time descending (newest first)
     
     // Debug: Log time filtering
@@ -214,7 +213,7 @@ export function AlertHeatmapTimeline({
 
     // Convert to GroupedAlerts with adaptive buckets
     const result: GroupedAlerts[] = []
-    const now = rangeEnd
+    const now = Date.now()
     
     // Adaptive bucket size based on zoom level
     // <2h: 1 minute buckets, 2-8h: 5 minute buckets, >8h: 15 minute buckets
@@ -273,26 +272,11 @@ export function AlertHeatmapTimeline({
       
       const delta = -e.deltaY
       const zoomFactor = delta > 0 ? 0.85 : 1.15 // Scroll up = zoom in
-
-      const rect = chartElement?.getBoundingClientRect()
-      const position = rect ? (e.clientX - rect.left) / rect.width : 0.5
-      const anchorRatio = Math.min(Math.max(position, 0), 1)
       
       setVisibleRange(prev => {
-        const newRange = Math.max(60 * 60 * 1000, Math.min(prev * zoomFactor, 48 * 60 * 60 * 1000))
-        const anchorTime = rangeEnd - prev + (anchorRatio * prev)
-        let newStart = anchorTime - (anchorRatio * newRange)
-        let newEnd = newStart + newRange
-
-        // Prevent zooming into the future; clamp end to now and shift start
-        const now = Date.now()
-        if (newEnd > now) {
-          newEnd = now
-          newStart = newEnd - newRange
-        }
-
-        setRangeEnd(newEnd)
-        return newRange
+        const newRange = prev * zoomFactor
+        // Constrain between 1 hour and 48 hours to show historical alerts
+        return Math.max(60 * 60 * 1000, Math.min(newRange, 48 * 60 * 60 * 1000))
       })
     }
 
@@ -303,18 +287,18 @@ export function AlertHeatmapTimeline({
         chartElement.removeEventListener('wheel', handleWheel, { capture: true })
       }
     }
-  }, [filteredAlerts.length, rangeEnd])
+  }, [filteredAlerts.length])
 
   // Reset zoom when symbol changes
   useEffect(() => {
     setVisibleRange(60 * 60 * 1000) // Reset to 1 hour
-    setRangeEnd(Date.now())
   }, [symbol])
 
   // Generate dynamic time labels based on zoom level
   const timeLabels = useMemo(() => {
-    const min = rangeEnd - visibleRange
-    const max = rangeEnd
+    const now = Date.now()
+    const min = now - visibleRange
+    const max = now
     
     // Adjust label count based on zoom level
     const labelCount = visibleRange < 5 * 60 * 1000 ? 12 : // <5min: 12 labels
@@ -353,10 +337,7 @@ export function AlertHeatmapTimeline({
         {/* Zoom Controls */}
         <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
           <button
-            onClick={() => {
-              setVisibleRange(48 * 60 * 60 * 1000)
-              setRangeEnd(Date.now())
-            }}
+            onClick={() => setVisibleRange(48 * 60 * 60 * 1000)}
             className={`px-1.5 md:px-2 py-0.5 md:py-1 text-[10px] md:text-xs rounded transition-colors ${
               visibleRange === 48 * 60 * 60 * 1000
                 ? 'bg-accent text-white'
@@ -367,10 +348,7 @@ export function AlertHeatmapTimeline({
             48H
           </button>
           <button
-            onClick={() => {
-              setVisibleRange(24 * 60 * 60 * 1000)
-              setRangeEnd(Date.now())
-            }}
+            onClick={() => setVisibleRange(24 * 60 * 60 * 1000)}
             className={`px-1.5 md:px-2 py-0.5 md:py-1 text-[10px] md:text-xs rounded transition-colors ${
               visibleRange === 24 * 60 * 60 * 1000
                 ? 'bg-accent text-white'
@@ -381,10 +359,7 @@ export function AlertHeatmapTimeline({
             24H
           </button>
           <button
-            onClick={() => {
-              setVisibleRange(60 * 60 * 1000)
-              setRangeEnd(Date.now())
-            }}
+            onClick={() => setVisibleRange(60 * 60 * 1000)}
             className={`px-1.5 md:px-2 py-0.5 md:py-1 text-[10px] md:text-xs rounded transition-colors ${
               visibleRange === 60 * 60 * 1000
                 ? 'bg-accent text-white'
