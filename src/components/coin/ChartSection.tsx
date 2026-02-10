@@ -99,8 +99,9 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
   const coinAlerts = useMemo(() => {
     if (!selectedCoin) return []
     const allAlerts = USE_BACKEND_API ? backendEntries : localEntries
-    return allAlerts.filter((alert) => alert.symbol === selectedCoin.symbol)
-  }, [selectedCoin?.symbol, backendEntries, localEntries])
+    const normalizedSelected = normalizeSymbol(selectedCoin.fullSymbol || selectedCoin.symbol)
+    return allAlerts.filter((alert) => normalizeSymbol(alert.symbol) === normalizedSelected)
+  }, [selectedCoin?.symbol, selectedCoin?.fullSymbol, backendEntries, localEntries])
 
   // Merge ALL historical backend alerts with real-time WebSocket alerts (no time filter)
   const allCombinedAlerts = useMemo(() => {

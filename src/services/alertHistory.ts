@@ -25,13 +25,16 @@ interface BackendAlert {
  * Alert History Service - Communicates with backend API
  */
 export class AlertHistory {
+  private readonly retentionHours = 48
   /**
    * Get alert history from backend (last 48 hours)
    */
   async getHistory(): Promise<AlertHistoryItem[]> {
     try {
+      const since = new Date(Date.now() - this.retentionHours * 60 * 60 * 1000).toISOString()
       const alerts = await backendApi.getAlertHistory({
         limit: 2000, // Increased from 500 to show more historical data
+        since,
       }) as unknown as BackendAlert[]
 
       // Transform backend Alert format to AlertHistoryItem
@@ -47,9 +50,11 @@ export class AlertHistory {
    */
   async getAllBySymbol(symbol: string): Promise<AlertHistoryItem[]> {
     try {
+      const since = new Date(Date.now() - this.retentionHours * 60 * 60 * 1000).toISOString()
       const alerts = await backendApi.getAlertHistory({
         symbol,
-        limit: 100,
+        limit: 2000,
+        since,
       }) as unknown as BackendAlert[]
       
       return alerts.map(alert => this.transformBackendAlert(alert))
