@@ -30,14 +30,12 @@ export function WebhookManager() {
     webhook_type: WebhookType
     webhook_url: string
     scope: WebhookScope
-    max_alerts_per_minute: number
     config: Record<string, any>
   }>({
     name: '',
     webhook_type: 'discord',
     webhook_url: '',
     scope: 'all',
-    max_alerts_per_minute: 10,
     config: {},
   })
   const [isTesting, setIsTesting] = useState<string | null>(null)
@@ -73,7 +71,6 @@ export function WebhookManager() {
       webhook_type: 'discord',
       webhook_url: '',
       scope: 'all',
-      max_alerts_per_minute: 10,
       config: {},
     })
     setError('')
@@ -87,7 +84,6 @@ export function WebhookManager() {
       webhook_type: webhook.webhook_type,
       webhook_url: webhook.webhook_url,
       scope: webhook.scope,
-      max_alerts_per_minute: webhook.max_alerts_per_minute || 10,
       config: webhook.config || {},
     })
     setError('')
@@ -123,7 +119,6 @@ export function WebhookManager() {
           webhook_url: formData.webhook_url,
           scope: formData.scope,
           is_enabled: true,
-          max_alerts_per_minute: formData.max_alerts_per_minute,
           config: formData.config,
         }
         const updated = await webhookService.updateWebhook(editingId, request)
@@ -135,7 +130,6 @@ export function WebhookManager() {
           webhook_type: formData.webhook_type,
           webhook_url: formData.webhook_url,
           scope: formData.scope,
-          max_alerts_per_minute: formData.max_alerts_per_minute,
           config: formData.config,
         }
         const created = await webhookService.createWebhook(request)
@@ -277,23 +271,6 @@ export function WebhookManager() {
             />
           </div>
 
-          <div>
-            <label className="text-xs text-gray-400">Rate Limit (alerts/minute)</label>
-            <Input
-              type="number"
-              min={1}
-              max={60}
-              value={formData.max_alerts_per_minute}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  max_alerts_per_minute: parseInt(e.target.value) || 10,
-                })
-              }
-              disabled={isLoading}
-            />
-          </div>
-
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -373,9 +350,7 @@ export function WebhookManager() {
                     <div className="text-xs text-gray-400 mt-0.5 truncate">
                       {webhook.webhook_url}
                     </div>
-                    <div className="text-xs text-gray-500 mt-0.5">
-                      Max {webhook.max_alerts_per_minute || 10} alerts/min
-                    </div>
+
                   </div>
                 </div>
 

@@ -32,7 +32,6 @@ export interface CreateWebhookRequest {
   webhook_url: string
   scope?: WebhookScope
   is_enabled?: boolean
-  max_alerts_per_minute?: number
   config?: Record<string, any>
 }
 
@@ -42,7 +41,6 @@ export interface UpdateWebhookRequest {
   webhook_url: string
   scope: WebhookScope
   is_enabled: boolean
-  max_alerts_per_minute: number
   config?: Record<string, any>
 }
 
@@ -122,7 +120,6 @@ export const webhookService = {
           ...webhook,
           scope: webhook.scope || 'all',
           is_enabled: webhook.is_enabled !== undefined ? webhook.is_enabled : true,
-          max_alerts_per_minute: webhook.max_alerts_per_minute || 10,
         },
         {
           headers: {
