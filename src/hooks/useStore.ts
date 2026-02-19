@@ -1,5 +1,4 @@
 import { create } from 'zustand'
-import { debug } from '@/utils/debug'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import type { CurrencyPair, Coin, CoinSort } from '@/types/coin'
 import type { ScreeningListId } from '@/types/screener'
@@ -9,8 +8,7 @@ import type { AlertRule, AlertSettings, Alert } from '@/types/alert'
 import { createIndexedDBStorage } from '@/services/storage'
 import { alertHistory } from '@/services/alertHistory'
 import { alertHistoryService } from '@/services/alertHistoryService'
-import { supabase } from '@/config'
-import type { User, Session } from '@supabase/supabase-js'
+
 import { watchlistService } from '@/services/watchlistService'
 import { authService } from '@/services/authService'
 import type { Webhook } from '@/services/webhookService'
@@ -50,8 +48,6 @@ interface AppState {
   // UI State
   leftSidebarCollapsed: boolean
   rightSidebarCollapsed: boolean
-  isAuthModalOpen: boolean
-
   // Alert system
   alertRules: AlertRule[]
   alertSettings: AlertSettings
@@ -72,12 +68,6 @@ interface AppState {
   // Webhooks
   webhooks: Webhook[]
 
-  // Auth
-  user: User | null
-  session: Session | null
-  isAuthenticated: boolean
-  isSyncing: boolean
-
   // Actions
   setCurrentPair: (pair: CurrencyPair) => void
   setCurrentList: (list: ScreeningListId) => void
@@ -97,8 +87,6 @@ interface AppState {
   setTheme: (theme: 'dark' | 'light') => void
   setLeftSidebarCollapsed: (collapsed: boolean) => void
   setRightSidebarCollapsed: (collapsed: boolean) => void
-  setAuthModalOpen: (open: boolean) => void
-  
   // Alert actions
   addAlertRule: (rule: AlertRule) => void
   updateAlertRule: (ruleId: string, updates: Partial<AlertRule>) => void
@@ -120,13 +108,6 @@ interface AppState {
   updateWebhook: (id: string, updates: Partial<Webhook>) => void
   deleteWebhook: (id: string) => void
   toggleWebhook: (id: string, enabled: boolean) => void
-  
-  // Auth actions
-  setUser: (user: User | null) => void
-  setSession: (session: Session | null) => void
-  signOut: () => Promise<void>
-  syncToCloud: () => Promise<void>
-  syncFromCloud: () => Promise<void>
   
   reset: () => void
 }
@@ -156,8 +137,6 @@ const initialState = {
   theme: 'dark' as const,
   leftSidebarCollapsed: false,
   rightSidebarCollapsed: false,
-  isAuthModalOpen: false,
-  
   // Alert system defaults
   alertRules: [] as AlertRule[],
   alertSettings: {
@@ -187,11 +166,6 @@ const initialState = {
   // Webhook defaults
   webhooks: [] as Webhook[],
   
-  // Auth defaults
-  user: null,
-  session: null,
-  isAuthenticated: false,
-  isSyncing: false,
 }
 
 export const useStore = create<AppState>()(
@@ -255,9 +229,6 @@ export const useStore = create<AppState>()(
 
       setRightSidebarCollapsed: (rightSidebarCollapsed) =>
         set({ rightSidebarCollapsed }),
-
-      setAuthModalOpen: (isAuthModalOpen) =>
-        set({ isAuthModalOpen }),
 
       // Alert actions
       addAlertRule: (rule) =>
@@ -404,101 +375,6 @@ export const useStore = create<AppState>()(
           ),
         })),
 
-      // Auth actions
-      setUser: (user) =>
-        set({ user, isAuthenticated: !!user }),
-
-      setSession: (session) =>
-        set({ session }),
-
-      signOut: async () => {
-        await supabase.auth.signOut()
-        set({ user: null, session: null, isAuthenticated: false })
-      },
-
-      syncToCloud: async () => {
-        const state = useStore.getState()
-        if (!state.user) return
-
-        set({ isSyncing: true })
-        try {
-          const { pushAllToCloud } = await import('@/services/syncService')
-          
-          await pushAllToCloud(state.user.id, {
-            userSettings: {
-              currentPair: state.currentPair,
-              currentList: state.currentList,
-              refreshInterval: state.refreshInterval,
-              sortField: state.sort.field,
-              sortDirection: state.sort.direction,
-              theme: state.theme,
-            },
-            alertSettings: state.alertSettings,
-            watchlistSymbols: state.watchlistSymbols,
-            alertRules: state.alertRules,
-            webhooks: state.alertSettings.webhooks,
-          })
-          
-          debug.log('✅ Synced to cloud successfully')
-        } catch (error) {
-          console.error('❌ Sync to cloud failed:', error)
-          throw error
-        } finally {
-          set({ isSyncing: false })
-        }
-      },
-
-      syncFromCloud: async () => {
-        const state = useStore.getState()
-        if (!state.user) return
-
-        set({ isSyncing: true })
-        try {
-          const { pullAllFromCloud } = await import('@/services/syncService')
-          
-          const cloudData = await pullAllFromCloud(state.user.id)
-          
-          // Update store with cloud data
-          if (cloudData.userSettings) {
-            set({
-              currentPair: cloudData.userSettings.currentPair,
-              currentList: cloudData.userSettings.currentList,
-              refreshInterval: cloudData.userSettings.refreshInterval,
-              sort: {
-                field: cloudData.userSettings.sortField || 'priceChangePercent',
-                direction: cloudData.userSettings.sortDirection || 'desc',
-              },
-              theme: cloudData.userSettings.theme,
-            })
-          }
-          
-          if (cloudData.alertSettings) {
-            set({
-              alertSettings: {
-                ...state.alertSettings,
-                ...cloudData.alertSettings,
-              },
-            })
-          }
-          
-          set({
-            watchlistSymbols: cloudData.watchlistSymbols || [],
-            alertRules: cloudData.alertRules,
-            alertSettings: {
-              ...state.alertSettings,
-              webhooks: cloudData.webhooks,
-            },
-          })
-          
-          debug.log('✅ Synced from cloud successfully')
-        } catch (error) {
-          console.error('❌ Sync from cloud failed:', error)
-          throw error
-        } finally {
-          set({ isSyncing: false })
-        }
-      },
-
       reset: () =>
         set(initialState as Partial<AppState>),
     }),
@@ -522,9 +398,6 @@ export const useStore = create<AppState>()(
         watchlistSymbols: state.watchlistSymbols, // Simplified watchlist
         webhooks: state.webhooks, // Persist webhooks
         activeView: state.activeView,
-        // Persist auth state
-        user: state.user,
-        session: state.session,
       }),
     }
   )

@@ -1,22 +1,17 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { Button } from '@/components/ui'
-
-interface UserMenuProps {
-  onSignIn: () => void
-}
 
 /**
  * UserMenu - User authentication menu
  * 
- * Features:
- * - Shows sign in button when logged out
- * - Shows user email and sign out button when logged in
- * - Integrates with backend JWT authentication
+ * Shows user email and sign out button.
+ * User is always authenticated when this renders (behind ProtectedRoute).
  */
-export function UserMenu({ onSignIn }: UserMenuProps) {
+export function UserMenu() {
   const [isOpen, setIsOpen] = useState(false)
   const { user, logout, loading } = useAuth()
+  const navigate = useNavigate()
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -34,19 +29,7 @@ export function UserMenu({ onSignIn }: UserMenuProps) {
   }
 
   if (!user) {
-    return (
-      <Button
-        onClick={onSignIn}
-        variant="secondary"
-        size="sm"
-        className="flex items-center gap-2"
-      >
-        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-        </svg>
-        Sign In
-      </Button>
-    )
+    return null
   }
 
   return (
@@ -96,6 +79,7 @@ export function UserMenu({ onSignIn }: UserMenuProps) {
               onClick={() => {
                 logout()
                 setIsOpen(false)
+                navigate('/')
               }}
               className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-300 hover:bg-surface-light hover:text-white transition-colors"
             >

@@ -1,7 +1,14 @@
-import { supabase } from '@/config'
+import { createClient } from '@supabase/supabase-js'
 import { debug } from '@/utils/debug'
 import type { AlertRule, AlertSettings } from '@/types/alert'
 import type { WebhookConfig } from '@/types/alert'
+
+// Legacy Supabase client — only used by cloud sync (deprecated, will be removed)
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co',
+  import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key',
+  { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } }
+)
 
 /**
  * Sync Service - Bidirectional sync between IndexedDB and Supabase

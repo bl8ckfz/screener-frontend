@@ -96,5 +96,3 @@ export type {
 
 export { DEFAULT_CONFIG, STORAGE_KEYS, DEFAULT_COLUMNS } from './config'
 
-// Supabase types
-export type { Database, Json } from './supabase'

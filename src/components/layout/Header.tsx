@@ -1,8 +1,6 @@
-import { useCallback } from 'react'
 import { ThemeToggle } from '@/components/controls'
-import { AuthModal, UserMenu } from '@/components/auth'
+import { UserMenu } from '@/components/auth'
 import { SettingsButton } from '@/components/settings'
-import { useStore } from '@/hooks/useStore'
 
 interface HeaderProps {
   title?: string
@@ -22,13 +20,6 @@ export function Header({
   onMouseEnter,
   onMouseLeave,
 }: HeaderProps) {
-  const isAuthModalOpen = useStore((state) => state.isAuthModalOpen)
-  const setAuthModalOpen = useStore((state) => state.setAuthModalOpen)
-
-  // Memoize callbacks to prevent AuthModal from re-rendering
-  const handleOpenAuth = useCallback(() => setAuthModalOpen(true), [setAuthModalOpen])
-  const handleCloseAuth = useCallback(() => setAuthModalOpen(false), [setAuthModalOpen])
-
   return (
     <>
       <header 
@@ -50,18 +41,13 @@ export function Header({
               )}
             </div>
             <div className="flex items-center space-x-1.5 sm:space-x-4 flex-shrink-0">
-              <UserMenu onSignIn={handleOpenAuth} />
+              <UserMenu />
               {onOpenSettings && <SettingsButton onClick={onOpenSettings} />}
               <ThemeToggle />
             </div>
           </div>
         </div>
       </header>
-
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={handleCloseAuth}
-      />
     </>
   )
 }

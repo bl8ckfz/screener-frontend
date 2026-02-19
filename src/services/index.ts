@@ -21,5 +21,4 @@ export type { AlertSeverity } from './audioNotification'
 // Notifications
 export { showNotification } from './notification'
 
-// Sync Service
-export * from './syncService'
+
