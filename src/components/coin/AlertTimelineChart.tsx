@@ -115,12 +115,14 @@ export function AlertTimelineChart({ symbol, fullSymbol: _fullSymbol, alerts = [
   }, [filteredAlerts])
 
   // Calculate visible time range (anchored to current time like Heatmap)
+  // Include filteredAlerts.length so Date.now() refreshes when new alerts arrive
   const timeRange = useMemo(() => {
     const now = Date.now()
     const min = now - visibleRange
     const max = now
     return { min, max }
-  }, [visibleRange])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleRange, filteredAlerts.length])
 
   // TradingView-style wheel zoom handler
   useEffect(() => {
@@ -159,6 +161,7 @@ export function AlertTimelineChart({ symbol, fullSymbol: _fullSymbol, alerts = [
   }
 
   // Generate dynamic time labels based on zoom level
+  // Include filteredAlerts.length so labels stay in sync with timeRange refresh
   const timeLabels = useMemo(() => {
     const now = Date.now()
     const min = now - visibleRange
@@ -177,7 +180,8 @@ export function AlertTimelineChart({ symbol, fullSymbol: _fullSymbol, alerts = [
         label: showDate ? formatDateTimeShort(timestamp) : formatTime(timestamp)
       }
     })
-  }, [visibleRange, showDate])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleRange, showDate, filteredAlerts.length])
 
   // Calculate chart width (must be before early return)
   const chartWidth = useMemo(() => {

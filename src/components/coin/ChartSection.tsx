@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { TradingChart } from './TradingChart'
 import { AlertTimelineChart } from './AlertTimelineChart'
-import { AlertHeatmapTimeline } from '@/components/alerts'
+// import { AlertHeatmapTimeline } from '@/components/alerts'
 import { ExternalLinks } from './ExternalLinks'
 import { fetchKlines, type KlineInterval, COMMON_INTERVALS, INTERVAL_LABELS } from '@/services/chartData'
 import { alertHistoryService } from '@/services/alertHistoryService'
@@ -348,17 +348,6 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
             showVolume={true}
             showAlerts={showAlerts}
             alerts={chartAlerts}
-          />
-        </div>
-      </div>
-
-      {/* Alert Heatmap Timeline - NEW: Shows all alerts with intensity visualization */}
-      <div className="px-1 md:px-4 pt-1 md:pt-4 w-full max-w-full overflow-hidden">
-        <div className="bg-gray-900 rounded-lg p-1 md:p-3 w-full max-w-full overflow-hidden">
-          <AlertHeatmapTimeline 
-            symbol={selectedCoin.symbol} 
-            fullSymbol={selectedCoin.fullSymbol}
-            alerts={allCombinedAlerts} 
           />
         </div>
       </div>
