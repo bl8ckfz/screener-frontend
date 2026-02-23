@@ -52,7 +52,7 @@ export function AlertBadges({ alertTypes, maxVisible = 3, latestAlertType }: Ale
     shouldHighlight: boolean
   } => {
     const cleanType = type.replace(/^futures_/, '').replace(/^5m_/, '5_').replace(/^15m_/, '15_')
-    const isBullish = cleanType.includes('bull') || cleanType.includes('bottom_hunter')
+    const isBullish = cleanType.includes('bull') || cleanType.includes('bottom_hunter') || cleanType === 'whale_accumulation'
     
     // Normalize type for color lookup (ensure futures_ prefix)
     const normalizedType = type.startsWith('futures_') ? type : `futures_${cleanType}`
@@ -83,6 +83,10 @@ export function AlertBadges({ alertTypes, maxVisible = 3, latestAlertType }: Ale
     } else if (cleanType === 'big_bull_60_v2' || cleanType === 'big_bear_60_v2') {
       text = '62'
     } else if (cleanType === 'whale_detector') {
+      text = '🐋'
+    } else if (cleanType === 'whale_accumulation') {
+      text = '🐋'
+    } else if (cleanType === 'whale_distribution') {
       text = '🐋'
     } else {
       // Fallback for legacy/other types

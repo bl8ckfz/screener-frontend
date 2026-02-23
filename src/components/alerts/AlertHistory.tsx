@@ -237,7 +237,7 @@ export function AlertHistory() {
 
   const getAlertBadge = (type: CombinedAlertType): { text: string; color: string; bgColor: string } => {
     const cleanType = type.replace(/^futures_/, '').replace(/^5m_/, '5_').replace(/^15m_/, '15_')
-    const isBullish = cleanType.includes('bull') || cleanType === 'bottom_hunter'
+    const isBullish = cleanType.includes('bull') || cleanType === 'bottom_hunter' || cleanType === 'whale_accumulation'
     
     // Normalize type for color lookup (ensure futures_ prefix)
     const normalizedType = type.startsWith('futures_') ? type : `futures_${cleanType}`
@@ -269,6 +269,10 @@ export function AlertHistory() {
       text = '62'
     } else if (cleanType === 'whale_detector') {
       text = '🐋'
+    } else if (cleanType === 'whale_accumulation') {
+      text = '🐋'
+    } else if (cleanType === 'whale_distribution') {
+      text = '🐋'
     } else {
       // Fallback for legacy/other types
       text = '?'
@@ -299,6 +303,8 @@ export function AlertHistory() {
       big_bear_60_v2: '🔴 Big Bear 60m V2',
       // Whale
       whale_detector: '🐋 Whale Detector',
+      whale_accumulation: '🐋⬆ Whale Accumulation',
+      whale_distribution: '🐋⬇ Whale Distribution',
     }
     return names[cleanType] || cleanType.split('_').map(w => 
       w.charAt(0).toUpperCase() + w.slice(1)
