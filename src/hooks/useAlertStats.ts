@@ -66,11 +66,14 @@ function normalizeSymbol(symbol: string): string {
 function aggregateBySymbol(entries: AlertHistoryEntry[], currentCoins?: Coin[]): CoinAlertStats[] {
   const grouped = new Map<string, AlertHistoryEntry[]>()
 
-  entries.forEach((entry) => {
-    const existing = grouped.get(entry.symbol) || []
-    existing.push(entry)
-    grouped.set(entry.symbol, existing)
-  })
+  // Exclude generic whale_detector — replaced by directional accumulation/distribution
+  entries
+    .filter(entry => entry.alertType !== 'futures_whale_detector')
+    .forEach((entry) => {
+      const existing = grouped.get(entry.symbol) || []
+      existing.push(entry)
+      grouped.set(entry.symbol, existing)
+    })
 
   const stats: CoinAlertStats[] = Array.from(grouped.entries()).map(([symbol, alerts]) => {
     const sortedAlerts = alerts.sort((a, b) => b.timestamp - a.timestamp)

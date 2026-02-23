@@ -104,7 +104,10 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
     realtimeAlerts.forEach((alert) => alertMap.set(alert.id, alert))
 
     // Return ALL alerts (no time filter) sorted by timestamp
-    return Array.from(alertMap.values()).sort((a, b) => b.timestamp - a.timestamp)
+    // Exclude generic whale_detector — replaced by directional accumulation/distribution
+    return Array.from(alertMap.values())
+      .filter(alert => alert.type !== 'futures_whale_detector')
+      .sort((a, b) => b.timestamp - a.timestamp)
   }, [selectedCoin, coinAlerts, activeAlerts])
 
   // Transform ALL alerts (Alert[]) to AlertHistoryEntry[] for TradingChart

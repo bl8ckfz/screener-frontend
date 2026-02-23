@@ -88,7 +88,8 @@ export function AlertHistory() {
 
   // Filter and sort history
   const filteredHistory = useMemo(() => {
-    let filtered = [...history]
+    // Exclude generic whale_detector — replaced by directional accumulation/distribution
+    let filtered = history.filter(item => item.type !== 'futures_whale_detector')
 
     // Source tab filter
     if (sourceTab !== 'all') {
