@@ -33,6 +33,8 @@ const ALERT_TYPE_COLORS: Record<string, { text: string; dot: string }> = {
   futures_big_bear_60_v2: { text: 'text-red-400', dot: '#ef4444' },
   // Whale
   futures_whale_detector: { text: 'text-cyan-400', dot: '#22d3ee' },
+  futures_whale_accumulation: { text: 'text-emerald-400', dot: '#34d399' },
+  futures_whale_distribution: { text: 'text-red-400', dot: '#f87171' },
 }
 
 // Display names for futures alert types - without "futures_" prefix
@@ -60,6 +62,8 @@ const getAlertTypeName = (type: string): string => {
     big_bear_60_v2: '🔴 Big Bear 60m V2',
     // Whale
     whale_detector: '🐋 Whale Detector',
+    whale_accumulation: '🐋⬆ Whale Accumulation',
+    whale_distribution: '🐋⬇ Whale Distribution',
   }
   
   return names[cleanType] || cleanType.split('_').map(w => 

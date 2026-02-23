@@ -31,6 +31,8 @@ const ALERT_TYPE_COLORS: Record<string, string> = {
   futures_big_bear_60_v2: '#ef4444',
   // Whale
   futures_whale_detector: '#22d3ee',
+  futures_whale_accumulation: '#34d399',
+  futures_whale_distribution: '#f87171',
 }
 
 /**

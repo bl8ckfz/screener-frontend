@@ -24,6 +24,8 @@ export type FuturesAlertType =
   | 'futures_big_bear_60_v2' // Big Bear 60 V2 (daily floor + BTC-relative)
   // Whale detection
   | 'futures_whale_detector' // Whale Detector (volume anomaly, no price move)
+  | 'futures_whale_accumulation' // Whale Accumulation (volume anomaly, bullish context)
+  | 'futures_whale_distribution' // Whale Distribution (volume anomaly, bearish context)
 
 /**
  * Legacy alert types (DEPRECATED - kept for backwards compatibility only)
@@ -539,6 +541,20 @@ export const FUTURES_ALERT_PRESETS: FuturesAlertPreset[] = [
     severity: 'high',
     marketMode: 'both',
   },
+  {
+    type: 'futures_whale_accumulation',
+    name: 'Whale Accumulation',
+    description: 'Whale volume anomaly with bullish context (15m trend positive or RSI > 50)',
+    severity: 'high',
+    marketMode: 'bull',
+  },
+  {
+    type: 'futures_whale_distribution',
+    name: 'Whale Distribution',
+    description: 'Whale volume anomaly with bearish context (15m trend negative or RSI < 50)',
+    severity: 'high',
+    marketMode: 'bear',
+  },
 ]
 
 /**
@@ -564,6 +580,8 @@ export const FUTURES_ALERT_LABELS: Record<FuturesAlertType, string> = {
   futures_big_bear_60_v2: '🔴 Big Bear 60m V2',
   // Whale
   futures_whale_detector: '🐋 Whale Detector',
+  futures_whale_accumulation: '🐋⬆️ Whale Accumulation',
+  futures_whale_distribution: '🐋⬇️ Whale Distribution',
 }
 
 /**
@@ -591,6 +609,8 @@ export const DEFAULT_FUTURES_ALERT_CONFIG: FuturesAlertConfig = {
     futures_big_bear_60_v2: { enabled: true, severity: 'critical' },
     // Whale (enabled by default)
     futures_whale_detector: { enabled: true, severity: 'high' },
+    futures_whale_accumulation: { enabled: true, severity: 'high' },
+    futures_whale_distribution: { enabled: true, severity: 'high' },
   },
   globalThresholds: {
     priceChange_15m: 1.0, // 1%

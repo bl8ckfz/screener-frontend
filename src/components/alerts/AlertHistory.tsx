@@ -231,6 +231,8 @@ export function AlertHistory() {
     futures_big_bear_60_v2: '#ef4444',
     // Whale
     futures_whale_detector: '#22d3ee',
+    futures_whale_accumulation: '#34d399',
+    futures_whale_distribution: '#f87171',
   }
 
   const getAlertBadge = (type: CombinedAlertType): { text: string; color: string; bgColor: string } => {
@@ -458,6 +460,8 @@ export function AlertHistory() {
             </optgroup>
             <optgroup label="Whale Detection">
               <option value="futures_whale_detector">Whale Detector</option>
+              <option value="futures_whale_accumulation">Whale Accumulation</option>
+              <option value="futures_whale_distribution">Whale Distribution</option>
             </optgroup>
             <optgroup label="Legacy Alerts">
               <option value="pioneer_bull">Pioneer Bull (Legacy)</option>
