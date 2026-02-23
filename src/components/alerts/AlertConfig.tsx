@@ -57,6 +57,66 @@ interface PresetGroup {
   presets: FuturesAlertPreset[]
 }
 
+// ── Preset Card ────────────────────────────────────────────────────
+function PresetCard({
+  preset,
+  enabled,
+  onToggle,
+  isToggling,
+  isV2,
+  isWhale,
+}: {
+  preset: FuturesAlertPreset
+  enabled: boolean
+  onToggle: (type: FuturesAlertType, enabled: boolean) => void
+  isToggling: boolean
+  isV2: boolean
+  isWhale: boolean
+}) {
+  return (
+    <div
+      className={`rounded-lg border p-3 transition-colors ${
+        enabled
+          ? 'border-green-500/50 bg-green-900/10'
+          : 'border-gray-700 bg-gray-800/30'
+      }`}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-medium text-white">{preset.name}</span>
+            <Badge className={`text-xs ${
+              preset.severity === 'critical' ? 'bg-red-500/20 text-red-400' :
+              preset.severity === 'high' ? 'bg-orange-500/20 text-orange-400' :
+              preset.severity === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+              'bg-blue-500/20 text-blue-400'
+            }`}>
+              {preset.severity}
+            </Badge>
+            {isV2 && (
+              <Badge className="text-xs bg-purple-500/20 text-purple-400">V2</Badge>
+            )}
+            {isWhale && (
+              <Badge className="text-xs bg-cyan-500/20 text-cyan-400">🐋</Badge>
+            )}
+          </div>
+          <p className="mt-1 text-xs text-gray-400">{preset.description}</p>
+        </div>
+        <label className="relative inline-flex cursor-pointer items-center ml-3 shrink-0">
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={(e) => onToggle(preset.type, e.target.checked)}
+            disabled={isToggling}
+            className="peer sr-only"
+          />
+          <div className="peer h-5 w-9 rounded-full bg-gray-700 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-gray-600 after:bg-white after:transition-all after:content-[''] peer-checked:bg-green-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-green-800"></div>
+        </label>
+      </div>
+    </div>
+  )
+}
+
 /**
  * AlertConfig - UI for managing alert rules
  * 
@@ -260,65 +320,60 @@ export function AlertConfig({
         />
       )}
 
-      {/* Futures Alert Presets — Grouped */}
-      {presetGroups.map((group) => (
-        <div key={group.label} className="space-y-2">
-          <div className="flex items-center gap-2 mb-3">
-            <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clipRule="evenodd" />
-            </svg>
-            <h4 className="text-sm font-semibold text-white">{group.label}</h4>
-            <Badge className={`text-xs ${group.badgeClass}`}>{group.badge}</Badge>
-          </div>
-          <p className="text-xs text-gray-400 mb-3">{group.description}</p>
-          
-          <div className="space-y-2">
-            {group.presets.map((preset) => (
-              <div
-                key={preset.type}
-                className={`rounded-lg border p-3 transition-colors ${
-                  isPresetEnabled(preset.type)
-                    ? 'border-green-500/50 bg-green-900/10'
-                    : 'border-gray-700 bg-gray-800/30'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-white">{preset.name}</span>
-                      <Badge className={`text-xs ${
-                        preset.severity === 'critical' ? 'bg-red-500/20 text-red-400' :
-                        preset.severity === 'high' ? 'bg-orange-500/20 text-orange-400' :
-                        preset.severity === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                        'bg-blue-500/20 text-blue-400'
-                      }`}>
-                        {preset.severity}
-                      </Badge>
-                      {V2_TYPES.has(preset.type) && (
-                        <Badge className="text-xs bg-purple-500/20 text-purple-400">V2</Badge>
-                      )}
-                      {WHALE_TYPES.has(preset.type) && (
-                        <Badge className="text-xs bg-cyan-500/20 text-cyan-400">🐋</Badge>
-                      )}
-                    </div>
-                    <p className="mt-1 text-xs text-gray-400">{preset.description}</p>
-                  </div>
-                  <label className="relative inline-flex cursor-pointer items-center ml-3">
-                    <input
-                      type="checkbox"
-                      checked={isPresetEnabled(preset.type)}
-                      onChange={(e) => handlePresetToggle(preset.type, e.target.checked)}
-                      disabled={isToggling}
-                      className="peer sr-only"
-                    />
-                    <div className="peer h-5 w-9 rounded-full bg-gray-700 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-gray-600 after:bg-white after:transition-all after:content-[''] peer-checked:bg-green-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-green-800"></div>
-                  </label>
-                </div>
+      {/* Futures Alert Presets — Two-column layout: Old | New */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Left column: Original rules */}
+        <div className="space-y-2">
+          {presetGroups.slice(0, 1).map((group) => (
+            <div key={group.label}>
+              <div className="flex items-center gap-2 mb-2">
+                <h4 className="text-sm font-semibold text-white">{group.label}</h4>
+                <Badge className={`text-xs ${group.badgeClass}`}>{group.badge}</Badge>
               </div>
-            ))}
-          </div>
+              <p className="text-xs text-gray-400 mb-3">{group.description}</p>
+              <div className="space-y-2">
+                {group.presets.map((preset) => (
+                  <PresetCard
+                    key={preset.type}
+                    preset={preset}
+                    enabled={isPresetEnabled(preset.type)}
+                    onToggle={handlePresetToggle}
+                    isToggling={isToggling}
+                    isV2={V2_TYPES.has(preset.type)}
+                    isWhale={WHALE_TYPES.has(preset.type)}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
+
+        {/* Right column: V2 + Whale rules */}
+        <div className="space-y-4">
+          {presetGroups.slice(1).map((group) => (
+            <div key={group.label}>
+              <div className="flex items-center gap-2 mb-2">
+                <h4 className="text-sm font-semibold text-white">{group.label}</h4>
+                <Badge className={`text-xs ${group.badgeClass}`}>{group.badge}</Badge>
+              </div>
+              <p className="text-xs text-gray-400 mb-3">{group.description}</p>
+              <div className="space-y-2">
+                {group.presets.map((preset) => (
+                  <PresetCard
+                    key={preset.type}
+                    preset={preset}
+                    enabled={isPresetEnabled(preset.type)}
+                    onToggle={handlePresetToggle}
+                    isToggling={isToggling}
+                    isV2={V2_TYPES.has(preset.type)}
+                    isWhale={WHALE_TYPES.has(preset.type)}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* Custom Rules List */}
       {rules.some(r => {
