@@ -22,6 +22,15 @@ const ALERT_TYPE_COLORS: Record<string, string> = {
   futures_5_big_bear: '#f87171',
   futures_15_big_bear: '#dc2626',
   futures_top_hunter: '#a855f7', // purple hunters
+  // V2 Optimized
+  futures_pioneer_bull_v2: '#6ee7b7',
+  futures_pioneer_bear_v2: '#f9a8d4',
+  futures_bottom_hunter_v2: '#8b5cf6',
+  futures_top_hunter_v2: '#8b5cf6',
+  futures_big_bull_60_v2: '#22c55e',
+  futures_big_bear_60_v2: '#ef4444',
+  // Whale
+  futures_whale_detector: '#22d3ee',
 }
 
 /**
@@ -63,6 +72,16 @@ export function AlertBadges({ alertTypes, maxVisible = 3, latestAlertType }: Ale
       text = 'BH'
     } else if (cleanType === 'top_hunter') {
       text = 'TH'
+    } else if (cleanType === 'pioneer_bull_v2' || cleanType === 'pioneer_bear_v2') {
+      text = 'P2'
+    } else if (cleanType === 'bottom_hunter_v2') {
+      text = 'B2'
+    } else if (cleanType === 'top_hunter_v2') {
+      text = 'T2'
+    } else if (cleanType === 'big_bull_60_v2' || cleanType === 'big_bear_60_v2') {
+      text = '62'
+    } else if (cleanType === 'whale_detector') {
+      text = '🐋'
     } else {
       // Fallback for legacy/other types
       text = '?'

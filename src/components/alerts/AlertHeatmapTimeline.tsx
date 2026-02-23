@@ -75,6 +75,43 @@ const ALERT_TYPE_COLORS: Record<string, { bg: string; text: string; intensity: s
     text: 'text-purple-400',
     intensity: ['bg-purple-900/10', 'bg-purple-800/30', 'bg-purple-700/50', 'bg-purple-600/70', 'bg-purple-500/90'],
   },
+  // V2 Optimized
+  futures_pioneer_bull_v2: {
+    bg: 'bg-emerald-900/20',
+    text: 'text-emerald-300',
+    intensity: ['bg-emerald-900/10', 'bg-emerald-800/30', 'bg-emerald-700/50', 'bg-emerald-600/70', 'bg-emerald-500/90'],
+  },
+  futures_pioneer_bear_v2: {
+    bg: 'bg-pink-900/20',
+    text: 'text-pink-300',
+    intensity: ['bg-pink-900/10', 'bg-pink-800/30', 'bg-pink-700/50', 'bg-pink-600/70', 'bg-pink-500/90'],
+  },
+  futures_bottom_hunter_v2: {
+    bg: 'bg-violet-900/20',
+    text: 'text-violet-400',
+    intensity: ['bg-violet-900/10', 'bg-violet-800/30', 'bg-violet-700/50', 'bg-violet-600/70', 'bg-violet-500/90'],
+  },
+  futures_top_hunter_v2: {
+    bg: 'bg-violet-900/20',
+    text: 'text-violet-400',
+    intensity: ['bg-violet-900/10', 'bg-violet-800/30', 'bg-violet-700/50', 'bg-violet-600/70', 'bg-violet-500/90'],
+  },
+  futures_big_bull_60_v2: {
+    bg: 'bg-green-900/20',
+    text: 'text-green-400',
+    intensity: ['bg-green-900/10', 'bg-green-800/30', 'bg-green-700/50', 'bg-green-600/70', 'bg-green-500/90'],
+  },
+  futures_big_bear_60_v2: {
+    bg: 'bg-red-900/20',
+    text: 'text-red-400',
+    intensity: ['bg-red-900/10', 'bg-red-800/30', 'bg-red-700/50', 'bg-red-600/70', 'bg-red-500/90'],
+  },
+  // Whale
+  futures_whale_detector: {
+    bg: 'bg-cyan-900/20',
+    text: 'text-cyan-400',
+    intensity: ['bg-cyan-900/10', 'bg-cyan-800/30', 'bg-cyan-700/50', 'bg-cyan-600/70', 'bg-cyan-500/90'],
+  },
 }
 
 const getAlertTypeName = (type: string): string => {
@@ -90,6 +127,15 @@ const getAlertTypeName = (type: string): string => {
     '15_big_bear': '15 Big Bear',
     bottom_hunter: 'Bottom Hunter',
     top_hunter: 'Top Hunter',
+    // V2 Optimized
+    pioneer_bull_v2: '🟢 Pioneer Bull V2',
+    pioneer_bear_v2: '🔴 Pioneer Bear V2',
+    bottom_hunter_v2: '🟢 Bottom Hunter V2',
+    top_hunter_v2: '🔴 Top Hunter V2',
+    big_bull_60_v2: '🟢 Big Bull 60m V2',
+    big_bear_60_v2: '🔴 Big Bear 60m V2',
+    // Whale
+    whale_detector: '🐋 Whale Detector',
   }
   return names[cleanType] || cleanType.split('_').map(w => 
     w.charAt(0).toUpperCase() + w.slice(1)

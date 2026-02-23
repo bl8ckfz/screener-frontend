@@ -72,6 +72,15 @@ const ALERT_MARKER_COLORS: Record<string, string> = {
   futures_5_big_bear: '#f87171',
   futures_15_big_bear: '#dc2626',
   futures_top_hunter: '#f97316',
+  // V2 Optimized
+  futures_pioneer_bull_v2: '#6ee7b7',
+  futures_pioneer_bear_v2: '#f9a8d4',
+  futures_bottom_hunter_v2: '#8b5cf6',
+  futures_top_hunter_v2: '#8b5cf6',
+  futures_big_bull_60_v2: '#22c55e',
+  futures_big_bear_60_v2: '#ef4444',
+  // Whale
+  futures_whale_detector: '#22d3ee',
 }
 
 /**
@@ -80,8 +89,14 @@ const ALERT_MARKER_COLORS: Record<string, string> = {
 const getAlertMarkerStyle = (alertType: string): { color: string; position: 'aboveBar' | 'belowBar'; shape: 'circle' | 'arrowUp' | 'arrowDown' } => {
   const cleanType = alertType.replace(/^futures_/, '')
   const normalizedKey = alertType.startsWith('futures_') ? alertType : `futures_${alertType}`
-  const isBullish = cleanType.includes('bull') || cleanType === 'bottom_hunter'
-  const isHunter = cleanType === 'bottom_hunter' || cleanType === 'top_hunter'
+  const isBullish = cleanType.includes('bull') || cleanType.includes('bottom_hunter')
+  const isHunter = cleanType.includes('bottom_hunter') || cleanType.includes('top_hunter')
+  const isWhale = cleanType === 'whale_detector'
+
+  // Whale uses cyan circle at the bar
+  if (isWhale) {
+    return { color: '#22d3ee', position: 'belowBar', shape: 'circle' }
+  }
 
   // Hunters use a distinct purple circle; others keep mapped/bull-bear colors
   const color = isHunter

@@ -28,6 +28,15 @@ const ALERT_TYPE_COLORS: Record<string, { text: string; dot: string }> = {
   futures_5_big_bear: { text: 'text-orange-400', dot: '#f87171' },
   futures_15_big_bear: { text: 'text-red-500', dot: '#dc2626' },
   futures_top_hunter: { text: 'text-purple-400', dot: '#a855f7' },
+  // V2 Optimized
+  futures_pioneer_bull_v2: { text: 'text-emerald-300', dot: '#6ee7b7' },
+  futures_pioneer_bear_v2: { text: 'text-pink-300', dot: '#f9a8d4' },
+  futures_bottom_hunter_v2: { text: 'text-violet-400', dot: '#8b5cf6' },
+  futures_top_hunter_v2: { text: 'text-violet-400', dot: '#8b5cf6' },
+  futures_big_bull_60_v2: { text: 'text-green-400', dot: '#22c55e' },
+  futures_big_bear_60_v2: { text: 'text-red-400', dot: '#ef4444' },
+  // Whale
+  futures_whale_detector: { text: 'text-cyan-400', dot: '#22d3ee' },
 }
 
 // Display names for futures alert types - without "futures_" prefix
@@ -46,6 +55,15 @@ const getAlertTypeName = (type: string): string => {
     '15_big_bear': '15 Big Bear',
     bottom_hunter: 'Bottom Hunter',
     top_hunter: 'Top Hunter',
+    // V2 Optimized
+    pioneer_bull_v2: '🟢 Pioneer Bull V2',
+    pioneer_bear_v2: '🔴 Pioneer Bear V2',
+    bottom_hunter_v2: '🟢 Bottom Hunter V2',
+    top_hunter_v2: '🔴 Top Hunter V2',
+    big_bull_60_v2: '🟢 Big Bull 60m V2',
+    big_bear_60_v2: '🔴 Big Bear 60m V2',
+    // Whale
+    whale_detector: '🐋 Whale Detector',
   }
   
   return names[cleanType] || cleanType.split('_').map(w => 

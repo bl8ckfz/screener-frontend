@@ -222,6 +222,15 @@ export function AlertHistory() {
     futures_5_big_bear: '#f87171',
     futures_15_big_bear: '#dc2626',
     futures_top_hunter: '#a855f7', // purple hunters
+    // V2 Optimized
+    futures_pioneer_bull_v2: '#6ee7b7',
+    futures_pioneer_bear_v2: '#f9a8d4',
+    futures_bottom_hunter_v2: '#8b5cf6',
+    futures_top_hunter_v2: '#8b5cf6',
+    futures_big_bull_60_v2: '#22c55e',
+    futures_big_bear_60_v2: '#ef4444',
+    // Whale
+    futures_whale_detector: '#22d3ee',
   }
 
   const getAlertBadge = (type: CombinedAlertType): { text: string; color: string; bgColor: string } => {
@@ -248,6 +257,16 @@ export function AlertHistory() {
       text = 'BH'
     } else if (cleanType === 'top_hunter') {
       text = 'TH'
+    } else if (cleanType === 'pioneer_bull_v2' || cleanType === 'pioneer_bear_v2') {
+      text = 'P2'
+    } else if (cleanType === 'bottom_hunter_v2') {
+      text = 'B2'
+    } else if (cleanType === 'top_hunter_v2') {
+      text = 'T2'
+    } else if (cleanType === 'big_bull_60_v2' || cleanType === 'big_bear_60_v2') {
+      text = '62'
+    } else if (cleanType === 'whale_detector') {
+      text = '🐋'
     } else {
       // Fallback for legacy/other types
       text = '?'
@@ -269,6 +288,15 @@ export function AlertHistory() {
       '15_big_bear': '15 Big Bear',
       bottom_hunter: 'Bottom Hunter',
       top_hunter: 'Top Hunter',
+      // V2 Optimized
+      pioneer_bull_v2: '🟢 Pioneer Bull V2',
+      pioneer_bear_v2: '🔴 Pioneer Bear V2',
+      bottom_hunter_v2: '🟢 Bottom Hunter V2',
+      top_hunter_v2: '🔴 Top Hunter V2',
+      big_bull_60_v2: '🟢 Big Bull 60m V2',
+      big_bear_60_v2: '🔴 Big Bear 60m V2',
+      // Whale
+      whale_detector: '🐋 Whale Detector',
     }
     return names[cleanType] || cleanType.split('_').map(w => 
       w.charAt(0).toUpperCase() + w.slice(1)
@@ -419,6 +447,17 @@ export function AlertHistory() {
               <option value="futures_15_big_bear">15 Big Bear (Futures)</option>
               <option value="futures_bottom_hunter">Bottom Hunter (Futures)</option>
               <option value="futures_top_hunter">Top Hunter (Futures)</option>
+            </optgroup>
+            <optgroup label="Optimized V2">
+              <option value="futures_pioneer_bull_v2">Pioneer Bull V2</option>
+              <option value="futures_pioneer_bear_v2">Pioneer Bear V2</option>
+              <option value="futures_bottom_hunter_v2">Bottom Hunter V2</option>
+              <option value="futures_top_hunter_v2">Top Hunter V2</option>
+              <option value="futures_big_bull_60_v2">Big Bull 60m V2</option>
+              <option value="futures_big_bear_60_v2">Big Bear 60m V2</option>
+            </optgroup>
+            <optgroup label="Whale Detection">
+              <option value="futures_whale_detector">Whale Detector</option>
             </optgroup>
             <optgroup label="Legacy Alerts">
               <option value="pioneer_bull">Pioneer Bull (Legacy)</option>
