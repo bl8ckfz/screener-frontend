@@ -1,15 +1,11 @@
 import { useMemo, useState, useRef, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { useStore } from '@/hooks/useStore'
-import { alertHistoryService } from '@/services/alertHistoryService'
-import { alertHistory } from '@/services/alertHistory'
-import { USE_BACKEND_API } from '@/services/backendApi'
 import type { AlertHistoryEntry } from '@/types/alertHistory'
-import type { AlertHistoryItem, CombinedAlertType } from '@/types/alert'
+import type { Alert } from '@/types/alert'
 
 interface AlertTimelineChartProps {
   symbol: string
   fullSymbol?: string
+  alerts?: Alert[]
   height?: number
 }
 
@@ -81,67 +77,31 @@ const formatTime = (timestamp: number): string => {
   })
 }
 
-function normalizeSymbol(symbol: string): string {
-  if (symbol.endsWith('USDT')) return symbol.replace('USDT', '')
-  if (symbol.endsWith('FDUSD')) return symbol.replace('FDUSD', '')
-  if (symbol.endsWith('TRY')) return symbol.replace('TRY', '')
-  return symbol
-}
-
-function toAlertHistoryEntry(alert: AlertHistoryItem): AlertHistoryEntry {
-  const normalizedSymbol = normalizeSymbol(alert.symbol)
-  return {
-    id: alert.id || `${alert.timestamp}-${normalizedSymbol}-${alert.type}`,
-    symbol: normalizedSymbol,
-    alertType: alert.type as CombinedAlertType,
-    timestamp: alert.timestamp,
-    priceAtTrigger: alert.value ?? 0,
-    changePercent: 0,
-    metadata: {
-      value: alert.value,
-      threshold: alert.threshold,
-    },
-  }
-}
-
-export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }: AlertTimelineChartProps) {
-  // Watch for alert history changes
-  const alertHistoryRefresh = useStore((state) => state.alertHistoryRefresh)
-  
+export function AlertTimelineChart({ symbol, fullSymbol: _fullSymbol, alerts = [], height: _unusedHeight }: AlertTimelineChartProps) {
   // Visible time range (in milliseconds from now)
-  const [visibleRange, setVisibleRange] = useState(60 * 60 * 1000) // Start at 1 hour (max zoom)
+  const [visibleRange, setVisibleRange] = useState(60 * 60 * 1000) // Start at 1 hour
   const chartRef = useRef<HTMLDivElement>(null)
+  const showDate = visibleRange >= 24 * 60 * 60 * 1000
 
-  const querySymbol = fullSymbol || symbol
-
-  const backendAlertsQuery = useQuery({
-    queryKey: ['backendAlerts', querySymbol],
-    queryFn: () => alertHistory.getAllBySymbol(querySymbol),
-    enabled: USE_BACKEND_API && !!querySymbol,
-    staleTime: 30000,
-    refetchInterval: 30000,
-    retry: 2,
-  })
-
-  const backendEntries = useMemo(() => {
-    if (!USE_BACKEND_API) return []
-    const alerts = backendAlertsQuery.data || []
-    return alerts.map((alert) => toAlertHistoryEntry(alert))
-  }, [backendAlertsQuery.data])
-
-  const localEntries = useMemo(() => {
-    if (USE_BACKEND_API) return []
-    return alertHistoryService.getHistory()
-  }, [alertHistoryRefresh])
-
-  // Filter alerts for this symbol in last 24 hours
+  // Transform Alert[] to AlertHistoryEntry[] for internal use
   const filteredAlerts = useMemo(() => {
-    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000
-    const allAlerts = USE_BACKEND_API ? backendEntries : localEntries
-    return allAlerts.filter(
-      (entry) => entry.symbol === symbol && entry.timestamp >= oneDayAgo
-    ).sort((a, b) => a.timestamp - b.timestamp) // Sort by time ascending
-  }, [symbol, backendEntries, localEntries])
+    const cutoff = Date.now() - 48 * 60 * 60 * 1000 // 48h max
+    return alerts
+      .filter(alert => alert.timestamp >= cutoff)
+      .map(alert => ({
+        id: alert.id,
+        symbol: alert.symbol,
+        alertType: alert.type,
+        timestamp: alert.timestamp,
+        priceAtTrigger: alert.value,
+        changePercent: 0,
+        metadata: {
+          value: alert.value,
+          threshold: alert.threshold,
+        },
+      } as AlertHistoryEntry))
+      .sort((a, b) => a.timestamp - b.timestamp)
+  }, [alerts])
 
   // Get unique alert types in chronological order; new types appear after existing ones
   const alertTypes = useMemo(() => {
@@ -173,8 +133,8 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
       
       setVisibleRange(prev => {
         const newRange = prev * zoomFactor
-        // Constrain between 1 hour and 24 hours
-        return Math.max(60 * 60 * 1000, Math.min(newRange, 24 * 60 * 60 * 1000))
+        // Constrain between 1 hour and 48 hours
+        return Math.max(60 * 60 * 1000, Math.min(newRange, 48 * 60 * 60 * 1000))
       })
     }
 
@@ -192,11 +152,13 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
     setVisibleRange(60 * 60 * 1000) // Reset to 1 hour
   }, [symbol])
 
-  const handleResetZoom = () => {
-    setVisibleRange(24 * 60 * 60 * 1000)
+  const formatDateTimeShort = (timestamp: number): string => {
+    const date = new Date(timestamp)
+    const month = date.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })
+    return `${month} ${formatTime(timestamp)}`
   }
 
-  // Generate dynamic time labels based on zoom level (matching Heatmap)
+  // Generate dynamic time labels based on zoom level
   const timeLabels = useMemo(() => {
     const now = Date.now()
     const min = now - visibleRange
@@ -212,10 +174,10 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
       const timestamp = min + (i / (labelCount - 1)) * (max - min)
       return { 
         position: (i / (labelCount - 1)) * 100, 
-        label: formatTime(timestamp) 
+        label: showDate ? formatDateTimeShort(timestamp) : formatTime(timestamp)
       }
     })
-  }, [visibleRange])
+  }, [visibleRange, showDate])
 
   // Calculate chart width (must be before early return)
   const chartWidth = useMemo(() => {
@@ -247,11 +209,11 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
 
   if (filteredAlerts.length === 0) {
     return (
-      <div className="flex items-center justify-center text-gray-500" style={{ height: 200 }}>
+      <div className="flex items-center justify-center py-12 text-gray-500">
         <div className="text-center">
-          <p className="text-sm font-medium">No alerts in the last 24 hours</p>
+          <p className="text-sm font-medium">No alerts in the selected time range</p>
           <p className="text-xs text-gray-600 mt-1">
-            Alerts for {symbol} will appear here
+            Use 24H or 48H buttons to view older alerts
           </p>
         </div>
       </div>
@@ -268,11 +230,37 @@ export function AlertTimelineChart({ symbol, fullSymbol, height: _unusedHeight }
         {/* Zoom Controls */}
         <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
           <button
-            onClick={handleResetZoom}
-            className="px-1.5 md:px-2 py-0.5 md:py-1 text-[10px] md:text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors"
-            title="Reset to 24h"
+            onClick={() => setVisibleRange(48 * 60 * 60 * 1000)}
+            className={`px-1.5 md:px-2 py-0.5 md:py-1 text-[10px] md:text-xs rounded transition-colors ${
+              visibleRange === 48 * 60 * 60 * 1000
+                ? 'bg-accent text-white'
+                : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+            }`}
+            title="View 48 hours"
           >
-            24h
+            48H
+          </button>
+          <button
+            onClick={() => setVisibleRange(24 * 60 * 60 * 1000)}
+            className={`px-1.5 md:px-2 py-0.5 md:py-1 text-[10px] md:text-xs rounded transition-colors ${
+              visibleRange === 24 * 60 * 60 * 1000
+                ? 'bg-accent text-white'
+                : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+            }`}
+            title="View 24 hours"
+          >
+            24H
+          </button>
+          <button
+            onClick={() => setVisibleRange(60 * 60 * 1000)}
+            className={`px-1.5 md:px-2 py-0.5 md:py-1 text-[10px] md:text-xs rounded transition-colors ${
+              visibleRange === 60 * 60 * 1000
+                ? 'bg-accent text-white'
+                : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+            }`}
+            title="View 1 hour"
+          >
+            1H
           </button>
           <span className="text-[10px] md:text-xs text-gray-500">
             {visibleRange < 60 * 60 * 1000
