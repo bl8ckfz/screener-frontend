@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   createChart,
   ColorType,
@@ -11,9 +11,8 @@ import {
   type SeriesMarker,
   type Time,
 } from 'lightweight-charts'
-import { calculateWeeklyVWAP, type IchimokuData, type Candlestick } from '@/services/chartData'
+import { type Candlestick } from '@/services/chartData'
 import type { AlertHistoryEntry } from '@/types/alertHistory'
-import type { Bubble } from '@/types/bubble'
 import { debug } from '@/utils/debug'
 
 // Format epoch seconds to local time string for axis/crosshair consistency with timeline
@@ -31,30 +30,15 @@ export interface TradingChartProps {
   height?: number
   livePrice?: number
   showVolume?: boolean
-  showWeeklyVWAP?: boolean
-  vwapData?: Candlestick[] // Separate VWAP data (15m interval for efficiency)
-  showIchimoku?: boolean
-  ichimokuData?: IchimokuData[]
   showAlerts?: boolean
   alerts?: AlertHistoryEntry[]
-  showBubbles?: boolean
-  bubbles?: Bubble[]
   className?: string
 }
 
 /**
  * Determine alert marker size based on alert type priority
  */
-const getAlertMarkerSize = (alertType: string): 0 | 1 | 2 => {
-  const cleanType = alertType.replace(/^futures_/, '')
-  const isHunter = cleanType === 'bottom_hunter' || cleanType === 'top_hunter'
-
-  // All arrows (non-hunter alerts) use unified size 1
-  if (!isHunter) {
-    return 1
-  }
-
-  // Hunters stay size 1 circles to avoid overpowering chart
+const getAlertMarkerSize = (_alertType: string): 0 | 1 | 2 => {
   return 1
 }
 
@@ -93,12 +77,10 @@ const getAlertMarkerStyle = (alertType: string): { color: string; position: 'abo
   const isHunter = cleanType.includes('bottom_hunter') || cleanType.includes('top_hunter')
   const isWhale = cleanType === 'whale_detector'
 
-  // Whale uses cyan circle at the bar
   if (isWhale) {
     return { color: '#22d3ee', position: 'belowBar', shape: 'circle' }
   }
 
-  // Hunters use a distinct purple circle; others keep mapped/bull-bear colors
   const color = isHunter
     ? '#a855f7'
     : ALERT_MARKER_COLORS[normalizedKey]
@@ -107,73 +89,11 @@ const getAlertMarkerStyle = (alertType: string): { color: string; position: 'abo
   return {
     color,
     position: isBullish ? 'belowBar' : 'aboveBar',
-    // Bottom/Top hunters should be circles to match timeline dots
     shape: isHunter
       ? 'circle'
       : (isBullish ? 'arrowUp' : 'arrowDown'),
   }
 }
-
-/**
- * Get display name for alert type
- */
-const getAlertDisplayName = (alertType: string): string => {
-  const cleanType = alertType.replace(/^futures_/, '')
-  const names: Record<string, string> = {
-    big_bull_60: '60 Big Bull',
-    big_bear_60: '60 Big Bear',
-    pioneer_bull: 'Pioneer Bull',
-    pioneer_bear: 'Pioneer Bear',
-    '5_big_bull': '5 Big Bull',
-    '5_big_bear': '5 Big Bear',
-    '15_big_bull': '15 Big Bull',
-    '15_big_bear': '15 Big Bear',
-    bottom_hunter: 'Bottom Hunter',
-    top_hunter: 'Top Hunter',
-  }
-  return names[cleanType] || cleanType.split('_').map(w => 
-    w.charAt(0).toUpperCase() + w.slice(1)
-  ).join(' ')
-}
-
-/**
- * Get bubble marker size based on bubble size classification
- */
-const getBubbleMarkerSize = (size: 'small' | 'medium' | 'large'): 0 | 1 | 2 => {
-  switch (size) {
-    case 'large': return 2
-    case 'medium': return 1
-    case 'small': return 0
-  }
-}
-
-/**
- * Get bubble marker color and style based on side and timeframe
- */
-const getBubbleMarkerStyle = (bubble: Bubble): { 
-  color: string
-  position: 'aboveBar' | 'belowBar'
-  shape: 'circle' | 'arrowUp' | 'arrowDown'
-} => {
-  // Buy pressure - green, below bar
-  // Sell pressure - red, above bar
-  // Differentiate 5m vs 15m with solid vs outlined (via color opacity)
-  
-  if (bubble.side === 'buy') {
-    return {
-      color: bubble.timeframe === '5m' ? '#10b981' : '#34d399', // green-500 vs green-400
-      position: 'belowBar' as const,
-      shape: 'circle' as const,
-    }
-  } else {
-    return {
-      color: bubble.timeframe === '5m' ? '#ef4444' : '#f87171', // red-500 vs red-400
-      position: 'aboveBar' as const,
-      shape: 'circle' as const,
-    }
-  }
-}
-
 
 /**
  * TradingChart component using lightweight-charts library
@@ -185,36 +105,17 @@ export function TradingChart({
   height = 400,
   livePrice,
   showVolume = true,
-  showWeeklyVWAP = false,
-  vwapData = [],
-  showIchimoku = false,
-  ichimokuData = [],
   showAlerts = false,
   alerts = [],
-  showBubbles = false,
-  bubbles = [],
   className = '',
 }: TradingChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const mainSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
   const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null)
-  const weeklyVWAPRef = useRef<ISeriesApi<'Line'> | null>(null)
-  // Ichimoku series refs
-  const tenkanRef = useRef<ISeriesApi<'Line'> | null>(null)
-  const kijunRef = useRef<ISeriesApi<'Line'> | null>(null)
-  const senkouARef = useRef<ISeriesApi<'Line'> | null>(null)
-  const senkouBRef = useRef<ISeriesApi<'Line'> | null>(null)
-  const chikouRef = useRef<ISeriesApi<'Line'> | null>(null)
   const markersRef = useRef<SeriesMarker<Time>[]>([]) // Store markers to re-apply on zoom
   const [isLoading, setIsLoading] = useState(true)
   const chartInitializedRef = useRef(false)
-
-  // Memoize VWAP calculation to avoid recalculating 672 candles on every render
-  const weeklyVWAPData = useMemo(() => {
-    if (!showWeeklyVWAP || vwapData.length === 0) return []
-    return calculateWeeklyVWAP(vwapData)
-  }, [vwapData, showWeeklyVWAP])
 
   // Create chart instance once on mount
   useEffect(() => {
@@ -476,235 +377,6 @@ export function TradingChart({
     })
   }, [data, showVolume]) // Only data and showVolume trigger volume series update
 
-  // Update VWAP series when enabled or data changes
-  useEffect(() => {
-    if (!chartRef.current || !mainSeriesRef.current) return
-
-    const chart = chartRef.current
-    const timeScale = chart.timeScale()
-
-    // CRITICAL: Save visible range BEFORE updating to preserve user's zoom/pan
-    const savedTimeRange = timeScale.getVisibleLogicalRange()
-
-    // Remove existing VWAP series
-    try {
-      if (weeklyVWAPRef.current) {
-        chart.removeSeries(weeklyVWAPRef.current)
-        weeklyVWAPRef.current = null
-      }
-    } catch (e) {
-      weeklyVWAPRef.current = null
-    }
-
-    // Add weekly VWAP series if enabled and vwapData is available
-    // Uses separate 15m interval data for consistent VWAP regardless of chart interval
-    if (showWeeklyVWAP && weeklyVWAPData.length > 0) {
-      const weeklyVWAPSeries = chart.addLineSeries({
-        color: '#f59e0b', // Amber-500 for weekly VWAP
-        lineWidth: 2,
-        lineStyle: LineStyle.Solid,
-        priceLineVisible: false,
-        lastValueVisible: true,
-        crosshairMarkerVisible: true,
-        crosshairMarkerRadius: 4,
-      })
-
-      weeklyVWAPSeries.setData(
-        weeklyVWAPData.map((d) => ({
-          time: d.time as any,
-          value: d.vwap,
-        }))
-      )
-
-      weeklyVWAPRef.current = weeklyVWAPSeries
-    }
-
-    // CRITICAL: Restore visible range AFTER updating to prevent zoom/pan reset
-    requestAnimationFrame(() => {
-      if (savedTimeRange) {
-        timeScale.setVisibleLogicalRange(savedTimeRange)
-      }
-    })
-  }, [showWeeklyVWAP, weeklyVWAPData]) // Only VWAP toggle and data trigger VWAP update
-
-  // Update Ichimoku series when enabled or data changes
-  useEffect(() => {
-    if (!chartRef.current || !mainSeriesRef.current) return
-
-    const chart = chartRef.current
-    const timeScale = chart.timeScale()
-
-    // CRITICAL: Save visible range BEFORE updating to preserve user's zoom/pan
-    const savedTimeRange = timeScale.getVisibleLogicalRange()
-
-    // Remove existing Ichimoku series
-    const refs = [tenkanRef, kijunRef, senkouARef, senkouBRef, chikouRef]
-    refs.forEach(ref => {
-      try {
-        if (ref.current) {
-          chart.removeSeries(ref.current)
-          ref.current = null
-        }
-      } catch (e) {
-        ref.current = null
-      }
-    })
-
-    // Add Ichimoku series if enabled and data is available
-    if (showIchimoku && ichimokuData.length > 0) {
-      const displacement = 26 // Standard Ichimoku displacement
-
-      // Calculate time interval between candles (in seconds)
-      const timeInterval = ichimokuData.length >= 2 
-        ? (ichimokuData[1].time as number) - (ichimokuData[0].time as number)
-        : 300 // Default to 5m if can't calculate
-
-      // For Senkou spans: plot them 26 periods ahead
-      // We take current values and project them into the future
-      const senkouData: Array<{ time: any; spanA: number; spanB: number }> = []
-      
-      for (let i = 0; i < ichimokuData.length; i++) {
-        // Calculate future time by adding displacement * interval
-        // If we have future data points, use their times; otherwise extrapolate
-        let futureTime: number
-        const futureIndex = i + displacement
-        
-        if (futureIndex < ichimokuData.length) {
-          // Use actual future time from data
-          futureTime = ichimokuData[futureIndex].time as number
-        } else {
-          // Extrapolate beyond data range
-          const periodsAhead = futureIndex - ichimokuData.length + 1
-          const lastTime = ichimokuData[ichimokuData.length - 1].time as number
-          futureTime = lastTime + (periodsAhead * timeInterval)
-        }
-        
-        senkouData.push({
-          time: futureTime,
-          spanA: ichimokuData[i].senkouSpanA ?? 0,
-          spanB: ichimokuData[i].senkouSpanB ?? 0,
-        })
-      }
-
-      debug.log(`📊 Ichimoku: ${senkouData.length} cloud points (displaced +${displacement})`)
-
-      // Senkou Span B (cloud bottom line)
-      const senkouBSeries = chart.addLineSeries({
-        color: '#6b7280', // gray-500
-        lineWidth: 1,
-        lineStyle: LineStyle.Solid,
-        priceLineVisible: false,
-        lastValueVisible: false,
-        crosshairMarkerVisible: false,
-      })
-
-      if (senkouData.length > 0) {
-        senkouBSeries.setData(
-          senkouData.map((d) => ({
-            time: d.time as any,
-            value: d.spanB,
-          }))
-        )
-      }
-      senkouBRef.current = senkouBSeries
-
-      // Senkou Span A (cloud top line)
-      const senkouASeries = chart.addLineSeries({
-        color: '#9ca3af', // gray-400
-        lineWidth: 1,
-        lineStyle: LineStyle.Solid,
-        priceLineVisible: false,
-        lastValueVisible: false,
-        crosshairMarkerVisible: false,
-      })
-
-      if (senkouData.length > 0) {
-        senkouASeries.setData(
-          senkouData.map((d) => ({
-            time: d.time as any,
-            value: d.spanA,
-          }))
-        )
-      }
-      senkouARef.current = senkouASeries
-
-      // Kijun-sen (Base Line) - red
-      const kijunSeries = chart.addLineSeries({
-        color: '#ef4444', // red-500
-        lineWidth: 2,
-        lineStyle: LineStyle.Solid,
-        priceLineVisible: false,
-        lastValueVisible: true,
-        crosshairMarkerVisible: true,
-        crosshairMarkerRadius: 3,
-      })
-
-      kijunSeries.setData(
-        ichimokuData.map((d) => ({
-          time: d.time as any,
-          value: d.kijunSen ?? d.kijun,
-        }))
-      )
-      kijunRef.current = kijunSeries
-
-      // Tenkan-sen (Conversion Line) - blue
-      const tenkanSeries = chart.addLineSeries({
-        color: '#3b82f6', // blue-500
-        lineWidth: 2,
-        lineStyle: LineStyle.Solid,
-        priceLineVisible: false,
-        lastValueVisible: true,
-        crosshairMarkerVisible: true,
-        crosshairMarkerRadius: 3,
-      })
-
-      tenkanSeries.setData(
-        ichimokuData.map((d) => ({
-          time: d.time as any,
-          value: d.tenkanSen ?? d.tenkan,
-        }))
-      )
-      tenkanRef.current = tenkanSeries
-
-      // Chikou Span (Lagging Span) - purple
-      const chikouSeries = chart.addLineSeries({
-        color: '#8b5cf6', // purple-500
-        lineWidth: 1,
-        lineStyle: LineStyle.Dashed,
-        priceLineVisible: false,
-        lastValueVisible: false,
-        crosshairMarkerVisible: true,
-        crosshairMarkerRadius: 3,
-      })
-
-      // Chikou Span is plotted 26 periods back (backward displacement)
-      // We take current closing prices and plot them 26 periods in the past
-      const chikouData: Array<{ time: any; value: number }> = []
-      
-      for (let i = displacement; i < ichimokuData.length; i++) {
-        const pastIndex = i - displacement
-        chikouData.push({
-          time: ichimokuData[pastIndex].time,
-          value: ichimokuData[i].chikouSpan ?? ichimokuData[i].chikou,
-        })
-      }
-
-      if (chikouData.length > 0) {
-        chikouSeries.setData(chikouData)
-      }
-      chikouRef.current = chikouSeries
-
-      debug.log(`📊 Ichimoku Cloud rendered: ${senkouData.length} cloud points, ${chikouData.length} chikou points`)
-    }
-
-    // CRITICAL: Restore visible range AFTER updating to prevent zoom/pan reset
-    requestAnimationFrame(() => {
-      if (savedTimeRange) {
-        timeScale.setVisibleLogicalRange(savedTimeRange)
-      }
-    })
-  }, [showIchimoku, ichimokuData]) // Only Ichimoku toggle and data trigger update
-
   // Helper function to find closest candle to a timestamp
   const findClosestCandle = (targetTime: number, candles: Candlestick[]): Candlestick | null => {
     if (candles.length === 0) return null
@@ -719,174 +391,68 @@ export function TradingChart({
     }, null as Candlestick | null)
   }
 
-  // Update markers when alerts or bubbles change
+  // Update alert markers when alerts change or toggle
   useEffect(() => {
     if (!chartRef.current || !mainSeriesRef.current || data.length === 0) return
 
     const mainSeries = mainSeriesRef.current
 
-    // Add alert markers if enabled
-    if (showAlerts && alerts.length > 0 && mainSeries) {
-      debug.log(`🎯 Processing ${alerts.length} alerts for markers`)
-      debug.log('Alert types:', alerts.map(a => a.alertType))
+    // Clear markers when alerts are disabled or empty
+    if (!showAlerts || alerts.length === 0) {
+      markersRef.current = []
+      mainSeries.setMarkers([])
+      return
+    }
+
+    debug.log(`🎯 Processing ${alerts.length} alerts for markers`)
+    
+    // Deduplicate alerts: one arrow per alert type per candle
+    const uniqueAlertMap = new Map<string, AlertHistoryEntry>()
+    
+    alerts.forEach(alert => {
+      const alertTime = Math.floor(alert.timestamp / 1000)
+      const closestCandle = findClosestCandle(alertTime, data)
       
-      // Deduplicate alerts: one arrow per alert type per candle
-      // Key format: "time_alertType" to ensure unique markers
-      const uniqueAlertMap = new Map<string, AlertHistoryEntry>()
+      if (!closestCandle) return
       
-      alerts.forEach(alert => {
+      const candleTime = typeof closestCandle.time === 'number' ? closestCandle.time : Number(closestCandle.time)
+      const timeDiff = Math.abs(candleTime - alertTime)
+      
+      // Skip if alert is more than 5 minutes away from any candle
+      if (timeDiff > 300) return
+      
+      const key = `${candleTime}_${alert.alertType}`
+      
+      if (!uniqueAlertMap.has(key)) {
+        uniqueAlertMap.set(key, alert)
+      }
+    })
+    
+    debug.log(`🎯 Deduplicated ${alerts.length} alerts to ${uniqueAlertMap.size} unique markers`)
+    
+    const markers: SeriesMarker<Time>[] = Array.from(uniqueAlertMap.values())
+      .map(alert => {
         const alertTime = Math.floor(alert.timestamp / 1000)
-        const closestCandle = findClosestCandle(alertTime, data)
+        const closestCandle = findClosestCandle(alertTime, data)!
         
-        if (!closestCandle) return
+        const style = getAlertMarkerStyle(alert.alertType)
+        const size = getAlertMarkerSize(alert.alertType)
         
-        const candleTime = typeof closestCandle.time === 'number' ? closestCandle.time : Number(closestCandle.time)
-        const timeDiff = Math.abs(candleTime - alertTime)
-        
-        // Skip if alert is more than 5 minutes away from any candle
-        if (timeDiff > 300) return
-        
-        // Deduplicate key: candle time + alert type
-        const key = `${candleTime}_${alert.alertType}`
-        
-        // Keep first occurrence of each alert type per candle
-        if (!uniqueAlertMap.has(key)) {
-          uniqueAlertMap.set(key, alert)
-        }
+        return {
+          time: closestCandle.time,
+          position: style.position,
+          color: style.color,
+          shape: style.shape,
+          size,
+        } as SeriesMarker<Time>
       })
-      
-      debug.log(`🎯 Deduplicated ${alerts.length} alerts to ${uniqueAlertMap.size} unique markers`)
-      
-      const markers: SeriesMarker<Time>[] = Array.from(uniqueAlertMap.values())
-        .map(alert => {
-          const alertTime = Math.floor(alert.timestamp / 1000)
-          const closestCandle = findClosestCandle(alertTime, data)!
-          
-          const style = getAlertMarkerStyle(alert.alertType)
-          const size = getAlertMarkerSize(alert.alertType)
-          const displayName = getAlertDisplayName(alert.alertType)
-          
-          debug.log(`✅ Creating marker for ${alert.alertType} (${displayName}) - size: ${size}, color: ${style.color}, shape: ${style.shape}`)
-          
-          return {
-            time: closestCandle.time,
-            position: style.position,
-            color: style.color,
-            shape: style.shape,
-            size,
-          } as SeriesMarker<Time>
-        })
-        .sort((a, b) => (a.time as number) - (b.time as number))
+      .sort((a, b) => (a.time as number) - (b.time as number))
 
-      debug.log(`📍 Setting ${markers.length} alert markers on chart`)
-      
-      // Store markers in ref for re-application on zoom
-      markersRef.current = markers
-      
-      if (markers.length > 0) {
-        mainSeries.setMarkers(markers)
-      } else {
-        debug.warn('⚠️  No valid alert markers to display')
-      }
-    }
-
-    // Add bubble markers if enabled (combined with alert markers)
-    if (showBubbles && bubbles.length > 0 && mainSeries) {
-      debug.log(`🫧 Processing ${bubbles.length} bubbles for markers`)
-      
-      const bubbleMarkers: SeriesMarker<Time>[] = bubbles
-        .map(bubble => {
-          // Convert bubble timestamp (ms) to candle time (seconds)
-          const bubbleTime = Math.floor(bubble.time / 1000)
-          const closestCandle = findClosestCandle(bubbleTime, data)
-          
-          if (!closestCandle) {
-            debug.warn(`⚠️  No candle found for bubble at ${new Date(bubble.time).toLocaleTimeString()}`)
-            return null
-          }
-          
-          const candleTime = typeof closestCandle.time === 'number' ? closestCandle.time : Number(closestCandle.time)
-          const timeDiff = Math.abs(candleTime - bubbleTime)
-          
-          // Skip if bubble is too far from any candle (>5 minutes)
-          if (timeDiff > 300) {
-            debug.warn(`⚠️  Bubble too far from candles (${Math.floor(timeDiff / 60)}m away)`)
-            return null
-          }
-          
-          const style = getBubbleMarkerStyle(bubble)
-          const size = getBubbleMarkerSize(bubble.size)
-          
-          debug.log(`🫧 Creating bubble marker: ${bubble.size} ${bubble.side} - size: ${size}, color: ${style.color}`)
-          
-          return {
-            time: closestCandle.time,
-            position: style.position,
-            color: style.color,
-            shape: style.shape,
-            size,
-            text: '', // Remove text label
-          } as SeriesMarker<Time>
-        })
-        .filter((marker): marker is SeriesMarker<Time> => marker !== null)
-
-      debug.log(`🫧 Setting ${bubbleMarkers.length} bubble markers on chart`)
-      
-      // Combine alert and bubble markers
-      if (showAlerts && alerts.length > 0) {
-        // Deduplicate alerts: one arrow per alert type per candle
-        const uniqueAlertMap = new Map<string, AlertHistoryEntry>()
-        
-        alerts.forEach(alert => {
-          const alertTime = Math.floor(alert.timestamp / 1000)
-          const closestCandle = findClosestCandle(alertTime, data)
-          
-          if (!closestCandle) return
-          
-          const candleTime = typeof closestCandle.time === 'number' ? closestCandle.time : Number(closestCandle.time)
-          const timeDiff = Math.abs(candleTime - alertTime)
-          
-          if (timeDiff > 300) return
-          
-          // Deduplicate key: candle time + alert type
-          const key = `${candleTime}_${alert.alertType}`
-          
-          if (!uniqueAlertMap.has(key)) {
-            uniqueAlertMap.set(key, alert)
-          }
-        })
-        
-        // Get deduplicated alert markers
-        const alertMarkers: SeriesMarker<Time>[] = Array.from(uniqueAlertMap.values())
-          .map(alert => {
-            const alertTime = Math.floor(alert.timestamp / 1000)
-            const closestCandle = findClosestCandle(alertTime, data)!
-            
-            const style = getAlertMarkerStyle(alert.alertType)
-            const size = getAlertMarkerSize(alert.alertType)
-            
-            return {
-              time: closestCandle.time,
-              position: style.position,
-              color: style.color,
-              shape: style.shape,
-              size,
-            } as SeriesMarker<Time>
-          })
-          .sort((a, b) => (a.time as number) - (b.time as number))
-        
-        // Combine both types of markers
-        const combinedMarkers = [...alertMarkers, ...bubbleMarkers]
-          .sort((a, b) => (a.time as number) - (b.time as number))
-        markersRef.current = combinedMarkers // Store for re-application
-        mainSeries.setMarkers(combinedMarkers)
-        debug.log(`📍 Set ${combinedMarkers.length} total markers (${alertMarkers.length} alerts + ${bubbleMarkers.length} bubbles)`)
-      } else if (bubbleMarkers.length > 0) {
-        markersRef.current = bubbleMarkers // Store for re-application
-        mainSeries.setMarkers(bubbleMarkers)
-      }
-    }
-  }, [showAlerts, alerts, showBubbles, bubbles, data]) // Only marker-related changes trigger update
+    debug.log(`📍 Setting ${markers.length} alert markers on chart`)
+    
+    markersRef.current = markers
+    mainSeries.setMarkers(markers)
+  }, [showAlerts, alerts, data]) // Only alert-related changes trigger update
 
   return (
     <div className={`relative ${className}`}>

@@ -36,7 +36,6 @@ const ORIGINAL_TYPES = new Set<FuturesAlertType>([
   'futures_5_big_bull', 'futures_5_big_bear',
   'futures_15_big_bull', 'futures_15_big_bear',
   'futures_bottom_hunter', 'futures_top_hunter',
-  'ichimoku_bull', 'ichimoku_bear',
 ])
 
 const V2_TYPES = new Set<FuturesAlertType>([
@@ -378,14 +377,14 @@ export function AlertConfig({
       {/* Custom Rules List */}
       {rules.some(r => {
         const type = r.conditions[0]?.type
-        return type && !type.startsWith('futures_') && !type.startsWith('ichimoku_')
+        return type && !type.startsWith('futures_')
       }) && (
         <div className="space-y-2">
           <h4 className="text-sm font-semibold text-white mb-2">Custom Rules</h4>
           {rules
             .filter(r => {
               const type = r.conditions[0]?.type
-              return type && !type.startsWith('futures_') && !type.startsWith('ichimoku_')
+              return type && !type.startsWith('futures_')
             })
             .map((rule) => (
               <div

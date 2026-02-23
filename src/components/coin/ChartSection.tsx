@@ -4,11 +4,10 @@ import { TradingChart } from './TradingChart'
 // import { AlertTimelineChart } from './AlertTimelineChart' // DISABLED
 import { AlertHeatmapTimeline } from '@/components/alerts'
 import { ExternalLinks } from './ExternalLinks'
-import { fetchKlines, calculateIchimoku, type KlineInterval, type IchimokuData, COMMON_INTERVALS, INTERVAL_LABELS } from '@/services/chartData'
+import { fetchKlines, type KlineInterval, COMMON_INTERVALS, INTERVAL_LABELS } from '@/services/chartData'
 import { alertHistoryService } from '@/services/alertHistoryService'
 import { alertHistory } from '@/services/alertHistory'
 import { USE_BACKEND_API } from '@/services/backendApi'
-import { useBubbleStream } from '@/hooks/useBubbleStream'
 import { useStore } from '@/hooks/useStore'
 import type { Coin } from '@/types/coin'
 import type { AlertHistoryEntry } from '@/types/alertHistory'
@@ -33,44 +32,14 @@ export interface ChartSectionProps {
  */
 export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSectionProps) {
   const [interval, setInterval] = useState<KlineInterval>('5m')
-  const [showWeeklyVWAP, setShowWeeklyVWAP] = useState(false)
-  const [showIchimoku, setShowIchimoku] = useState(false)
   const [showAlerts, setShowAlerts] = useState(true)
-  const [showBubbles, setShowBubbles] = useState(true)
-  const [bubbleTimeframe] = useState<'5m' | '15m' | 'both'>('both')
-  const [bubbleSize] = useState<'large' | 'medium+' | 'all'>('large')
   
   const [chartData, setChartData] = useState<any[]>([])
-  const [vwapData, setVwapData] = useState<any[]>([]) // Separate data for VWAP (15m interval)
-  const [ichimokuData, setIchimokuData] = useState<IchimokuData[]>([]) // Ichimoku indicator data
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const visibilityRef = useRef(!document.hidden)
   const driftTimerRef = useRef<number | null>(null)
 
-  // Get bubbles for current coin (use fullSymbol to match futures symbol)
-  // Bubble detection disabled - using stub
-  const { bubbles: allBubbles } = useBubbleStream(false)
-  
-  // Filter bubbles by timeframe and size
-  const filteredBubbles = useMemo(() => {
-    let filtered = allBubbles
-    
-    // Filter by timeframe
-    if (bubbleTimeframe !== 'both') {
-      filtered = filtered.filter(b => b.timeframe === bubbleTimeframe)
-    }
-    
-    // Filter by size
-    if (bubbleSize === 'large') {
-      filtered = filtered.filter(b => b.size === 'large')
-    } else if (bubbleSize === 'medium+') {
-      filtered = filtered.filter(b => b.size === 'large' || b.size === 'medium')
-    }
-    
-    return filtered
-  }, [allBubbles, bubbleTimeframe, bubbleSize])
-  
   // Get alerts for current coin from global store (WebSocket alerts)
   // NO HTTP POLLING - using real-time WebSocket data
   const activeAlerts = useStore((state) => state.activeAlerts)
@@ -207,8 +176,6 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
   useEffect(() => {
     if (!selectedCoin) {
       setChartData([])
-      setVwapData([])
-      setIchimokuData([])
       return
     }
     loadChartData()
@@ -265,54 +232,6 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
       }
     }
   }, [loadChartData, selectedCoin])
-
-  // Fetch VWAP data (15m interval) when toggled on or coin changes
-  useEffect(() => {
-    if (!selectedCoin || !showWeeklyVWAP) {
-      setVwapData([])
-      return
-    }
-
-    let isCancelled = false
-
-    const loadVwapData = async () => {
-      try {
-        // Use 15m interval for VWAP calculation (more efficient than 1m)
-        const data = await fetchKlines(selectedCoin.fullSymbol, '15m', 672) // 672 * 15m = 1 week
-        
-        if (!isCancelled) {
-          setVwapData(data)
-        }
-      } catch (err) {
-        debug.error('VWAP data error:', err)
-      }
-    }
-
-    loadVwapData()
-
-    return () => {
-      isCancelled = true
-    }
-  }, [selectedCoin, showWeeklyVWAP])
-
-  // Calculate Ichimoku data when toggled on or chart data changes
-  useEffect(() => {
-    if (!showIchimoku || chartData.length === 0) {
-      setIchimokuData([])
-      return
-    }
-
-    try {
-      const ichimoku = calculateIchimoku(chartData)
-      if (ichimoku) {
-        setIchimokuData([ichimoku])
-      } else {
-        setIchimokuData([])
-      }
-    } catch (err) {
-      debug.error('Ichimoku calculation error:', err)
-    }
-  }, [chartData, showIchimoku])
 
   // Show empty state when no coin selected
   if (!selectedCoin) {
@@ -404,28 +323,8 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
           ))}
         </div>
 
-        {/* Indicator Toggles */}
+        {/* Alert Toggle */}
         <div className="flex items-center gap-0.5 md:gap-2 ml-auto">
-          <button
-            onClick={() => setShowWeeklyVWAP(!showWeeklyVWAP)}
-            className={`px-1.5 md:px-3 py-0 md:py-0.5 text-[10px] md:text-xs font-medium rounded transition-colors ${
-              showWeeklyVWAP
-                ? 'bg-purple-600 text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-            }`}
-          >
-            VWAP
-          </button>
-          <button
-            onClick={() => setShowIchimoku(!showIchimoku)}
-            className={`px-1.5 md:px-3 py-0 md:py-0.5 text-[10px] md:text-xs font-medium rounded transition-colors ${
-              showIchimoku
-                ? 'bg-cyan-600 text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-            }`}
-          >
-            Ichimoku
-          </button>
           <button
             onClick={() => setShowAlerts(!showAlerts)}
             className={`px-1.5 md:px-3 py-0 md:py-0.5 text-[10px] md:text-xs font-medium rounded transition-colors ${
@@ -436,16 +335,6 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
           >
             Alerts
           </button>
-          <button
-            onClick={() => setShowBubbles(!showBubbles)}
-            className={`px-1.5 md:px-3 py-0 md:py-0.5 text-[10px] md:text-xs font-medium rounded transition-colors ${
-              showBubbles
-                ? 'bg-orange-600 text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-            }`}
-          >
-            Bubbles
-          </button>
         </div>
       </div>
 
@@ -454,17 +343,11 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
         <div className="bg-gray-900 rounded-lg p-1 md:p-3 w-full max-w-full overflow-hidden">
           <TradingChart
             data={chartData}
-            height={260} // Increased from 220px (controls are smaller now)
+            height={260}
             livePrice={selectedCoin.lastPrice}
             showVolume={true}
-            showWeeklyVWAP={showWeeklyVWAP}
-            vwapData={vwapData}
-            showIchimoku={showIchimoku}
-            ichimokuData={ichimokuData}
             showAlerts={showAlerts}
             alerts={chartAlerts}
-            showBubbles={showBubbles}
-            bubbles={filteredBubbles}
           />
         </div>
       </div>
