@@ -77,10 +77,11 @@ const getAlertMarkerStyle = (alertType: string): { color: string; position: 'abo
   const normalizedKey = alertType.startsWith('futures_') ? alertType : `futures_${alertType}`
   const isBullish = cleanType.includes('bull') || cleanType.includes('bottom_hunter') || cleanType === 'whale_accumulation'
   const isHunter = cleanType.includes('bottom_hunter') || cleanType.includes('top_hunter')
-  const isWhale = cleanType === 'whale_detector'
+  const isWhale = cleanType === 'whale_detector' || cleanType === 'whale_accumulation' || cleanType === 'whale_distribution'
 
   if (isWhale) {
-    return { color: '#22d3ee', position: 'belowBar', shape: 'circle' }
+    const color = ALERT_MARKER_COLORS[normalizedKey] || '#22d3ee'
+    return { color, position: isBullish ? 'belowBar' : 'aboveBar', shape: 'circle' }
   }
 
   const color = isHunter

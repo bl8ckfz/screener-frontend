@@ -607,8 +607,8 @@ export const DEFAULT_FUTURES_ALERT_CONFIG: FuturesAlertConfig = {
     futures_top_hunter_v2: { enabled: true, severity: 'medium' },
     futures_big_bull_60_v2: { enabled: true, severity: 'critical' },
     futures_big_bear_60_v2: { enabled: true, severity: 'critical' },
-    // Whale (enabled by default)
-    futures_whale_detector: { enabled: true, severity: 'high' },
+    // Whale (directional enabled, generic disabled)
+    futures_whale_detector: { enabled: false, severity: 'high' },
     futures_whale_accumulation: { enabled: true, severity: 'high' },
     futures_whale_distribution: { enabled: true, severity: 'high' },
   },

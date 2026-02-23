@@ -45,7 +45,6 @@ const V2_TYPES = new Set<FuturesAlertType>([
 ])
 
 const WHALE_TYPES = new Set<FuturesAlertType>([
-  'futures_whale_detector',
   'futures_whale_accumulation',
   'futures_whale_distribution',
 ])
