@@ -3,7 +3,6 @@ import type { CoinAlertStats } from '@/types/alertHistory'
 import { AlertBadges } from './AlertBadges'
 import { EmptyAlertHistory } from './EmptyAlertHistory'
 import { formatNumber } from '@/utils/format'
-import { Button } from '@/components/ui'
 import { WatchlistStar } from '@/components/coin/WatchlistStar'
 import { useStore } from '@/hooks/useStore'
 import { FEATURE_FLAGS } from '@/config'
@@ -12,12 +11,11 @@ interface AlertHistoryTableProps {
   stats: CoinAlertStats[]
   selectedSymbol?: string
   onAlertClick: (symbol: string, alert: CoinAlertStats) => void
-  onClearHistory: () => void
 }
 
 type SortField = 'symbol' | 'price' | 'change' | 'alerts' | 'lastAlert'
 
-export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClearHistory }: AlertHistoryTableProps) {
+export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick }: AlertHistoryTableProps) {
   const watchlistSymbols = useStore((state) => state.watchlistSymbols)
   const alertHistorySort = useStore((state) => state.alertHistorySort)
   const setAlertHistorySort = useStore((state) => state.setAlertHistorySort)
@@ -128,9 +126,6 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
     <div className="space-y-2 md:hidden">
       <div className="flex items-center justify-between px-1 text-sm text-gray-300">
         <span className="font-semibold">Alert History</span>
-        <Button onClick={onClearHistory} variant="secondary" size="sm">
-          🗑️
-        </Button>
       </div>
 
       {watchlistStats.map((stat) => renderCard(stat))}
@@ -217,11 +212,6 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
                 )}
               </div>
             </th>
-            <th className="px-3 py-3 text-center text-sm font-semibold text-gray-400 whitespace-nowrap w-16 bg-gray-900">
-              <Button onClick={onClearHistory} variant="secondary" size="sm">
-                🗑️
-              </Button>
-            </th>
           </tr>
         </thead>
         <tbody>
@@ -270,7 +260,6 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
               <td className="py-1.5 px-2 text-right text-[10px] text-gray-400">
                 {formatTimeAgo(stat.lastAlertTimestamp)}
               </td>
-              <td className="py-1.5 px-2"></td>
             </tr>
           ))}
           
@@ -334,7 +323,6 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick, onClear
               <td className="py-1.5 px-2 text-right text-[10px] text-gray-400">
                 {formatTimeAgo(stat.lastAlertTimestamp)}
               </td>
-              <td className="py-1.5 px-2"></td>
             </tr>
           ))}
         </tbody>

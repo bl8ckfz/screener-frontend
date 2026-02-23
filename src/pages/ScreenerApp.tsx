@@ -41,7 +41,6 @@ export function ScreenerApp() {
   }, [error])
   
   // Alert history state
-  const clearAlertHistory = useStore((state) => state.clearAlertHistory)
   const sentimentFilter = useStore((state) => state.sentimentFilter)
   const alertStats = useAlertStats(coins || [])
   
@@ -307,11 +306,6 @@ export function ScreenerApp() {
                     stats={filteredAlertStats}
                     selectedSymbol={selectedAlert?.coin?.symbol}
                     onAlertClick={handleAlertClick}
-                    onClearHistory={() => {
-                      if (confirm('Clear all alert history? This cannot be undone.')) {
-                        clearAlertHistory()
-                      }
-                    }}
                   />
                 )}
               </div>
