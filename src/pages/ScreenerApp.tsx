@@ -11,6 +11,7 @@ import { debug } from '@/utils/debug'
 import { memoryProfiler } from '@/utils/memoryProfiler'
 import { useStore } from '@/hooks/useStore'
 import { useKeyboardShortcuts, useAlertStats, useBackendAlerts, useBackendData } from '@/hooks'
+import { useAlertRules } from '@/hooks/useAlertRules'
 import { alertHistoryService } from '@/services'
 import { ALERT_HISTORY_CONFIG } from '@/types'
 import { Layout } from '@/components/layout'
@@ -47,11 +48,15 @@ export function ScreenerApp() {
   // Auto-hide header config
   const autoHideHeader = useStore((state) => state.config.display.autoHideHeader)
   
+  // Per-user rule toggles (backend sync)
+  const { isRuleEnabled } = useAlertRules()
+
   // Backend WebSocket alerts
   const addAlert = useStore((state) => state.addAlert)
   const { isConnected: backendWsConnected } = useBackendAlerts({
     enabled: true,
     autoConnect: true,
+    isRuleEnabled,
     onAlert: (alert) => {
       debug.log('🚨 Backend alert (WebSocket):', alert.symbol, alert.type)
       addAlert(alert)

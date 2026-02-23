@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import {
   AlertRule,
   AlertType,
@@ -6,12 +6,14 @@ import {
   CombinedAlertType,
   FUTURES_ALERT_PRESETS,
   FUTURES_ALERT_LABELS,
+  type FuturesAlertPreset,
 } from '@/types/alert'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Input } from '@/components/ui/Input'
 import { CustomAlertBuilder } from './CustomAlertBuilder'
 import { useStore } from '@/hooks/useStore'
+import { useAlertRules } from '@/hooks/useAlertRules'
 import {
   isNotificationSupported,
   getNotificationPermission,
@@ -27,14 +29,43 @@ interface AlertConfigProps {
   onRuleDelete: (ruleId: string) => void
 }
 
+// ── Preset grouping ───────────────────────────────────────────────
+const ORIGINAL_TYPES = new Set<FuturesAlertType>([
+  'futures_big_bull_60', 'futures_big_bear_60',
+  'futures_pioneer_bull', 'futures_pioneer_bear',
+  'futures_5_big_bull', 'futures_5_big_bear',
+  'futures_15_big_bull', 'futures_15_big_bear',
+  'futures_bottom_hunter', 'futures_top_hunter',
+  'ichimoku_bull', 'ichimoku_bear',
+])
+
+const V2_TYPES = new Set<FuturesAlertType>([
+  'futures_pioneer_bull_v2', 'futures_pioneer_bear_v2',
+  'futures_bottom_hunter_v2', 'futures_top_hunter_v2',
+  'futures_big_bull_60_v2', 'futures_big_bear_60_v2',
+])
+
+const WHALE_TYPES = new Set<FuturesAlertType>([
+  'futures_whale_detector',
+])
+
+interface PresetGroup {
+  label: string
+  badge: string
+  badgeClass: string
+  description: string
+  presets: FuturesAlertPreset[]
+}
+
 /**
  * AlertConfig - UI for managing alert rules
  * 
  * Features:
  * - Display active alert rules with enable/disable toggles
- * - Preset selector for 8 legacy alert types
+ * - Grouped presets: Original / Optimized V2 / Whale Detection
+ * - Backend sync for per-user rule toggles (when authenticated)
+ * - Local Zustand fallback when anonymous
  * - Create custom rules with condition editor
- * - Edit existing rules (name, conditions, thresholds)
  */
 export function AlertConfig({
   rules,
@@ -46,6 +77,40 @@ export function AlertConfig({
 
   const alertSettings = useStore((state) => state.alertSettings)
   const updateAlertSettings = useStore((state) => state.updateAlertSettings)
+
+  // Backend rule toggles (only active when authenticated)
+  const {
+    isAuthenticated,
+    isRuleEnabled: isBackendRuleEnabled,
+    toggleRule: toggleBackendRule,
+    isLoading: isLoadingRules,
+    isToggling,
+  } = useAlertRules()
+
+  // ── Grouped presets ──────────────────────────────────────────────
+  const presetGroups: PresetGroup[] = useMemo(() => [
+    {
+      label: 'Original Rules',
+      badge: 'Core',
+      badgeClass: 'bg-green-500/20 text-green-400',
+      description: 'Multi-timeframe analysis with progressive validation.',
+      presets: FUTURES_ALERT_PRESETS.filter(p => ORIGINAL_TYPES.has(p.type)),
+    },
+    {
+      label: 'Optimized V2 Rules',
+      badge: 'Improved',
+      badgeClass: 'bg-purple-500/20 text-purple-400',
+      description: 'Enhanced versions with volume floors, RSI confirmation, and BTC-relative checks.',
+      presets: FUTURES_ALERT_PRESETS.filter(p => V2_TYPES.has(p.type)),
+    },
+    {
+      label: 'Whale Detection',
+      badge: 'New',
+      badgeClass: 'bg-cyan-500/20 text-cyan-400',
+      description: 'Detects large volume anomalies with minimal price impact — potential accumulation or distribution.',
+      presets: FUTURES_ALERT_PRESETS.filter(p => WHALE_TYPES.has(p.type)),
+    },
+  ], [])
 
   const handleToggleBrowserNotifications = async () => {
     const currentPermission = getNotificationPermission()
@@ -66,14 +131,21 @@ export function AlertConfig({
     // If denied, do nothing (user needs to enable in browser settings)
   }
 
+  // ── Preset toggle logic ──────────────────────────────────────────
+  // When authenticated: toggle via backend API
+  // When anonymous: toggle via local Zustand rules
   const handlePresetToggle = (presetType: FuturesAlertType, enabled: boolean) => {
+    if (isAuthenticated) {
+      toggleBackendRule(presetType, enabled)
+      return
+    }
+
+    // Local-only fallback
     const existingRule = rules.find(r => r.conditions[0]?.type === presetType)
     
     if (existingRule) {
-      // Toggle existing rule
       onRuleToggle(existingRule.id, enabled)
     } else if (enabled) {
-      // Create new rule from preset
       const preset = FUTURES_ALERT_PRESETS.find(p => p.type === presetType)
       if (!preset) return
 
@@ -101,11 +173,18 @@ export function AlertConfig({
   }
 
   const isPresetEnabled = (presetType: FuturesAlertType): boolean => {
+    if (isAuthenticated) {
+      return isBackendRuleEnabled(presetType)
+    }
+    // Local fallback
     const rule = rules.find(r => r.conditions[0]?.type === presetType)
     return rule?.enabled ?? false
   }
 
   const getAlertTypeBadgeColor = (type: CombinedAlertType): string => {
+    if (type.includes('whale')) {
+      return 'bg-cyan-500/20 text-cyan-400'
+    }
     if (type.includes('bull') || type === 'price_pump' || type === 'volume_spike') {
       return 'bg-green-500/20 text-green-400'
     }
@@ -152,7 +231,11 @@ export function AlertConfig({
         <div>
           <h3 className="text-lg font-semibold text-white">Alert Rules</h3>
           <p className="text-sm text-gray-400">
-            {rules.filter(r => r.enabled).length} of {rules.length} rules active
+            {isAuthenticated ? (
+              isLoadingRules ? 'Loading rules…' : 'Synced with your account'
+            ) : (
+              `${rules.filter(r => r.enabled).length} of ${rules.length} rules active`
+            )}
           </p>
         </div>
         <Button
@@ -177,58 +260,65 @@ export function AlertConfig({
         />
       )}
 
-      {/* Futures Alert Presets - Always Visible */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2 mb-3">
-          <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clipRule="evenodd" />
-          </svg>
-          <h4 className="text-sm font-semibold text-white">Futures Alerts</h4>
-          <Badge className="bg-green-500/20 text-green-400 text-xs">Recommended</Badge>
-        </div>
-        <p className="text-xs text-gray-400 mb-3">
-          Multi-timeframe analysis with progressive validation. Toggle to enable/disable.
-        </p>
-        
-        <div className="space-y-2">
-          {FUTURES_ALERT_PRESETS.map((preset) => (
-            <div
-              key={preset.type}
-              className={`rounded-lg border p-3 transition-colors ${
-                isPresetEnabled(preset.type)
-                  ? 'border-green-500/50 bg-green-900/10'
-                  : 'border-gray-700 bg-gray-800/30'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-white">{preset.name}</span>
-                    <Badge className={`text-xs ${
-                      preset.severity === 'critical' ? 'bg-red-500/20 text-red-400' :
-                      preset.severity === 'high' ? 'bg-orange-500/20 text-orange-400' :
-                      preset.severity === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                      'bg-blue-500/20 text-blue-400'
-                    }`}>
-                      {preset.severity}
-                    </Badge>
+      {/* Futures Alert Presets — Grouped */}
+      {presetGroups.map((group) => (
+        <div key={group.label} className="space-y-2">
+          <div className="flex items-center gap-2 mb-3">
+            <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clipRule="evenodd" />
+            </svg>
+            <h4 className="text-sm font-semibold text-white">{group.label}</h4>
+            <Badge className={`text-xs ${group.badgeClass}`}>{group.badge}</Badge>
+          </div>
+          <p className="text-xs text-gray-400 mb-3">{group.description}</p>
+          
+          <div className="space-y-2">
+            {group.presets.map((preset) => (
+              <div
+                key={preset.type}
+                className={`rounded-lg border p-3 transition-colors ${
+                  isPresetEnabled(preset.type)
+                    ? 'border-green-500/50 bg-green-900/10'
+                    : 'border-gray-700 bg-gray-800/30'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-white">{preset.name}</span>
+                      <Badge className={`text-xs ${
+                        preset.severity === 'critical' ? 'bg-red-500/20 text-red-400' :
+                        preset.severity === 'high' ? 'bg-orange-500/20 text-orange-400' :
+                        preset.severity === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                        'bg-blue-500/20 text-blue-400'
+                      }`}>
+                        {preset.severity}
+                      </Badge>
+                      {V2_TYPES.has(preset.type) && (
+                        <Badge className="text-xs bg-purple-500/20 text-purple-400">V2</Badge>
+                      )}
+                      {WHALE_TYPES.has(preset.type) && (
+                        <Badge className="text-xs bg-cyan-500/20 text-cyan-400">🐋</Badge>
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs text-gray-400">{preset.description}</p>
                   </div>
-                  <p className="mt-1 text-xs text-gray-400">{preset.description}</p>
+                  <label className="relative inline-flex cursor-pointer items-center ml-3">
+                    <input
+                      type="checkbox"
+                      checked={isPresetEnabled(preset.type)}
+                      onChange={(e) => handlePresetToggle(preset.type, e.target.checked)}
+                      disabled={isToggling}
+                      className="peer sr-only"
+                    />
+                    <div className="peer h-5 w-9 rounded-full bg-gray-700 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-gray-600 after:bg-white after:transition-all after:content-[''] peer-checked:bg-green-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-green-800"></div>
+                  </label>
                 </div>
-                <label className="relative inline-flex cursor-pointer items-center ml-3">
-                  <input
-                    type="checkbox"
-                    checked={isPresetEnabled(preset.type)}
-                    onChange={(e) => handlePresetToggle(preset.type, e.target.checked)}
-                    className="peer sr-only"
-                  />
-                  <div className="peer h-5 w-9 rounded-full bg-gray-700 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-gray-600 after:bg-white after:transition-all after:content-[''] peer-checked:bg-green-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-green-800"></div>
-                </label>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      ))}
 
       {/* Custom Rules List */}
       {rules.some(r => {

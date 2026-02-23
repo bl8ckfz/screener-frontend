@@ -17,6 +17,15 @@ export type FuturesAlertType =
   | 'futures_top_hunter' // Top Hunter (potential top reversal)
   | 'ichimoku_bull' // Ichimoku Cloud bullish breakout (15m)
   | 'ichimoku_bear' // Ichimoku Cloud bearish breakdown (15m)
+  // V2 optimized rules
+  | 'futures_pioneer_bull_v2' // Pioneer Bull V2 (volume floor + RSI)
+  | 'futures_pioneer_bear_v2' // Pioneer Bear V2 (volume floor + RSI)
+  | 'futures_bottom_hunter_v2' // Bottom Hunter V2 (deeper + RSI oversold)
+  | 'futures_top_hunter_v2' // Top Hunter V2 (deeper + RSI overbought)
+  | 'futures_big_bull_60_v2' // Big Bull 60 V2 (daily floor + BTC-relative)
+  | 'futures_big_bear_60_v2' // Big Bear 60 V2 (daily floor + BTC-relative)
+  // Whale detection
+  | 'futures_whale_detector' // Whale Detector (volume anomaly, no price move)
 
 /**
  * Legacy alert types (DEPRECATED - kept for backwards compatibility only)
@@ -495,6 +504,57 @@ export const FUTURES_ALERT_PRESETS: FuturesAlertPreset[] = [
     severity: 'high',
     marketMode: 'bear',
   },
+  // V2 Optimized Rules
+  {
+    type: 'futures_pioneer_bull_v2',
+    name: 'Pioneer Bull V2',
+    description: 'Improved: adds 50k/150k volume floor + RSI > 50 confirmation',
+    severity: 'critical',
+    marketMode: 'bull',
+  },
+  {
+    type: 'futures_pioneer_bear_v2',
+    name: 'Pioneer Bear V2',
+    description: 'Improved: adds 50k/150k volume floor + RSI < 50 confirmation',
+    severity: 'critical',
+    marketMode: 'bear',
+  },
+  {
+    type: 'futures_bottom_hunter_v2',
+    name: 'Bottom Hunter V2',
+    description: 'Improved: deeper thresholds (-1.5%/-1.0%/+0.7%) + RSI < 35 oversold',
+    severity: 'medium',
+    marketMode: 'both',
+  },
+  {
+    type: 'futures_top_hunter_v2',
+    name: 'Top Hunter V2',
+    description: 'Improved: deeper thresholds (+1.5%/+1.0%/-0.7%) + RSI > 65 overbought',
+    severity: 'medium',
+    marketMode: 'both',
+  },
+  {
+    type: 'futures_big_bull_60_v2',
+    name: 'Big Bull 60m V2',
+    description: 'Improved: daily must be positive + outperforms BTC by 0.5%',
+    severity: 'critical',
+    marketMode: 'bull',
+  },
+  {
+    type: 'futures_big_bear_60_v2',
+    name: 'Big Bear 60m V2',
+    description: 'Improved: daily must be negative + underperforms BTC by 0.5%',
+    severity: 'critical',
+    marketMode: 'bear',
+  },
+  // Whale Detection
+  {
+    type: 'futures_whale_detector',
+    name: 'Whale Detector',
+    description: '5x average volume anomaly with < 0.3% price impact — potential accumulation/distribution',
+    severity: 'high',
+    marketMode: 'both',
+  },
 ]
 
 /**
@@ -513,6 +573,15 @@ export const FUTURES_ALERT_LABELS: Record<FuturesAlertType, string> = {
   futures_top_hunter: 'Top Hunter',
   ichimoku_bull: 'Ichimoku Bull',
   ichimoku_bear: 'Ichimoku Bear',
+  // V2 optimized
+  futures_pioneer_bull_v2: '🟢 Pioneer Bull V2',
+  futures_pioneer_bear_v2: '🔴 Pioneer Bear V2',
+  futures_bottom_hunter_v2: '🟢 Bottom Hunter V2',
+  futures_top_hunter_v2: '🔴 Top Hunter V2',
+  futures_big_bull_60_v2: '🟢 Big Bull 60m V2',
+  futures_big_bear_60_v2: '🔴 Big Bear 60m V2',
+  // Whale
+  futures_whale_detector: '🐋 Whale Detector',
 }
 
 /**
@@ -533,6 +602,15 @@ export const DEFAULT_FUTURES_ALERT_CONFIG: FuturesAlertConfig = {
     futures_top_hunter: { enabled: true, severity: 'medium' },
     ichimoku_bull: { enabled: true, severity: 'high' },
     ichimoku_bear: { enabled: true, severity: 'high' },
+    // V2 optimized (enabled by default)
+    futures_pioneer_bull_v2: { enabled: true, severity: 'critical' },
+    futures_pioneer_bear_v2: { enabled: true, severity: 'critical' },
+    futures_bottom_hunter_v2: { enabled: true, severity: 'medium' },
+    futures_top_hunter_v2: { enabled: true, severity: 'medium' },
+    futures_big_bull_60_v2: { enabled: true, severity: 'critical' },
+    futures_big_bear_60_v2: { enabled: true, severity: 'critical' },
+    // Whale (enabled by default)
+    futures_whale_detector: { enabled: true, severity: 'high' },
   },
   globalThresholds: {
     priceChange_15m: 1.0, // 1%

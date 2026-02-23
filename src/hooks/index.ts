@@ -7,6 +7,7 @@ export {
   type ShortcutConfig,
 } from './useKeyboardShortcuts'
 export { useAlertStats } from './useAlertStats'
+export { useAlertRules } from './useAlertRules'
 export { useBackendAlerts } from './useBackendAlerts'
 export { useBackendData } from './useBackendData'
 export { useBubbleStream } from './useBubbleStream'

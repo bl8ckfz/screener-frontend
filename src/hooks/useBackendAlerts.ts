@@ -24,6 +24,8 @@ interface UseBackendAlertsOptions {
   enabled?: boolean
   autoConnect?: boolean
   onAlert?: (alert: Alert) => void
+  /** Optional filter: only deliver alerts whose rule_type passes this check */
+  isRuleEnabled?: (ruleType: string) => boolean
 }
 
 interface UseBackendAlertsReturn {
@@ -46,6 +48,7 @@ export function useBackendAlerts(
     enabled = true,
     autoConnect = false, // Disabled by default - Railway doesn't support WebSocket
     onAlert,
+    isRuleEnabled,
   } = options
 
   const [isConnected, setIsConnected] = useState(false)
@@ -56,11 +59,16 @@ export function useBackendAlerts(
   const wsClientRef = useRef<BackendWebSocketClient | null>(null)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>()
   const onAlertRef = useRef<((alert: Alert) => void) | undefined>(onAlert)
+  const isRuleEnabledRef = useRef<((ruleType: string) => boolean) | undefined>(isRuleEnabled)
   const unsubscribeFnsRef = useRef<(() => void)[]>([])
 
   useEffect(() => {
     onAlertRef.current = onAlert
   }, [onAlert])
+
+  useEffect(() => {
+    isRuleEnabledRef.current = isRuleEnabled
+  }, [isRuleEnabled])
 
   /**
    * Transform backend alert to frontend Alert type
@@ -86,6 +94,12 @@ export function useBackendAlerts(
    * Handle incoming alert from WebSocket
    */
   const handleAlert = useCallback((backendAlert: BackendAlert) => {
+    // Filter out alerts for disabled rules
+    if (isRuleEnabledRef.current && !isRuleEnabledRef.current(backendAlert.rule_type)) {
+      debug.log('⏭️ Skipping disabled rule alert:', backendAlert.rule_type, backendAlert.symbol)
+      return
+    }
+
     debug.log('🔔 Backend alert received:', backendAlert)
 
     const alert = transformBackendAlert(backendAlert)

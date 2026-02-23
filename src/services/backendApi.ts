@@ -223,6 +223,43 @@ export const backendApi = {
       return false
     }
   },
+
+  /**
+   * Get all alert rules with user's enabled/disabled overrides
+   * Returns rules categorized as original/optimized/whale
+   */
+  async getAlertRules(): Promise<{
+    rules: Array<{
+      rule_type: string
+      description: string
+      enabled: boolean
+      category: 'original' | 'optimized' | 'whale'
+    }>
+    count: number
+  }> {
+    const response = await fetchWithTimeout(
+      `${BACKEND_CONFIG.baseUrl}/api/alert-rules`
+    )
+    return response.json()
+  },
+
+  /**
+   * Toggle a specific alert rule on/off for the authenticated user
+   */
+  async toggleAlertRule(ruleType: string, enabled: boolean): Promise<{
+    rule_type: string
+    enabled: boolean
+    message: string
+  }> {
+    const response = await fetchWithTimeout(
+      `${BACKEND_CONFIG.baseUrl}/api/alert-rules/${ruleType}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({ enabled }),
+      }
+    )
+    return response.json()
+  },
 }
 
 /**
