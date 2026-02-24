@@ -128,7 +128,7 @@ const initialState = {
     direction: 'desc' as const,
   },
   alertHistorySort: {
-    field: 'alerts' as const,
+    field: 'lastAlert' as const,
     direction: 'desc' as const,
   },
   config: DEFAULT_CONFIG,
