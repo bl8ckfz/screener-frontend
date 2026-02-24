@@ -15,8 +15,20 @@ const API_URL = import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:8080'
 export interface User {
   id: string
   email: string
+  role: 'user' | 'admin'
+  status: 'trial' | 'active' | 'expired'
+  trial_ends_at: string | null
+  plan: 'monthly' | 'yearly' | null
+  plan_activated_at: string | null
+  plan_expires_at: string | null
   created_at: string
   last_login_at?: string
+}
+
+export interface InviteValidation {
+  valid: boolean
+  message?: string
+  expires_at?: string
 }
 
 export interface AuthResponse {
@@ -36,13 +48,14 @@ const USER_KEY = 'auth_user'
  */
 export const authService = {
   /**
-   * Register a new user account
+   * Register a new user account (requires invite code)
    */
-  async register(email: string, password: string): Promise<AuthResponse> {
+  async register(email: string, password: string, inviteCode: string): Promise<AuthResponse> {
     try {
       const response = await axios.post<AuthResponse>(`${API_URL}/auth/register`, {
         email,
         password,
+        invite_code: inviteCode,
       })
 
       // Store token and user
@@ -196,5 +209,39 @@ export const authService = {
    */
   isAuthenticated(): boolean {
     return !!this.getToken()
+  },
+
+  /**
+   * Validate an invite code
+   */
+  async validateInvite(code: string): Promise<InviteValidation> {
+    try {
+      const response = await axios.get<InviteValidation>(`${API_URL}/auth/invite/${code}`)
+      return response.data
+    } catch (error: any) {
+      return {
+        valid: false,
+        message: error.response?.data?.message || 'Invalid invite code',
+      }
+    }
+  },
+
+  /**
+   * Set up subscription expired interceptor.
+   * Call once on app init. Fires callback when API returns 403 subscription_expired.
+   */
+  setupSubscriptionInterceptor(onExpired: () => void) {
+    axios.interceptors.response.use(
+      response => response,
+      error => {
+        if (
+          error.response?.status === 403 &&
+          error.response?.data?.error === 'subscription_expired'
+        ) {
+          onExpired()
+        }
+        return Promise.reject(error)
+      }
+    )
   },
 }

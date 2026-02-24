@@ -1,5 +1,6 @@
 import { ThemeToggle } from '@/components/controls'
 import { UserMenu } from '@/components/auth'
+import { TrialBanner } from '@/components/auth'
 import { SettingsButton } from '@/components/settings'
 
 interface HeaderProps {
@@ -41,6 +42,7 @@ export function Header({
               )}
             </div>
             <div className="flex items-center space-x-1.5 sm:space-x-4 flex-shrink-0">
+              <TrialBanner />
               <UserMenu />
               {onOpenSettings && <SettingsButton onClick={onOpenSettings} />}
               <ThemeToggle />

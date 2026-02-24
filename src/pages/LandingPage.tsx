@@ -46,12 +46,6 @@ export function LandingPage() {
             >
               Sign In
             </button>
-            <button
-              onClick={() => navigate('/signup')}
-              className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
-            >
-              Get Started
-            </button>
           </div>
         </div>
       </header>
@@ -68,14 +62,8 @@ export function LandingPage() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
-              onClick={() => navigate('/signup')}
-              className="w-full sm:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold rounded-xl transition-colors shadow-lg shadow-blue-600/20"
-            >
-              Get Started Free
-            </button>
-            <button
               onClick={() => navigate('/login')}
-              className="w-full sm:w-auto px-8 py-4 border border-gray-700 hover:border-gray-500 text-gray-300 hover:text-white text-lg rounded-xl transition-colors"
+              className="w-full sm:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold rounded-xl transition-colors shadow-lg shadow-blue-600/20"
             >
               Sign In
             </button>
@@ -139,13 +127,13 @@ export function LandingPage() {
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-3xl font-bold mb-4">Ready to start?</h2>
           <p className="text-gray-400 mb-8">
-            Create a free account and start monitoring the market in seconds.
+            Request an invite to start your 7-day free trial.
           </p>
           <button
-            onClick={() => navigate('/signup')}
+            onClick={() => navigate('/login')}
             className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold rounded-xl transition-colors shadow-lg shadow-blue-600/20"
           >
-            Create Free Account
+            Sign In
           </button>
         </div>
       </section>
