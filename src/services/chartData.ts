@@ -22,6 +22,8 @@ export interface Candlestick {
   trades: number
 }
 
+import { authService } from './authService'
+
 const BINANCE_FUTURES_API = 'https://fapi.binance.com/fapi/v1'
 const BACKEND_API_BASE = import.meta.env.VITE_BACKEND_API_URL
 const USE_BACKEND_API = import.meta.env.VITE_USE_BACKEND_API === 'true'
@@ -47,11 +49,19 @@ export async function fetchKlines(
 
     const url = `${base}?symbol=${symbol}&interval=${interval}&limit=${safeLimit}`
     
-    const response = await fetch(url, {
-      headers: {
-        'Accept': 'application/json',
-      },
-    })
+    const headers: Record<string, string> = {
+      'Accept': 'application/json',
+    }
+
+    // Add JWT token for authenticated backend requests
+    if (USE_BACKEND_API && BACKEND_API_BASE) {
+      const token = authService.getToken()
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+    }
+
+    const response = await fetch(url, { headers })
 
     if (!response.ok) {
       const apiSource = USE_BACKEND_API && BACKEND_API_BASE ? 'Backend' : 'Binance'

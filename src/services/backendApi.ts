@@ -385,8 +385,12 @@ export class BackendWebSocketClient {
 
     console.log('[BackendWS] Connecting to', BACKEND_CONFIG.wsUrl)
     
-    // Connect directly without token (backend endpoint is authOptional)
-    this.ws = new WebSocket(BACKEND_CONFIG.wsUrl)
+    // Pass JWT token as query param (WebSocket API doesn't support custom headers)
+    const token = authService.getToken()
+    const wsUrl = token
+      ? `${BACKEND_CONFIG.wsUrl}?token=${encodeURIComponent(token)}`
+      : BACKEND_CONFIG.wsUrl
+    this.ws = new WebSocket(wsUrl)
 
     this.ws.onopen = () => {
       console.log('[BackendWS] Connected successfully')
