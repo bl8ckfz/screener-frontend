@@ -1,5 +1,7 @@
 import type { CombinedAlertType } from '@/types/alert'
 import { FUTURES_ALERT_LABELS } from '@/types/alert'
+import { useStore } from '@/hooks/useStore'
+import { resolveAlertColor } from '@/types/alertColors'
 
 interface AlertBadgesProps {
   alertTypes: Set<CombinedAlertType>
@@ -7,39 +9,12 @@ interface AlertBadgesProps {
   latestAlertType?: CombinedAlertType // Highlight this alert as the most recent
 }
 
-// Match colors from AlertTimelineChart and TradingChart
-const ALERT_TYPE_COLORS: Record<string, string> = {
-  // Bullish
-  futures_big_bull_60: '#14532d',
-  futures_pioneer_bull: '#a7f3d0',
-  futures_5_big_bull: '#84cc16',
-  futures_15_big_bull: '#16a34a',
-  futures_bottom_hunter: '#a855f7', // purple hunters
-  
-  // Bearish
-  futures_big_bear_60: '#7f1d1d',
-  futures_pioneer_bear: '#fce7f3',
-  futures_5_big_bear: '#f87171',
-  futures_15_big_bear: '#dc2626',
-  futures_top_hunter: '#a855f7', // purple hunters
-  // V2 Optimized
-  futures_pioneer_bull_v2: '#6ee7b7',
-  futures_pioneer_bear_v2: '#f9a8d4',
-  futures_bottom_hunter_v2: '#8b5cf6',
-  futures_top_hunter_v2: '#8b5cf6',
-  futures_big_bull_60_v2: '#22c55e',
-  futures_big_bear_60_v2: '#ef4444',
-  // Whale
-  futures_whale_detector: '#22d3ee',
-  futures_whale_accumulation: '#34d399',
-  futures_whale_distribution: '#f87171',
-}
-
 /**
  * Display alert type badges with colors matching alert severity
  * Shows first N badges, then "+X more" if there are additional types
  */
 export function AlertBadges({ alertTypes, maxVisible = 3, latestAlertType }: AlertBadgesProps) {
+  const alertColors = useStore((state) => state.alertColors)
   const types = Array.from(alertTypes)
   const visibleTypes = types.slice(0, maxVisible)
   const remainingCount = Math.max(0, types.length - maxVisible)
@@ -57,8 +32,8 @@ export function AlertBadges({ alertTypes, maxVisible = 3, latestAlertType }: Ale
     // Normalize type for color lookup (ensure futures_ prefix)
     const normalizedType = type.startsWith('futures_') ? type : `futures_${cleanType}`
     
-    // Get base color from mapping, fallback to bull/bear default
-    const baseColor = ALERT_TYPE_COLORS[normalizedType] || (isBullish ? '#22c55e' : '#ef4444')
+    // Get base color from store (user-configurable), fallback to bull/bear default
+    const baseColor = resolveAlertColor(alertColors, normalizedType, isBullish ? '#22c55e' : '#ef4444')
     
     // Determine badge text
     let text = ''

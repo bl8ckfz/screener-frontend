@@ -1,3 +1,5 @@
 export { SettingsModal } from './SettingsModal'
 export { SettingsButton } from './SettingsButton'
 export { GeneralSettings } from './GeneralSettings'
+export { AlertColorSettings } from './AlertColorSettings'
+export { ColorPicker } from './ColorPicker'

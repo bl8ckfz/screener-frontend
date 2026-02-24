@@ -1,6 +1,8 @@
 import { useMemo, useState, useRef, useEffect } from 'react'
 import type { AlertHistoryEntry } from '@/types/alertHistory'
 import type { Alert } from '@/types/alert'
+import { useStore } from '@/hooks/useStore'
+import { resolveAlertColor } from '@/types/alertColors'
 
 interface AlertTimelineChartProps {
   symbol: string
@@ -9,32 +11,31 @@ interface AlertTimelineChartProps {
   height?: number
 }
 
-// Color scheme matching Heatmap
-const ALERT_TYPE_COLORS: Record<string, { text: string; dot: string }> = {
+// Static text color classes (Tailwind classes can't be dynamic)
+const ALERT_TEXT_CLASSES: Record<string, string> = {
   // Bullish
-  futures_big_bull_60: { text: 'text-green-400', dot: '#14532d' },
-  futures_pioneer_bull: { text: 'text-emerald-300', dot: '#a7f3d0' },
-  futures_5_big_bull: { text: 'text-lime-400', dot: '#84cc16' },
-  futures_15_big_bull: { text: 'text-green-500', dot: '#16a34a' },
-  futures_bottom_hunter: { text: 'text-purple-400', dot: '#a855f7' },
-  
+  futures_big_bull_60: 'text-green-400',
+  futures_pioneer_bull: 'text-emerald-300',
+  futures_5_big_bull: 'text-lime-400',
+  futures_15_big_bull: 'text-green-500',
+  futures_bottom_hunter: 'text-purple-400',
   // Bearish
-  futures_big_bear_60: { text: 'text-red-400', dot: '#7f1d1d' },
-  futures_pioneer_bear: { text: 'text-pink-300', dot: '#fce7f3' },
-  futures_5_big_bear: { text: 'text-orange-400', dot: '#f87171' },
-  futures_15_big_bear: { text: 'text-red-500', dot: '#dc2626' },
-  futures_top_hunter: { text: 'text-purple-400', dot: '#a855f7' },
+  futures_big_bear_60: 'text-red-400',
+  futures_pioneer_bear: 'text-pink-300',
+  futures_5_big_bear: 'text-orange-400',
+  futures_15_big_bear: 'text-red-500',
+  futures_top_hunter: 'text-purple-400',
   // V2 Optimized
-  futures_pioneer_bull_v2: { text: 'text-emerald-300', dot: '#6ee7b7' },
-  futures_pioneer_bear_v2: { text: 'text-pink-300', dot: '#f9a8d4' },
-  futures_bottom_hunter_v2: { text: 'text-violet-400', dot: '#8b5cf6' },
-  futures_top_hunter_v2: { text: 'text-violet-400', dot: '#8b5cf6' },
-  futures_big_bull_60_v2: { text: 'text-green-400', dot: '#22c55e' },
-  futures_big_bear_60_v2: { text: 'text-red-400', dot: '#ef4444' },
+  futures_pioneer_bull_v2: 'text-emerald-300',
+  futures_pioneer_bear_v2: 'text-pink-300',
+  futures_bottom_hunter_v2: 'text-violet-400',
+  futures_top_hunter_v2: 'text-violet-400',
+  futures_big_bull_60_v2: 'text-green-400',
+  futures_big_bear_60_v2: 'text-red-400',
   // Whale
-  futures_whale_detector: { text: 'text-cyan-400', dot: '#22d3ee' },
-  futures_whale_accumulation: { text: 'text-emerald-400', dot: '#34d399' },
-  futures_whale_distribution: { text: 'text-red-400', dot: '#f87171' },
+  futures_whale_detector: 'text-cyan-400',
+  futures_whale_accumulation: 'text-emerald-400',
+  futures_whale_distribution: 'text-red-400',
 }
 
 // Display names for futures alert types - without "futures_" prefix
@@ -82,6 +83,7 @@ const formatTime = (timestamp: number): string => {
 }
 
 export function AlertTimelineChart({ symbol, fullSymbol: _fullSymbol, alerts = [], height: _unusedHeight }: AlertTimelineChartProps) {
+  const alertColors = useStore((state) => state.alertColors)
   // Visible time range (in milliseconds from now)
   const [visibleRange, setVisibleRange] = useState(60 * 60 * 1000) // Start at 1 hour
   const chartRef = useRef<HTMLDivElement>(null)
@@ -281,7 +283,10 @@ export function AlertTimelineChart({ symbol, fullSymbol: _fullSymbol, alerts = [
       {/* Alert Type Rows */}
       <div className="space-y-1.5">
         {alertsByType.map((group) => {
-          const colors = ALERT_TYPE_COLORS[group.alertType] || { text: 'text-gray-400', dot: '#6b7280' }
+          const colors = {
+            text: ALERT_TEXT_CLASSES[group.alertType] || 'text-gray-400',
+            dot: resolveAlertColor(alertColors, group.alertType, '#6b7280'),
+          }
           
           return (
             <div

@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/Input'
 import { Badge } from '@/components/ui/Badge'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { formatNumber } from '@/utils/format'
+import { useStore } from '@/hooks/useStore'
+import { resolveAlertColor } from '@/types/alertColors'
 
 type TimeFilter = '1h' | '24h' | '7d' | '30d' | 'all'
 type SortField = 'timestamp' | 'symbol' | 'type' | 'severity'
@@ -26,6 +28,7 @@ type SourceTab = 'all' | 'main' | 'watchlist'
  * - Statistics dashboard
  */
 export function AlertHistory() {
+  const alertColors = useStore((state) => state.alertColors)
   const [history, setHistory] = useState<AlertHistoryItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -208,34 +211,6 @@ export function AlertHistory() {
     return colors[severity]
   }
 
-  // Match colors from AlertTimelineChart and TradingChart
-  const ALERT_TYPE_COLORS: Record<string, string> = {
-    // Bullish
-    futures_big_bull_60: '#14532d',
-    futures_pioneer_bull: '#a7f3d0',
-    futures_5_big_bull: '#84cc16',
-    futures_15_big_bull: '#16a34a',
-    futures_bottom_hunter: '#a855f7', // purple hunters
-    
-    // Bearish
-    futures_big_bear_60: '#7f1d1d',
-    futures_pioneer_bear: '#fce7f3',
-    futures_5_big_bear: '#f87171',
-    futures_15_big_bear: '#dc2626',
-    futures_top_hunter: '#a855f7', // purple hunters
-    // V2 Optimized
-    futures_pioneer_bull_v2: '#6ee7b7',
-    futures_pioneer_bear_v2: '#f9a8d4',
-    futures_bottom_hunter_v2: '#8b5cf6',
-    futures_top_hunter_v2: '#8b5cf6',
-    futures_big_bull_60_v2: '#22c55e',
-    futures_big_bear_60_v2: '#ef4444',
-    // Whale
-    futures_whale_detector: '#22d3ee',
-    futures_whale_accumulation: '#34d399',
-    futures_whale_distribution: '#f87171',
-  }
-
   const getAlertBadge = (type: CombinedAlertType): { text: string; color: string; bgColor: string } => {
     const cleanType = type.replace(/^futures_/, '').replace(/^5m_/, '5_').replace(/^15m_/, '15_')
     const isBullish = cleanType.includes('bull') || cleanType === 'bottom_hunter' || cleanType === 'whale_accumulation'
@@ -243,8 +218,8 @@ export function AlertHistory() {
     // Normalize type for color lookup (ensure futures_ prefix)
     const normalizedType = type.startsWith('futures_') ? type : `futures_${cleanType}`
     
-    // Get color from mapping, fallback to bull/bear default
-    const color = ALERT_TYPE_COLORS[normalizedType] || (isBullish ? '#22c55e' : '#ef4444')
+    // Get color from store (user-configurable), fallback to bull/bear default
+    const color = resolveAlertColor(alertColors, normalizedType, isBullish ? '#22c55e' : '#ef4444')
     
     // Determine badge text
     let text = ''

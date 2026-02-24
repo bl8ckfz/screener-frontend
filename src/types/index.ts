@@ -96,3 +96,13 @@ export type {
 
 export { DEFAULT_CONFIG, STORAGE_KEYS, DEFAULT_COLUMNS } from './config'
 
+// Alert color types
+export type { AlertColorConfig, AlertColorKey } from './alertColors'
+export {
+  DEFAULT_ALERT_COLORS,
+  ALERT_COLOR_CATEGORIES,
+  getAlertColorLabel,
+  isValidHexColor,
+  resolveAlertColor,
+} from './alertColors'
+

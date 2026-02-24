@@ -5,6 +5,8 @@ import type { ScreeningListId } from '@/types/screener'
 import type { AppConfig } from '@/types/config'
 import { DEFAULT_CONFIG, STORAGE_KEYS } from '@/types/config'
 import type { AlertRule, AlertSettings, Alert } from '@/types/alert'
+import type { AlertColorConfig } from '@/types/alertColors'
+import { DEFAULT_ALERT_COLORS } from '@/types/alertColors'
 import { createIndexedDBStorage } from '@/services/storage'
 import { alertHistory } from '@/services/alertHistory'
 import { alertHistoryService } from '@/services/alertHistoryService'
@@ -68,6 +70,9 @@ interface AppState {
   // Webhooks
   webhooks: Webhook[]
 
+  // Alert colors
+  alertColors: AlertColorConfig
+
   // Actions
   setCurrentPair: (pair: CurrencyPair) => void
   setCurrentList: (list: ScreeningListId) => void
@@ -108,6 +113,10 @@ interface AppState {
   updateWebhook: (id: string, updates: Partial<Webhook>) => void
   deleteWebhook: (id: string) => void
   toggleWebhook: (id: string, enabled: boolean) => void
+
+  // Alert color actions
+  updateAlertColor: (alertType: keyof AlertColorConfig, color: string) => void
+  resetAlertColors: () => void
   
   reset: () => void
 }
@@ -165,6 +174,9 @@ const initialState = {
   
   // Webhook defaults
   webhooks: [] as Webhook[],
+
+  // Alert color defaults
+  alertColors: DEFAULT_ALERT_COLORS,
   
 }
 
@@ -375,6 +387,15 @@ export const useStore = create<AppState>()(
           ),
         })),
 
+      // Alert color actions
+      updateAlertColor: (alertType, color) =>
+        set((state) => ({
+          alertColors: { ...state.alertColors, [alertType]: color },
+        })),
+
+      resetAlertColors: () =>
+        set({ alertColors: DEFAULT_ALERT_COLORS }),
+
       reset: () =>
         set(initialState as Partial<AppState>),
     }),
@@ -397,6 +418,7 @@ export const useStore = create<AppState>()(
         alertSettings: state.alertSettings,
         watchlistSymbols: state.watchlistSymbols, // Simplified watchlist
         webhooks: state.webhooks, // Persist webhooks
+        alertColors: state.alertColors, // Persist alert colors
         activeView: state.activeView,
       }),
     }
