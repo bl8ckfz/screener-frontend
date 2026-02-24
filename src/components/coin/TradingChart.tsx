@@ -14,6 +14,9 @@ import {
 import { type Candlestick } from '@/services/chartData'
 import type { AlertHistoryEntry } from '@/types/alertHistory'
 import { debug } from '@/utils/debug'
+import { useStore } from '@/hooks/useStore'
+import type { AlertColorConfig } from '@/types/alertColors'
+import { resolveAlertColor } from '@/types/alertColors'
 
 // Format epoch seconds to local time string for axis/crosshair consistency with timeline
 const formatLocalTimeLabel = (time: Time): string => {
@@ -42,37 +45,10 @@ const getAlertMarkerSize = (_alertType: string): 0 | 1 | 2 => {
   return 1
 }
 
-// Match alert marker colors with alert timeline legend
-const ALERT_MARKER_COLORS: Record<string, string> = {
-  // Bullish
-  futures_big_bull_60: '#14532d',
-  futures_pioneer_bull: '#a7f3d0',
-  futures_5_big_bull: '#84cc16',
-  futures_15_big_bull: '#16a34a',
-  futures_bottom_hunter: '#34d399',
-  // Bearish
-  futures_big_bear_60: '#7f1d1d',
-  futures_pioneer_bear: '#fce7f3',
-  futures_5_big_bear: '#f87171',
-  futures_15_big_bear: '#dc2626',
-  futures_top_hunter: '#f97316',
-  // V2 Optimized
-  futures_pioneer_bull_v2: '#6ee7b7',
-  futures_pioneer_bear_v2: '#f9a8d4',
-  futures_bottom_hunter_v2: '#8b5cf6',
-  futures_top_hunter_v2: '#8b5cf6',
-  futures_big_bull_60_v2: '#22c55e',
-  futures_big_bear_60_v2: '#ef4444',
-  // Whale
-  futures_whale_detector: '#22d3ee',
-  futures_whale_accumulation: '#34d399',
-  futures_whale_distribution: '#f87171',
-}
-
 /**
  * Get alert marker color and position based on alert type
  */
-const getAlertMarkerStyle = (alertType: string): { color: string; position: 'aboveBar' | 'belowBar'; shape: 'circle' | 'arrowUp' | 'arrowDown' } => {
+const getAlertMarkerStyle = (alertType: string, alertColors: AlertColorConfig): { color: string; position: 'aboveBar' | 'belowBar'; shape: 'circle' | 'arrowUp' | 'arrowDown' } => {
   const cleanType = alertType.replace(/^futures_/, '')
   const normalizedKey = alertType.startsWith('futures_') ? alertType : `futures_${alertType}`
   const isBullish = cleanType.includes('bull') || cleanType.includes('bottom_hunter') || cleanType === 'whale_accumulation'
@@ -80,14 +56,13 @@ const getAlertMarkerStyle = (alertType: string): { color: string; position: 'abo
   const isWhale = cleanType === 'whale_detector' || cleanType === 'whale_accumulation' || cleanType === 'whale_distribution'
 
   if (isWhale) {
-    const color = ALERT_MARKER_COLORS[normalizedKey] || '#22d3ee'
+    const color = resolveAlertColor(alertColors, normalizedKey, '#22d3ee')
     return { color, position: isBullish ? 'belowBar' : 'aboveBar', shape: 'circle' }
   }
 
   const color = isHunter
-    ? '#a855f7'
-    : ALERT_MARKER_COLORS[normalizedKey]
-      || (isBullish ? '#22c55e' : '#ef4444')
+    ? resolveAlertColor(alertColors, normalizedKey, '#a855f7')
+    : resolveAlertColor(alertColors, normalizedKey, isBullish ? '#22c55e' : '#ef4444')
 
   return {
     color,
@@ -112,6 +87,7 @@ export function TradingChart({
   alerts = [],
   className = '',
 }: TradingChartProps) {
+  const alertColors = useStore((state) => state.alertColors)
   const chartContainerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const mainSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
@@ -438,7 +414,7 @@ export function TradingChart({
         const alertTime = Math.floor(alert.timestamp / 1000)
         const closestCandle = findClosestCandle(alertTime, data)!
         
-        const style = getAlertMarkerStyle(alert.alertType)
+        const style = getAlertMarkerStyle(alert.alertType, alertColors)
         const size = getAlertMarkerSize(alert.alertType)
         
         return {
@@ -455,7 +431,7 @@ export function TradingChart({
     
     markersRef.current = markers
     mainSeries.setMarkers(markers)
-  }, [showAlerts, alerts, data]) // Only alert-related changes trigger update
+  }, [showAlerts, alerts, data, alertColors]) // Alert color changes also trigger update
 
   return (
     <div className={`relative ${className}`}>
