@@ -7,11 +7,36 @@
 
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 export function LandingPage() {
   const { isAuthenticated, loading } = useAuth()
   const navigate = useNavigate()
+
+  const [reqEmail, setReqEmail] = useState('')
+  const [reqLoading, setReqLoading] = useState(false)
+  const [reqSuccess, setReqSuccess] = useState(false)
+  const [reqError, setReqError] = useState('')
+
+  const handleRequestAccess = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setReqError('')
+    setReqLoading(true)
+    try {
+      const res = await fetch('/api/request-access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: reqEmail }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Something went wrong.')
+      setReqSuccess(true)
+    } catch (err: any) {
+      setReqError(err.message ?? 'Failed to send request. Please try again.')
+    } finally {
+      setReqLoading(false)
+    }
+  }
 
   // Redirect authenticated users to app
   useEffect(() => {
@@ -127,14 +152,48 @@ export function LandingPage() {
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-3xl font-bold mb-4">Ready to start?</h2>
           <p className="text-gray-400 mb-8">
-            Request an invite to start your 7-day free trial.
+            Request early access to start your 7-day free trial.
           </p>
-          <button
-            onClick={() => navigate('/login')}
-            className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold rounded-xl transition-colors shadow-lg shadow-blue-600/20"
-          >
-            Sign In
-          </button>
+
+          {reqSuccess ? (
+            <div className="bg-green-500/10 border border-green-500/40 rounded-xl p-6 text-green-400">
+              <div className="text-2xl mb-2">✅</div>
+              <p className="font-semibold">Request received!</p>
+              <p className="text-sm mt-1 text-green-400/80">We'll send your invite link shortly.</p>
+            </div>
+          ) : (
+            <form onSubmit={handleRequestAccess} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+              <input
+                type="email"
+                value={reqEmail}
+                onChange={(e) => setReqEmail(e.target.value)}
+                required
+                placeholder="your@email.com"
+                className="flex-1 px-4 py-3 bg-gray-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <button
+                type="submit"
+                disabled={reqLoading}
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors shadow-lg shadow-blue-600/20 whitespace-nowrap"
+              >
+                {reqLoading ? 'Sending…' : 'Request Access'}
+              </button>
+            </form>
+          )}
+
+          {reqError && (
+            <p className="mt-3 text-sm text-red-400">{reqError}</p>
+          )}
+
+          <p className="mt-6 text-sm text-gray-500">
+            Already have an account?{' '}
+            <button
+              onClick={() => navigate('/login')}
+              className="text-blue-400 hover:text-blue-300 transition-colors"
+            >
+              Sign in
+            </button>
+          </p>
         </div>
       </section>
 
