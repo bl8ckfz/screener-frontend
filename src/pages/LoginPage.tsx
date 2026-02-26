@@ -55,7 +55,7 @@ export function LoginPage() {
       {/* Minimal Header */}
       <header className="px-4 sm:px-6 py-4">
         <Link to="/" className="text-xl font-bold text-white hover:text-gray-300 transition-colors">
-          📊 Screener
+          ⚡ Pulsaryx
         </Link>
       </header>
 

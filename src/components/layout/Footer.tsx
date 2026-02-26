@@ -4,7 +4,7 @@ export function Footer() {
       <div className="container mx-auto px-4 py-3 sm:py-4">
         <div className="flex items-center justify-between text-xs sm:text-sm text-gray-500">
           <div>
-            <p>Crypto Screener v2.0</p>
+            <p>Pulsaryx v2.0</p>
           </div>
           <div className="flex items-center space-x-3 sm:space-x-4">
             <span>Built with React + TypeScript + Vite</span>

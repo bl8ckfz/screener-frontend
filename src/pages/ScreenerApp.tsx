@@ -211,7 +211,7 @@ export function ScreenerApp() {
       <StorageMigration />
       
       <Layout
-        title="Screener"
+        title="Pulsaryx"
         subtitle="Real-time USDT market analysis"
         onOpenSettings={() => setIsSettingsOpen(true)}
         autoHideHeader={autoHideHeader}

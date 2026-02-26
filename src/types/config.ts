@@ -140,11 +140,11 @@ export const DEFAULT_CONFIG: AppConfig = {
  * Storage keys for persisting config
  */
 export const STORAGE_KEYS = {
-  USER_PREFERENCES: 'crypto_screener_preferences',
-  HISTORICAL_DATA: 'crypto_screener_historical',
-  WATCHLISTS: 'crypto_screener_watchlists',
-  ALERT_RULES: 'crypto_screener_alerts',
-  CACHE: 'crypto_screener_cache',
+  USER_PREFERENCES: 'pulsaryx_preferences',
+  HISTORICAL_DATA: 'pulsaryx_historical',
+  WATCHLISTS: 'pulsaryx_watchlists',
+  ALERT_RULES: 'pulsaryx_alerts',
+  CACHE: 'pulsaryx_cache',
 } as const
 
 /**

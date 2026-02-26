@@ -37,7 +37,7 @@ export function LandingPage() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-gray-900/80 backdrop-blur-md border-b border-gray-800">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-xl sm:text-2xl font-bold">📊 Screener</span>
+            <span className="text-xl sm:text-2xl font-bold">⚡ Pulsaryx</span>
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -141,7 +141,7 @@ export function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-gray-800 py-8 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto text-center text-sm text-gray-500">
-          <p>&copy; {new Date().getFullYear()} Screener. Real-time crypto market analysis.</p>
+          <p>&copy; {new Date().getFullYear()} Pulsaryx. Real-time crypto market analysis.</p>
         </div>
       </footer>
     </div>

@@ -35,7 +35,7 @@ export interface CoinAlertStats {
  * Alert history configuration
  */
 export const ALERT_HISTORY_CONFIG = {
-  STORAGE_KEY: 'crypto-screener-alert-history',
+  STORAGE_KEY: 'pulsaryx-alert-history',
   RETENTION_HOURS: 24,
   CLEANUP_INTERVAL_MS: 60000, // Cleanup every 60 seconds
   MAX_HISTORY_ITEMS: 5000, // Maximum alerts to keep in storage (increased for high-volatility periods)

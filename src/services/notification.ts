@@ -139,7 +139,7 @@ export function showTestNotification(): Notification | null {
   return showNotification({
     title: '🎉 Notifications Enabled',
     body: 'You will now receive crypto alerts via browser notifications.',
-    tag: 'crypto-screener-test',
+    tag: 'pulsaryx-test',
     silent: true,
   })
 }

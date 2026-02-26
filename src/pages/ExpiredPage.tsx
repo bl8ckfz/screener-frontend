@@ -18,7 +18,7 @@ export function ExpiredPage() {
       {/* Header */}
       <header className="px-4 sm:px-6 py-4 border-b border-gray-800">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <span className="text-xl font-bold text-white">📊 Screener</span>
+          <span className="text-xl font-bold text-white">⚡ Pulsaryx</span>
           <button
             onClick={logout}
             className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
@@ -42,7 +42,7 @@ export function ExpiredPage() {
           {/* Description */}
           <p className="text-gray-400 mb-8 leading-relaxed">
             {wasTrial
-              ? 'Your 7-day free trial has ended. Subscribe to continue using Crypto Screener with full access to all features.'
+              ? 'Your 7-day free trial has ended. Subscribe to continue using Pulsaryx with full access to all features.'
               : 'Your subscription has expired. Renew to continue accessing real-time alerts, charts, and market analysis.'}
           </p>
 

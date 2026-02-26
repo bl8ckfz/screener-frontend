@@ -12,13 +12,13 @@ export function ExportButton({ coins, disabled = false }: ExportButtonProps) {
   const [isOpen, setIsOpen] = useState(false)
 
   const handleExportCSV = () => {
-    const filename = generateFilename('crypto-screener', 'csv')
+    const filename = generateFilename('pulsaryx', 'csv')
     exportToCSV(coins, filename)
     setIsOpen(false)
   }
 
   const handleExportJSON = () => {
-    const filename = generateFilename('crypto-screener', 'json')
+    const filename = generateFilename('pulsaryx', 'json')
     exportToJSON(coins, filename)
     setIsOpen(false)
   }

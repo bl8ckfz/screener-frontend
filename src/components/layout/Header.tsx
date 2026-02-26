@@ -14,7 +14,7 @@ interface HeaderProps {
 }
 
 export function Header({ 
-  title = 'Screener', 
+  title = 'Pulsaryx', 
   subtitle, 
   onOpenSettings,
   isVisible = true,

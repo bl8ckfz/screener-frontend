@@ -1,5 +1,5 @@
 /**
- * Crypto Screener Design System
+ * Pulsaryx Design System
  * 
  * Centralized design tokens for consistent styling across the application.
  * All tokens are consumed via Tailwind CSS utility classes.
