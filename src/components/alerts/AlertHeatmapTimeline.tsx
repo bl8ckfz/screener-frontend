@@ -76,16 +76,6 @@ const ALERT_TYPE_COLORS: Record<string, { bg: string; text: string; intensity: s
     intensity: ['bg-purple-900/10', 'bg-purple-800/30', 'bg-purple-700/50', 'bg-purple-600/70', 'bg-purple-500/90'],
   },
   // V2 Optimized
-  futures_pioneer_bull_v2: {
-    bg: 'bg-emerald-900/20',
-    text: 'text-emerald-300',
-    intensity: ['bg-emerald-900/10', 'bg-emerald-800/30', 'bg-emerald-700/50', 'bg-emerald-600/70', 'bg-emerald-500/90'],
-  },
-  futures_pioneer_bear_v2: {
-    bg: 'bg-pink-900/20',
-    text: 'text-pink-300',
-    intensity: ['bg-pink-900/10', 'bg-pink-800/30', 'bg-pink-700/50', 'bg-pink-600/70', 'bg-pink-500/90'],
-  },
   futures_bottom_hunter_v2: {
     bg: 'bg-violet-900/20',
     text: 'text-violet-400',
@@ -138,8 +128,6 @@ const getAlertTypeName = (type: string): string => {
     bottom_hunter: 'Bottom Hunter',
     top_hunter: 'Top Hunter',
     // V2 Optimized
-    pioneer_bull_v2: '🟢 Pioneer Bull V2',
-    pioneer_bear_v2: '🔴 Pioneer Bear V2',
     bottom_hunter_v2: '🟢 Bottom Hunter V2',
     top_hunter_v2: '🔴 Top Hunter V2',
     big_bull_60_v2: '🟢 Big Bull 60m V2',

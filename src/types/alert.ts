@@ -16,8 +16,6 @@ export type FuturesAlertType =
   | 'futures_bottom_hunter' // Bottom Hunter (potential bottom reversal)
   | 'futures_top_hunter' // Top Hunter (potential top reversal)
   // V2 optimized rules
-  | 'futures_pioneer_bull_v2' // Pioneer Bull V2 (volume floor + RSI)
-  | 'futures_pioneer_bear_v2' // Pioneer Bear V2 (volume floor + RSI)
   | 'futures_bottom_hunter_v2' // Bottom Hunter V2 (deeper + RSI oversold)
   | 'futures_top_hunter_v2' // Top Hunter V2 (deeper + RSI overbought)
   | 'futures_big_bull_60_v2' // Big Bull 60 V2 (daily floor + BTC-relative)
@@ -492,20 +490,6 @@ export const FUTURES_ALERT_PRESETS: FuturesAlertPreset[] = [
   },
   // V2 Optimized Rules
   {
-    type: 'futures_pioneer_bull_v2',
-    name: 'Pioneer Bull V2',
-    description: 'Improved: adds 50k/150k volume floor + RSI > 50 confirmation',
-    severity: 'critical',
-    marketMode: 'bull',
-  },
-  {
-    type: 'futures_pioneer_bear_v2',
-    name: 'Pioneer Bear V2',
-    description: 'Improved: adds 50k/150k volume floor + RSI < 50 confirmation',
-    severity: 'critical',
-    marketMode: 'bear',
-  },
-  {
     type: 'futures_bottom_hunter_v2',
     name: 'Bottom Hunter V2',
     description: 'Improved: deeper thresholds (-1.5%/-1.0%/+0.7%) + RSI < 35 oversold',
@@ -572,8 +556,6 @@ export const FUTURES_ALERT_LABELS: Record<FuturesAlertType, string> = {
   futures_bottom_hunter: 'Bottom Hunter',
   futures_top_hunter: 'Top Hunter',
   // V2 optimized
-  futures_pioneer_bull_v2: '🟢 Pioneer Bull V2',
-  futures_pioneer_bear_v2: '🔴 Pioneer Bear V2',
   futures_bottom_hunter_v2: '🟢 Bottom Hunter V2',
   futures_top_hunter_v2: '🔴 Top Hunter V2',
   futures_big_bull_60_v2: '🟢 Big Bull 60m V2',
@@ -601,8 +583,6 @@ export const DEFAULT_FUTURES_ALERT_CONFIG: FuturesAlertConfig = {
     futures_bottom_hunter: { enabled: true, severity: 'medium' },
     futures_top_hunter: { enabled: true, severity: 'medium' },
     // V2 optimized (enabled by default)
-    futures_pioneer_bull_v2: { enabled: true, severity: 'critical' },
-    futures_pioneer_bear_v2: { enabled: true, severity: 'critical' },
     futures_bottom_hunter_v2: { enabled: true, severity: 'medium' },
     futures_top_hunter_v2: { enabled: true, severity: 'medium' },
     futures_big_bull_60_v2: { enabled: true, severity: 'critical' },

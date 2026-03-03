@@ -15,8 +15,6 @@ export interface AlertColorConfig {
   futures_15_big_bear: string
   futures_top_hunter: string
   // V2 Optimized
-  futures_pioneer_bull_v2: string
-  futures_pioneer_bear_v2: string
   futures_bottom_hunter_v2: string
   futures_top_hunter_v2: string
   futures_big_bull_60_v2: string
@@ -43,8 +41,6 @@ export const DEFAULT_ALERT_COLORS: AlertColorConfig = {
   futures_15_big_bear: '#dc2626',
   futures_top_hunter: '#a855f7',
   // V2 Optimized
-  futures_pioneer_bull_v2: '#6ee7b7',
-  futures_pioneer_bear_v2: '#f9a8d4',
   futures_bottom_hunter_v2: '#8b5cf6',
   futures_top_hunter_v2: '#8b5cf6',
   futures_big_bull_60_v2: '#22c55e',
@@ -76,8 +72,6 @@ export const ALERT_COLOR_CATEGORIES = {
   v2: [
     'futures_big_bull_60_v2',
     'futures_big_bear_60_v2',
-    'futures_pioneer_bull_v2',
-    'futures_pioneer_bear_v2',
     'futures_bottom_hunter_v2',
     'futures_top_hunter_v2',
   ] as AlertColorKey[],
@@ -101,8 +95,6 @@ export function getAlertColorLabel(alertType: AlertColorKey): string {
     futures_5_big_bear: '5m Big Bear',
     futures_15_big_bear: '15m Big Bear',
     futures_top_hunter: 'Top Hunter',
-    futures_pioneer_bull_v2: 'Pioneer Bull V2',
-    futures_pioneer_bear_v2: 'Pioneer Bear V2',
     futures_bottom_hunter_v2: 'Bottom Hunter V2',
     futures_top_hunter_v2: 'Top Hunter V2',
     futures_big_bull_60_v2: '60m Big Bull V2',

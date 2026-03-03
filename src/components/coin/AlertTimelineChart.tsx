@@ -26,8 +26,6 @@ const ALERT_TEXT_CLASSES: Record<string, string> = {
   futures_15_big_bear: 'text-red-500',
   futures_top_hunter: 'text-purple-400',
   // V2 Optimized
-  futures_pioneer_bull_v2: 'text-emerald-300',
-  futures_pioneer_bear_v2: 'text-pink-300',
   futures_bottom_hunter_v2: 'text-violet-400',
   futures_top_hunter_v2: 'text-violet-400',
   futures_big_bull_60_v2: 'text-green-400',
@@ -55,8 +53,6 @@ const getAlertTypeName = (type: string): string => {
     bottom_hunter: 'Bottom Hunter',
     top_hunter: 'Top Hunter',
     // V2 Optimized
-    pioneer_bull_v2: '🟢 Pioneer Bull V2',
-    pioneer_bear_v2: '🔴 Pioneer Bear V2',
     bottom_hunter_v2: '🟢 Bottom Hunter V2',
     top_hunter_v2: '🔴 Top Hunter V2',
     big_bull_60_v2: '🟢 Big Bull 60m V2',

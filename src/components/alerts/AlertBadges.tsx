@@ -49,8 +49,6 @@ export function AlertBadges({ alertTypes, maxVisible = 3, latestAlertType }: Ale
       text = 'BH'
     } else if (cleanType === 'top_hunter') {
       text = 'TH'
-    } else if (cleanType === 'pioneer_bull_v2' || cleanType === 'pioneer_bear_v2') {
-      text = 'P2'
     } else if (cleanType === 'bottom_hunter_v2') {
       text = 'B2'
     } else if (cleanType === 'top_hunter_v2') {

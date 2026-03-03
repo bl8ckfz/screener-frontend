@@ -39,7 +39,6 @@ const ORIGINAL_TYPES = new Set<FuturesAlertType>([
 ])
 
 const V2_TYPES = new Set<FuturesAlertType>([
-  'futures_pioneer_bull_v2', 'futures_pioneer_bear_v2',
   'futures_bottom_hunter_v2', 'futures_top_hunter_v2',
   'futures_big_bull_60_v2', 'futures_big_bear_60_v2',
 ])

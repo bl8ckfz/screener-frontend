@@ -235,8 +235,6 @@ export function AlertHistory() {
       text = 'BH'
     } else if (cleanType === 'top_hunter') {
       text = 'TH'
-    } else if (cleanType === 'pioneer_bull_v2' || cleanType === 'pioneer_bear_v2') {
-      text = 'P2'
     } else if (cleanType === 'bottom_hunter_v2') {
       text = 'B2'
     } else if (cleanType === 'top_hunter_v2') {
@@ -271,8 +269,6 @@ export function AlertHistory() {
       bottom_hunter: 'Bottom Hunter',
       top_hunter: 'Top Hunter',
       // V2 Optimized
-      pioneer_bull_v2: '🟢 Pioneer Bull V2',
-      pioneer_bear_v2: '🔴 Pioneer Bear V2',
       bottom_hunter_v2: '🟢 Bottom Hunter V2',
       top_hunter_v2: '🔴 Top Hunter V2',
       big_bull_60_v2: '🟢 Big Bull 60m V2',
@@ -433,8 +429,6 @@ export function AlertHistory() {
               <option value="futures_top_hunter">Top Hunter (Futures)</option>
             </optgroup>
             <optgroup label="Optimized V2">
-              <option value="futures_pioneer_bull_v2">Pioneer Bull V2</option>
-              <option value="futures_pioneer_bear_v2">Pioneer Bear V2</option>
               <option value="futures_bottom_hunter_v2">Bottom Hunter V2</option>
               <option value="futures_top_hunter_v2">Top Hunter V2</option>
               <option value="futures_big_bull_60_v2">Big Bull 60m V2</option>
