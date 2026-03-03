@@ -807,10 +807,10 @@ const [selectedAlert, setSelectedAlert] = useState<AlertStat | null>(null)
 │          │  │ [WATCHLIST ALERTS] (3)       │   │              │
 │          │  │ ├─ BTC  Scout Bull   12:34  │   │ VCP: 0.234   │
 │          │  │ ├─ ETH  Bottom Hunter 12:30  │   │              │
-│          │  │ └─ SOL  5m Big Bull   12:25  │   │ Fib Pivots   │
+│          │  │ └─ SOL  Surge 5 Bull   12:25  │   │ Fib Pivots   │
 │          │  │─────────────────────────────│   │ R1: ...      │
 │          │  │ [ALL ALERTS] (47)            │   │ P:  ...      │
-│          │  │ ├─ DOGE 60 Big Bull   12:20  │   │ S1: ...      │
+│          │  │ ├─ DOGE Surge 60 Bull   12:20  │   │ S1: ...      │
 │          │  │ ├─ ADA  Scout Bear   12:15  │   │              │
 │          │  │ ├─ ... (more rows)           │   │ External     │
 │          │  │ └─ ... (scroll)              │   │ [CoinGlass]  │

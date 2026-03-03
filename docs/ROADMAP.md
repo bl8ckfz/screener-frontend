@@ -328,7 +328,7 @@
   - Created src/services/alertEngine.ts (561 lines)
   - Implemented evaluateAlertRules(), evaluateRule(), evaluateCondition()
   - Built 18 evaluator functions for all alert types
-  - Legacy evaluators: Scout Bull/Bear, 5m/15m Big Bull/Bear, Bottom/Top Hunter
+  - Legacy evaluators: Scout Bull/Bear, 5m/15m Surge Bull/Bear, Bottom/Top Hunter
   - Standard evaluators: Price Pump/Dump, Volume Spike/Drop, VCP Signal, Fibonacci Break
 - [x] Create alert configuration UI
   - Built AlertConfig component (259 lines)
@@ -697,7 +697,7 @@
   - [x] Big momentum alerts (5): 5m/15m bull/bear with ascending price/volume patterns
   - [x] Core signal alerts (8): price pump/dump, volume spike/drop, VCP signal, Fibonacci break, bottom/top hunter
 - [ ] Unit tests for business logic (alert engine, services, sync)
-  - [ ] Alert engine evaluators (remaining 14 functions): price pump/dump, volume spike/drop, VCP signal, Fibonacci break, big bull/bear 5m/15m, bottom/top hunter, generic conditions
+  - [ ] Alert engine evaluators (remaining 14 functions): price pump/dump, volume spike/drop, VCP signal, Fibonacci break, surge bull/bear 5m/15m, bottom/top hunter, generic conditions
   - [ ] Anti-spam logic: 60s cooldown, max 5 per symbol
   - [ ] Fallback logic for missing history data
   - [ ] Sync service: bidirectional sync, conflict resolution, real-time updates
@@ -1009,7 +1009,7 @@
 - ✅ **NEW**: Virtualized rendering for 1000+ coins (constant 50ms render) (Phase 5.1)
 - ✅ **NEW**: Smart polling with tab visibility (50% API reduction) (Phase 5.2)
 - ✅ **NEW**: IndexedDB storage with automatic migration (Phase 5.3)
-- ✅ **NEW**: Alert system with 8 legacy types (Scout, Big Bull/Bear, Hunters) (Phase 6.1)
+- ✅ **NEW**: Alert system with 8 legacy types (Scout, Surge Bull/Bear, Hunters) (Phase 6.1)
 - ✅ **NEW**: Alert evaluation engine (18 evaluator functions, 561 lines) (Phase 6.1)
 - ✅ **NEW**: Alert configuration UI with preset selector (Phase 6.1)
 - ✅ **NEW**: Toast notifications with auto-dismiss and sounds (Phase 6.1)

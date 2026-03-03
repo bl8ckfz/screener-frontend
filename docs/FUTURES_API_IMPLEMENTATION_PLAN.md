@@ -7,10 +7,10 @@ Implement a service to retrieve price-change and volume metrics for USDT-M futur
 **5 timeframes:** 5m, 15m, 1h, 8h, 1d
 
 This provides data for multiple alert types:
-- **60 Big Bull**: Uses 1h, 8h, 1d for sustained momentum detection (includes 1d volume)
+- **Surge 60 Bull**: Uses 1h, 8h, 1d for sustained momentum detection (includes 1d volume)
 - **Scout Bull**: Uses 5m, 15m for early trend detection
-- **5 Big Bull**: Uses 5m, 15m, 1h, 8h, 1d for explosive moves
-- **15 Big Bull**: Uses 15m, 1h, 8h, 1d for strong trending moves
+- **Surge 5 Bull**: Uses 5m, 15m, 1h, 8h, 1d for explosive moves
+- **1Surge 5 Bull**: Uses 15m, 1h, 8h, 1d for strong trending moves
 - **Bottom Hunter**: Uses 5m, 15m, 1h for reversal detection
 
 ---
@@ -407,7 +407,7 @@ Add to `src/types/alert.ts`:
 ```typescript
 export type AlertType =
   | ... // existing types
-  | 'futures_big_bull_60' // Futures-based 60 Big Bull
+  | 'futures_big_bull_60' // Futures-based Surge 60 Bull
 ```
 
 ### 8.2 Alert Evaluator
@@ -518,7 +518,7 @@ export const COINGECKO_CONFIG = {
 
 ## 12. Alert Rules to Implement
 
-### 12.1 60 Big Bull
+### 12.1 Surge 60 Bull
 **Type:** `futures_big_bull_60`  
 **Purpose:** Detect coins with sustained momentum over multiple timeframes
 
@@ -539,7 +539,7 @@ export const COINGECKO_CONFIG = {
 
 ---
 
-### 12.2 60 Big Bear
+### 12.2 Surge 60 Bear
 **Type:** `futures_big_bear_60`  
 **Purpose:** Detect coins with sustained downward momentum over multiple timeframes
 
@@ -594,7 +594,7 @@ export const COINGECKO_CONFIG = {
 
 ---
 
-### 12.5 5 Big Bull
+### 12.5 Surge 5 Bull
 **Type:** `futures_5_big_bull`  
 **Purpose:** Catch explosive moves with progressive momentum acceleration
 
@@ -616,7 +616,7 @@ export const COINGECKO_CONFIG = {
 
 ---
 
-### 12.6 5 Big Bear
+### 12.6 Surge 5 Bear
 **Type:** `futures_5_big_bear`  
 **Purpose:** Catch explosive downward moves with progressive momentum acceleration
 
@@ -638,7 +638,7 @@ export const COINGECKO_CONFIG = {
 
 ---
 
-### 12.7 15 Big Bull
+### 12.7 1Surge 5 Bull
 **Type:** `futures_15_big_bull`  
 **Purpose:** Identify strong trending moves with progressive momentum acceleration
 
@@ -659,7 +659,7 @@ export const COINGECKO_CONFIG = {
 
 ---
 
-### 12.8 15 Big Bear
+### 12.8 1Surge 5 Bear
 **Type:** `futures_15_big_bear`  
 **Purpose:** Identify strong downward trending moves with progressive momentum acceleration
 
@@ -910,14 +910,14 @@ export interface FuturesAlertConfig extends BaseAlertConfig {
 // In src/components/alerts/AlertBadges.tsx
 
 const FUTURES_ALERT_LABELS: Record<FuturesAlertType, string> = {
-  futures_big_bull_60: '60 Big Bull',
-  futures_big_bear_60: '60 Big Bear',
+  futures_big_bull_60: 'Surge 60 Bull',
+  futures_big_bear_60: 'Surge 60 Bear',
   futures_pioneer_bull: 'Scout Bull',
   futures_pioneer_bear: 'Scout Bear',
-  futures_5_big_bull: '5 Big Bull',
-  futures_5_big_bear: '5 Big Bear',
-  futures_15_big_bull: '15 Big Bull',
-  futures_15_big_bear: '15 Big Bear',
+  futures_5_big_bull: 'Surge 5 Bull',
+  futures_5_big_bear: 'Surge 5 Bear',
+  futures_15_big_bull: '1Surge 5 Bull',
+  futures_15_big_bear: '1Surge 5 Bear',
   futures_bottom_hunter: 'Bottom Hunter',
   futures_top_hunter: 'Top Hunter',
 };

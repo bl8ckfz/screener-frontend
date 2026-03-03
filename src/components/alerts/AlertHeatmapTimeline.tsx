@@ -117,21 +117,21 @@ const ALERT_TYPE_COLORS: Record<string, { bg: string; text: string; intensity: s
 const getAlertTypeName = (type: string): string => {
   const cleanType = type.replace(/^futures_/, '')
   const names: Record<string, string> = {
-    big_bull_60: '60 Big Bull',
-    big_bear_60: '60 Big Bear',
+    big_bull_60: 'Surge 60 Bull',
+    big_bear_60: 'Surge 60 Bear',
     pioneer_bull: 'Scout Bull',
     pioneer_bear: 'Scout Bear',
-    '5_big_bull': '5 Big Bull',
-    '5_big_bear': '5 Big Bear',
-    '15_big_bull': '15 Big Bull',
-    '15_big_bear': '15 Big Bear',
+    '5_big_bull': 'Surge 5 Bull',
+    '5_big_bear': 'Surge 5 Bear',
+    '15_big_bull': 'Surge 15 Bull',
+    '15_big_bear': 'Surge 15 Bear',
     bottom_hunter: 'Bottom Hunter',
     top_hunter: 'Top Hunter',
     // V2 Optimized
     bottom_hunter_v2: '🟢 Bottom Hunter V2',
     top_hunter_v2: '🔴 Top Hunter V2',
-    big_bull_60_v2: '🟢 Big Bull 60m V2',
-    big_bear_60_v2: '🔴 Big Bear 60m V2',
+    big_bull_60_v2: '🟢 Surge 60 Bull V2',
+    big_bear_60_v2: '🔴 Surge 60 Bear V2',
     // Whale
     whale_detector: '🐋 Whale Detector',
     whale_accumulation: '🐋⬆ Whale Accumulation',

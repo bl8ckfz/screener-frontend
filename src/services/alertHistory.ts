@@ -196,8 +196,8 @@ export class AlertHistory {
    */
   private generateTitle(ruleType: string): string {
     const titles: Record<string, string> = {
-      'big_bull_60m': 'Big Bull 60m',
-      'big_bear_60m': 'Big Bear 60m',
+      'big_bull_60m': 'Surge 60 Bull',
+      'big_bear_60m': 'Surge 60 Bear',
       'pioneer_bull': 'Scout Bull',
       'pioneer_bear': 'Scout Bear',
       'whale': 'Whale Alert',

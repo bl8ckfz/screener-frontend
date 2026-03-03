@@ -470,7 +470,7 @@ interface Store {
 
 ---
 
-### 3. 5m Big Bull
+### 3. Surge 5 Bull
 **Purpose**: Catch 5-minute breakouts  
 **Conditions**:
 - Price/3m > 1.006 (0.6% gain)
@@ -482,7 +482,7 @@ interface Store {
 
 ---
 
-### 4. 5m Big Bear
+### 4. Surge 5 Bear
 **Purpose**: Catch 5-minute breakdowns  
 **Conditions**:
 - Price/3m < 0.994 (0.6% loss)
@@ -494,7 +494,7 @@ interface Store {
 
 ---
 
-### 5. 15m Big Bull
+### 5. 1Surge 5 Bull
 **Purpose**: Sustained bullish moves  
 **Conditions**:
 - Price/3m > 1.006 (0.6% gain)
@@ -505,7 +505,7 @@ interface Store {
 
 ---
 
-### 6. 15m Big Bear
+### 6. 1Surge 5 Bear
 **Purpose**: Sustained bearish moves  
 **Conditions**:
 - Price/3m < 0.994 (0.6% loss)

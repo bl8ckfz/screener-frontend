@@ -41,7 +41,7 @@ The component combines two visualization approaches:
 ## Key Features
 
 ### Alert Grouping
-- Groups by alert type (Scout Bull, 60 Big Bull, etc.)
+- Groups by alert type (Scout Bull, Surge 60 Bull, etc.)
 - Creates 1-minute time buckets
 - Preserves all individual alert records
 
@@ -109,7 +109,7 @@ Shows all 13 individual alerts with timestamps:
 
 ### Scenario 2: Multiple Alert Types
 ```
-60 Big Bull [8 alerts] 8.0/min
+Surge 60 Bull [8 alerts] 8.0/min
 ░░░▓▓██▓░░░░░░░░░░░░░░░
 
 Scout Bull [5 alerts] 5.0/min

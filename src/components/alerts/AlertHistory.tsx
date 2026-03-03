@@ -258,21 +258,21 @@ export function AlertHistory() {
   const getAlertDisplayName = (type: CombinedAlertType): string => {
     const cleanType = type.replace(/^futures_/, '')
     const names: Record<string, string> = {
-      big_bull_60: '60 Big Bull',
-      big_bear_60: '60 Big Bear',
+      big_bull_60: 'Surge 60 Bull',
+      big_bear_60: 'Surge 60 Bear',
       pioneer_bull: 'Scout Bull',
       pioneer_bear: 'Scout Bear',
-      '5_big_bull': '5 Big Bull',
-      '5_big_bear': '5 Big Bear',
-      '15_big_bull': '15 Big Bull',
-      '15_big_bear': '15 Big Bear',
+      '5_big_bull': 'Surge 5 Bull',
+      '5_big_bear': 'Surge 5 Bear',
+      '15_big_bull': 'Surge 15 Bull',
+      '15_big_bear': 'Surge 15 Bear',
       bottom_hunter: 'Bottom Hunter',
       top_hunter: 'Top Hunter',
       // V2 Optimized
       bottom_hunter_v2: '🟢 Bottom Hunter V2',
       top_hunter_v2: '🔴 Top Hunter V2',
-      big_bull_60_v2: '🟢 Big Bull 60m V2',
-      big_bear_60_v2: '🔴 Big Bear 60m V2',
+      big_bull_60_v2: '🟢 Surge 60 Bull V2',
+      big_bear_60_v2: '🔴 Surge 60 Bear V2',
       // Whale
       whale_detector: '🐋 Whale Detector',
       whale_accumulation: '🐋⬆ Whale Accumulation',
@@ -417,22 +417,22 @@ export function AlertHistory() {
           >
             <option value="all">All Types</option>
             <optgroup label="Futures Alerts">
-              <option value="futures_big_bull_60">60 Big Bull</option>
-              <option value="futures_big_bear_60">60 Big Bear</option>
+              <option value="futures_big_bull_60">Surge 60 Bull</option>
+              <option value="futures_big_bear_60">Surge 60 Bear</option>
               <option value="futures_pioneer_bull">Scout Bull (Futures)</option>
               <option value="futures_pioneer_bear">Scout Bear (Futures)</option>
-              <option value="futures_5_big_bull">5 Big Bull (Futures)</option>
-              <option value="futures_5_big_bear">5 Big Bear (Futures)</option>
-              <option value="futures_15_big_bull">15 Big Bull (Futures)</option>
-              <option value="futures_15_big_bear">15 Big Bear (Futures)</option>
+              <option value="futures_5_big_bull">Surge 5 Bull (Futures)</option>
+              <option value="futures_5_big_bear">Surge 5 Bear (Futures)</option>
+              <option value="futures_15_big_bull">Surge 15 Bull (Futures)</option>
+              <option value="futures_15_big_bear">Surge 15 Bear (Futures)</option>
               <option value="futures_bottom_hunter">Bottom Hunter (Futures)</option>
               <option value="futures_top_hunter">Top Hunter (Futures)</option>
             </optgroup>
             <optgroup label="Optimized V2">
               <option value="futures_bottom_hunter_v2">Bottom Hunter V2</option>
               <option value="futures_top_hunter_v2">Top Hunter V2</option>
-              <option value="futures_big_bull_60_v2">Big Bull 60m V2</option>
-              <option value="futures_big_bear_60_v2">Big Bear 60m V2</option>
+              <option value="futures_big_bull_60_v2">Surge 60 Bull V2</option>
+              <option value="futures_big_bear_60_v2">Surge 60 Bear V2</option>
             </optgroup>
             <optgroup label="Whale Detection">
               <option value="futures_whale_detector">Whale Detector</option>
@@ -442,10 +442,10 @@ export function AlertHistory() {
             <optgroup label="Legacy Alerts">
               <option value="pioneer_bull">Scout Bull (Legacy)</option>
               <option value="pioneer_bear">Scout Bear (Legacy)</option>
-              <option value="5m_big_bull">5m Big Bull (Legacy)</option>
-              <option value="5m_big_bear">5m Big Bear (Legacy)</option>
-              <option value="15m_big_bull">15m Big Bull (Legacy)</option>
-              <option value="15m_big_bear">15m Big Bear (Legacy)</option>
+              <option value="5m_big_bull">Surge 5 Bull (Legacy)</option>
+              <option value="5m_big_bear">Surge 5 Bear (Legacy)</option>
+              <option value="15m_big_bull">Surge 15 Bull (Legacy)</option>
+              <option value="15m_big_bear">Surge 15 Bear (Legacy)</option>
               <option value="bottom_hunter">Bottom Hunter (Legacy)</option>
               <option value="top_hunter">Top Hunter (Legacy)</option>
               <option value="price_pump">Price Pump</option>

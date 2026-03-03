@@ -101,7 +101,7 @@ Test each of the 8 legacy alert types from fast.html:
 
 ---
 
-#### 3. 5m Big Bull Alert
+#### 3. Surge 5 Bull Alert
 **Conditions**: 5-minute volume and price surge
 - Price/3m > 1.006
 - 3m volume delta > 100,000
@@ -109,7 +109,7 @@ Test each of the 8 legacy alert types from fast.html:
 - Ascending volume: 3m < 1m < 5m < current
 
 **Test Steps**:
-1. Create 5m Big Bull rule
+1. Create Surge 5 Bull rule
 2. Monitor coins with sudden volume spikes
 3. Verify 5-minute timeframe detection
 4. Check volume delta calculations
@@ -118,7 +118,7 @@ Test each of the 8 legacy alert types from fast.html:
 
 ---
 
-#### 4. 5m Big Bear Alert
+#### 4. Surge 5 Bear Alert
 **Conditions**: 5-minute volume and price drop
 - Price/3m < 0.994
 - 3m volume delta > 100,000
@@ -126,7 +126,7 @@ Test each of the 8 legacy alert types from fast.html:
 - Ascending volume pattern
 
 **Test Steps**:
-1. Create 5m Big Bear rule
+1. Create Surge 5 Bear rule
 2. Watch for sudden sell pressure
 3. Verify alert timing matches volume spikes
 4. Confirm price drop threshold
@@ -135,14 +135,14 @@ Test each of the 8 legacy alert types from fast.html:
 
 ---
 
-#### 5. 15m Big Bull Alert
+#### 5. 1Surge 5 Bull Alert
 **Conditions**: 15-minute sustained bull run
 - Price/3m > 1.006
 - 15m volume delta > 400,000
 - Volume ascending across multiple timeframes
 
 **Test Steps**:
-1. Create 15m Big Bull rule
+1. Create 1Surge 5 Bull rule
 2. Monitor for sustained upward trends
 3. Verify 15-minute timeframe used
 4. Check larger volume threshold (400k)
@@ -151,14 +151,14 @@ Test each of the 8 legacy alert types from fast.html:
 
 ---
 
-#### 6. 15m Big Bear Alert
+#### 6. 1Surge 5 Bear Alert
 **Conditions**: 15-minute sustained decline
 - Price/3m < 0.994
 - 15m volume delta > 400,000
 - Volume spike during decline
 
 **Test Steps**:
-1. Create 15m Big Bear rule
+1. Create 1Surge 5 Bear rule
 2. Watch for prolonged sell-offs
 3. Verify 15-minute timeframe detection
 4. Confirm volume threshold met

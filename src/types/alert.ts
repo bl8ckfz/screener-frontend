@@ -5,21 +5,21 @@ import { Timeframe } from './coin'
  * Based on Binance Futures API data with kline intervals
  */
 export type FuturesAlertType =
-  | 'futures_big_bull_60' // 60-minute Big Bull (strong upward momentum)
-  | 'futures_big_bear_60' // 60-minute Big Bear (strong downward momentum)
+  | 'futures_big_bull_60' // Surge 60 Bull (strong upward momentum)
+  | 'futures_big_bear_60' // Surge 60 Bear (strong downward momentum)
   | 'futures_pioneer_bull' // Scout Bull (early bullish trend detection)
   | 'futures_pioneer_bear' // Scout Bear (early bearish trend detection)
-  | 'futures_5_big_bull' // 5-minute Big Bull (short-term bullish spike)
-  | 'futures_5_big_bear' // 5-minute Big Bear (short-term bearish spike)
-  | 'futures_15_big_bull' // 15-minute Big Bull (medium-term bullish spike)
-  | 'futures_15_big_bear' // 15-minute Big Bear (medium-term bearish spike)
+  | 'futures_5_big_bull' // Surge 5 Bull (short-term bullish spike)
+  | 'futures_5_big_bear' // Surge 5 Bear (short-term bearish spike)
+  | 'futures_15_big_bull' // Surge 15 Bull (medium-term bullish spike)
+  | 'futures_15_big_bear' // Surge 15 Bear (medium-term bearish spike)
   | 'futures_bottom_hunter' // Bottom Hunter (potential bottom reversal)
   | 'futures_top_hunter' // Top Hunter (potential top reversal)
   // V2 optimized rules
   | 'futures_bottom_hunter_v2' // Bottom Hunter V2 (deeper + RSI oversold)
   | 'futures_top_hunter_v2' // Top Hunter V2 (deeper + RSI overbought)
-  | 'futures_big_bull_60_v2' // Big Bull 60 V2 (daily floor + BTC-relative)
-  | 'futures_big_bear_60_v2' // Big Bear 60 V2 (daily floor + BTC-relative)
+  | 'futures_big_bull_60_v2' // Surge 60 Bull V2 (daily floor + BTC-relative)
+  | 'futures_big_bear_60_v2' // Surge 60 Bear V2 (daily floor + BTC-relative)
   // Whale detection
   | 'futures_whale_detector' // Whale Detector (volume anomaly, no price move)
   | 'futures_whale_accumulation' // Whale Accumulation (volume anomaly, bullish context)
@@ -279,7 +279,7 @@ export const LEGACY_ALERT_PRESETS: LegacyAlertPreset[] = [
   },
   {
     type: '5m_big_bull',
-    name: '5m Big Bull',
+    name: 'Surge 5 Bull',
     description: '5-minute significant volume and price increase',
     conditions: {
       priceRatios: {
@@ -299,7 +299,7 @@ export const LEGACY_ALERT_PRESETS: LegacyAlertPreset[] = [
   },
   {
     type: '5m_big_bear',
-    name: '5m Big Bear',
+    name: 'Surge 5 Bear',
     description: '5-minute significant volume and price decrease',
     conditions: {
       priceRatios: {
@@ -319,7 +319,7 @@ export const LEGACY_ALERT_PRESETS: LegacyAlertPreset[] = [
   },
   {
     type: '15m_big_bull',
-    name: '15m Big Bull',
+    name: 'Surge 15 Bull',
     description: '15-minute significant volume and price increase',
     conditions: {
       priceRatios: {
@@ -341,7 +341,7 @@ export const LEGACY_ALERT_PRESETS: LegacyAlertPreset[] = [
   },
   {
     type: '15m_big_bear',
-    name: '15m Big Bear',
+    name: 'Surge 15 Bear',
     description: '15-minute significant volume and price decrease',
     conditions: {
       priceRatios: {
@@ -420,14 +420,14 @@ export interface FuturesAlertPreset {
 export const FUTURES_ALERT_PRESETS: FuturesAlertPreset[] = [
   {
     type: 'futures_big_bull_60',
-    name: '60 Big Bull',
+    name: 'Surge 60 Bull',
     description: 'Sustained bullish momentum: 1h > 1.6%, progressive validation across 8h/1d, strong volume acceleration',
     severity: 'critical',
     marketMode: 'bull',
   },
   {
     type: 'futures_big_bear_60',
-    name: '60 Big Bear',
+    name: 'Surge 60 Bear',
     description: 'Sustained bearish momentum: 1h < -1.6%, progressive downtrend across 8h/1d, strong volume',
     severity: 'critical',
     marketMode: 'bear',
@@ -448,28 +448,28 @@ export const FUTURES_ALERT_PRESETS: FuturesAlertPreset[] = [
   },
   {
     type: 'futures_5_big_bull',
-    name: '5 Big Bull',
+    name: 'Surge 5 Bull',
     description: 'Explosive 5m move: progressive validation across 5m/15m/1h with strong volume acceleration',
     severity: 'high',
     marketMode: 'bull',
   },
   {
     type: 'futures_5_big_bear',
-    name: '5 Big Bear',
+    name: 'Surge 5 Bear',
     description: 'Explosive 5m drop: progressive downward momentum with strong volume acceleration',
     severity: 'high',
     marketMode: 'bear',
   },
   {
     type: 'futures_15_big_bull',
-    name: '15 Big Bull',
+    name: 'Surge 15 Bull',
     description: 'Strong 15m uptrend: progressive validation across 15m/1h/8h with volume confirmation',
     severity: 'high',
     marketMode: 'bull',
   },
   {
     type: 'futures_15_big_bear',
-    name: '15 Big Bear',
+    name: 'Surge 15 Bear',
     description: 'Strong 15m downtrend: progressive downward momentum across timeframes',
     severity: 'high',
     marketMode: 'bear',
@@ -505,14 +505,14 @@ export const FUTURES_ALERT_PRESETS: FuturesAlertPreset[] = [
   },
   {
     type: 'futures_big_bull_60_v2',
-    name: 'Big Bull 60m V2',
+    name: 'Surge 60 Bull V2',
     description: 'Improved: daily must be positive + outperforms BTC by 0.5%',
     severity: 'critical',
     marketMode: 'bull',
   },
   {
     type: 'futures_big_bear_60_v2',
-    name: 'Big Bear 60m V2',
+    name: 'Surge 60 Bear V2',
     description: 'Improved: daily must be negative + underperforms BTC by 0.5%',
     severity: 'critical',
     marketMode: 'bear',
@@ -545,21 +545,21 @@ export const FUTURES_ALERT_PRESETS: FuturesAlertPreset[] = [
  * Futures alert type labels for UI display
  */
 export const FUTURES_ALERT_LABELS: Record<FuturesAlertType, string> = {
-  futures_big_bull_60: '60 Big Bull',
-  futures_big_bear_60: '60 Big Bear',
+  futures_big_bull_60: 'Surge 60 Bull',
+  futures_big_bear_60: 'Surge 60 Bear',
   futures_pioneer_bull: 'Scout Bull',
   futures_pioneer_bear: 'Scout Bear',
-  futures_5_big_bull: '5 Big Bull',
-  futures_5_big_bear: '5 Big Bear',
-  futures_15_big_bull: '15 Big Bull',
-  futures_15_big_bear: '15 Big Bear',
+  futures_5_big_bull: 'Surge 5 Bull',
+  futures_5_big_bear: 'Surge 5 Bear',
+  futures_15_big_bull: 'Surge 15 Bull',
+  futures_15_big_bear: 'Surge 15 Bear',
   futures_bottom_hunter: 'Bottom Hunter',
   futures_top_hunter: 'Top Hunter',
   // V2 optimized
   futures_bottom_hunter_v2: '🟢 Bottom Hunter V2',
   futures_top_hunter_v2: '🔴 Top Hunter V2',
-  futures_big_bull_60_v2: '🟢 Big Bull 60m V2',
-  futures_big_bear_60_v2: '🔴 Big Bear 60m V2',
+  futures_big_bull_60_v2: '🟢 Surge 60 Bull V2',
+  futures_big_bear_60_v2: '🔴 Surge 60 Bear V2',
   // Whale
   futures_whale_detector: '🐋 Whale Detector',
   futures_whale_accumulation: '🐋⬆️ Whale Accumulation',

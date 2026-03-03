@@ -114,7 +114,7 @@
 ### Pending Tasks
 
 1. **Expand Alert Engine Tests**:
-   - [ ] Cover remaining evaluator functions beyond Pioneer (price pump/dump, volume spike/drop, VCP, Fibonacci break, bottom/top hunter, big bull/bear 5m/15m)
+   - [ ] Cover remaining evaluator functions beyond Pioneer (price pump/dump, volume spike/drop, VCP, Fibonacci break, bottom/top hunter, surge bull/bear 5m/15m)
    - [ ] Test anti-spam logic (60s cooldown, max 5 per symbol)
    - [ ] Test fallback logic for missing history data
    - Estimated: +30 tests
@@ -143,7 +143,7 @@
    - [ ] Debug `sortCoins()` function - currently returns unsorted arrays
 
 4. **Create Alert Engine Tests**:
-   - [ ] Test all 18 evaluator functions (Pioneer Bull/Bear, Big Bull/Bear, etc.)
+   - [ ] Test all 18 evaluator functions (Pioneer Bull/Bear, Surge Bull/Bear, etc.)
    - [ ] Test anti-spam logic (60s cooldown, max alerts per symbol)
    - [ ] Test fallback logic for missing history data
 
@@ -162,7 +162,7 @@
 ## Key Technical Context
 
 ### Alert System Features (Phase 6.1 - Complete)
-- **8 Legacy Alert Types**: Pioneer Bull/Bear, Big Bull/Bear, Bottom/Top Hunter, Price Pump/Dump, Volume Spike, VCP Signal
+- **8 Legacy Alert Types**: Pioneer Bull/Bear, Surge Bull/Bear, Bottom/Top Hunter, Price Pump/Dump, Volume Spike, VCP Signal
 - **18 Evaluator Functions**: Timeframe-specific logic (5s/15s/30s/1m/3m/5m/15m)
 - **Color-Coded Notifications**:
   - Green (bullish): price_pump, pioneer_bull, big_bull (5m/15m), bottom_hunter

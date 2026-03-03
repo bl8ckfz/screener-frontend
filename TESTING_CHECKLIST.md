@@ -39,7 +39,7 @@ Add these alerts one by one:
 - [ ] Scout Bull (strong uptrend detection)
 - [ ] Scout Bear (strong downtrend detection)  
 - [ ] Bottom Hunter (reversal from oversold)
-- [ ] 5m Big Bull (5-minute volume spike)
+- [ ] Surge 5 Bull (5-minute volume spike)
 
 ---
 
@@ -51,8 +51,8 @@ Add these alerts one by one:
 │ 🎯 Alert Configuration          │
 ├─────────────────────────────────┤
 │ [+ Scout Bull] [+ Scout Bear]│
-│ [+ 5m Big Bull]  [+ 5m Big Bear] │
-│ [+ 15m Big Bull] [+ 15m Big Bear]│
+│ [+ Surge 5 Bull]  [+ Surge 5 Bear] │
+│ [+ 1Surge 5 Bull] [+ 1Surge 5 Bear]│
 │ [+ Bottom Hunter] [+ Top Hunter] │
 │                                  │
 │ Active Rules:                    │
@@ -79,7 +79,7 @@ When an alert triggers:
 Open DevTools (F12) and watch for:
 ```
 🔔 Alert triggered: BTCUSDT - Scout Bull
-🔔 Alert triggered: ETHUSDT - 5m Big Bull
+🔔 Alert triggered: ETHUSDT - Surge 5 Bull
 ✅ Alert evaluation complete: 0 alerts triggered
 ```
 
@@ -132,7 +132,7 @@ Open DevTools (F12) and watch for:
 
 ---
 
-### 4. 5m Big Bull (5-Minute Breakout)
+### 4. Surge 5 Bull (5-Minute Breakout)
 **Conditions**:
 - Price/3m > 1.006 (0.6% gain)
 - 3m volume delta > 100,000
@@ -326,7 +326,7 @@ location.reload()
 **Alerts Triggered**:
 - [ ] Scout Bull - Symbol: _______ Time: _______
 - [ ] Scout Bear - Symbol: _______ Time: _______
-- [ ] 5m Big Bull - Symbol: _______ Time: _______
+- [ ] Surge 5 Bull - Symbol: _______ Time: _______
 - [ ] Bottom Hunter - Symbol: _______ Time: _______
 
 **Issues Found**:

@@ -106,15 +106,15 @@ export function isValidHexColor(color: string): boolean {
 // Utility: Get human-readable label for alert type
 export function getAlertColorLabel(alertType: AlertColorKey): string {
   const labels: Record<AlertColorKey, string> = {
-    futures_big_bull_60: '60 Big Bull',
+    futures_big_bull_60: 'Surge 60 Bull',
     futures_pioneer_bull: 'Scout Bull',
-    futures_5_big_bull: '5 Big Bull',
-    futures_15_big_bull: '15 Big Bull',
+    futures_5_big_bull: 'Surge 5 Bull',
+    futures_15_big_bull: '1Surge 5 Bull',
     futures_bottom_hunter: 'Bottom Hunter',
-    futures_big_bear_60: '60 Big Bear',
+    futures_big_bear_60: 'Surge 60 Bear',
     futures_pioneer_bear: 'Scout Bear',
-    futures_5_big_bear: '5 Big Bear',
-    futures_15_big_bear: '15 Big Bear',
+    futures_5_big_bear: 'Surge 5 Bear',
+    futures_15_big_bear: '1Surge 5 Bear',
     futures_top_hunter: 'Top Hunter',
   }
   return labels[alertType]
@@ -542,15 +542,15 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 Alert colors are user-configurable and stored in localStorage. Default values:
 
 - **Bullish Alerts** (Green spectrum): Dark → Light
-  - 60 Big Bull: `#14532d`
-  - 15 Big Bull: `#16a34a`
-  - 5 Big Bull: `#84cc16`
+  - Surge 60 Bull: `#14532d`
+  - 1Surge 5 Bull: `#16a34a`
+  - Surge 5 Bull: `#84cc16`
   - Scout Bull: `#a7f3d0`
 
 - **Bearish Alerts** (Red spectrum): Dark → Light
-  - 60 Big Bear: `#7f1d1d`
-  - 15 Big Bear: `#dc2626`
-  - 5 Big Bear: `#f87171`
+  - Surge 60 Bear: `#7f1d1d`
+  - 1Surge 5 Bear: `#dc2626`
+  - Surge 5 Bear: `#f87171`
   - Scout Bear: `#fce7f3`
 
 - **Hunter Alerts**: Purple

@@ -106,7 +106,7 @@ export function LandingPage() {
             <FeatureCard
               icon="🚨"
               title="10 Alert Types"
-              description="Big Bull/Bear, Scout, Whale, Volume Spike, Flat detection — evaluated in real-time on every candle."
+              description="Surge, Scout, Whale, Volume Spike, Flat detection — evaluated in real-time on every candle."
             />
             <FeatureCard
               icon="📈"
