@@ -44,8 +44,8 @@ const getAlertTypeName = (type: string): string => {
   const names: Record<string, string> = {
     big_bull_60: '60 Big Bull',
     big_bear_60: '60 Big Bear',
-    pioneer_bull: 'Pioneer Bull',
-    pioneer_bear: 'Pioneer Bear',
+    pioneer_bull: 'Scout Bull',
+    pioneer_bear: 'Scout Bear',
     '5_big_bull': '5 Big Bull',
     '5_big_bear': '5 Big Bear',
     '15_big_bull': '15 Big Bull',

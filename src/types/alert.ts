@@ -7,8 +7,8 @@ import { Timeframe } from './coin'
 export type FuturesAlertType =
   | 'futures_big_bull_60' // 60-minute Big Bull (strong upward momentum)
   | 'futures_big_bear_60' // 60-minute Big Bear (strong downward momentum)
-  | 'futures_pioneer_bull' // Pioneer Bull (early bullish trend detection)
-  | 'futures_pioneer_bear' // Pioneer Bear (early bearish trend detection)
+  | 'futures_pioneer_bull' // Scout Bull (early bullish trend detection)
+  | 'futures_pioneer_bear' // Scout Bear (early bearish trend detection)
   | 'futures_5_big_bull' // 5-minute Big Bull (short-term bullish spike)
   | 'futures_5_big_bear' // 5-minute Big Bear (short-term bearish spike)
   | 'futures_15_big_bull' // 15-minute Big Bull (medium-term bullish spike)
@@ -245,7 +245,7 @@ export interface LegacyAlertPreset {
 export const LEGACY_ALERT_PRESETS: LegacyAlertPreset[] = [
   {
     type: 'pioneer_bull',
-    name: 'Pioneer Bull',
+    name: 'Scout Bull',
     description: 'Strong bullish momentum: price > +1% vs 5m & 15m, accelerating vs prev close, volume ratio confirms',
     conditions: {
       priceRatios: {
@@ -262,7 +262,7 @@ export const LEGACY_ALERT_PRESETS: LegacyAlertPreset[] = [
   },
   {
     type: 'pioneer_bear',
-    name: 'Pioneer Bear',
+    name: 'Scout Bear',
     description: 'Strong bearish momentum: price < -1% vs 5m & 15m, accelerating decline vs prev close, volume ratio confirms',
     conditions: {
       priceRatios: {
@@ -434,14 +434,14 @@ export const FUTURES_ALERT_PRESETS: FuturesAlertPreset[] = [
   },
   {
     type: 'futures_pioneer_bull',
-    name: 'Pioneer Bull',
+    name: 'Scout Bull',
     description: 'Early bullish detection: 5m/15m > 1%, accelerating momentum with volume confirmation',
     severity: 'critical',
     marketMode: 'bull',
   },
   {
     type: 'futures_pioneer_bear',
-    name: 'Pioneer Bear',
+    name: 'Scout Bear',
     description: 'Early bearish detection: 5m/15m < -1%, accelerating downward momentum with volume',
     severity: 'critical',
     marketMode: 'bear',
@@ -547,8 +547,8 @@ export const FUTURES_ALERT_PRESETS: FuturesAlertPreset[] = [
 export const FUTURES_ALERT_LABELS: Record<FuturesAlertType, string> = {
   futures_big_bull_60: '60 Big Bull',
   futures_big_bear_60: '60 Big Bear',
-  futures_pioneer_bull: 'Pioneer Bull',
-  futures_pioneer_bear: 'Pioneer Bear',
+  futures_pioneer_bull: 'Scout Bull',
+  futures_pioneer_bear: 'Scout Bear',
   futures_5_big_bull: '5 Big Bull',
   futures_5_big_bear: '5 Big Bear',
   futures_15_big_bull: '15 Big Bull',

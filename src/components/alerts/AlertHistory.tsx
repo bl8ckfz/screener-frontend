@@ -224,7 +224,7 @@ export function AlertHistory() {
     // Determine badge text
     let text = ''
     if (cleanType === 'pioneer_bull' || cleanType === 'pioneer_bear') {
-      text = 'P'
+      text = 'SC'
     } else if (cleanType === '5_big_bull' || cleanType === '5_big_bear') {
       text = '5'
     } else if (cleanType === '15_big_bull' || cleanType === '15_big_bear') {
@@ -260,8 +260,8 @@ export function AlertHistory() {
     const names: Record<string, string> = {
       big_bull_60: '60 Big Bull',
       big_bear_60: '60 Big Bear',
-      pioneer_bull: 'Pioneer Bull',
-      pioneer_bear: 'Pioneer Bear',
+      pioneer_bull: 'Scout Bull',
+      pioneer_bear: 'Scout Bear',
       '5_big_bull': '5 Big Bull',
       '5_big_bear': '5 Big Bear',
       '15_big_bull': '15 Big Bull',
@@ -419,8 +419,8 @@ export function AlertHistory() {
             <optgroup label="Futures Alerts">
               <option value="futures_big_bull_60">60 Big Bull</option>
               <option value="futures_big_bear_60">60 Big Bear</option>
-              <option value="futures_pioneer_bull">Pioneer Bull (Futures)</option>
-              <option value="futures_pioneer_bear">Pioneer Bear (Futures)</option>
+              <option value="futures_pioneer_bull">Scout Bull (Futures)</option>
+              <option value="futures_pioneer_bear">Scout Bear (Futures)</option>
               <option value="futures_5_big_bull">5 Big Bull (Futures)</option>
               <option value="futures_5_big_bear">5 Big Bear (Futures)</option>
               <option value="futures_15_big_bull">15 Big Bull (Futures)</option>
@@ -440,8 +440,8 @@ export function AlertHistory() {
               <option value="futures_whale_distribution">Whale Distribution</option>
             </optgroup>
             <optgroup label="Legacy Alerts">
-              <option value="pioneer_bull">Pioneer Bull (Legacy)</option>
-              <option value="pioneer_bear">Pioneer Bear (Legacy)</option>
+              <option value="pioneer_bull">Scout Bull (Legacy)</option>
+              <option value="pioneer_bear">Scout Bear (Legacy)</option>
               <option value="5m_big_bull">5m Big Bull (Legacy)</option>
               <option value="5m_big_bear">5m Big Bear (Legacy)</option>
               <option value="15m_big_bull">15m Big Bull (Legacy)</option>
@@ -534,7 +534,7 @@ export function AlertHistory() {
             const isBullish = alert.type.includes('bull') || alert.type.includes('bottom_hunter')
             
             // Determine text color based on background brightness
-            // Light backgrounds (Pioneer bull/bear) need dark text
+            // Light backgrounds (Scout bull/bear) need dark text
             const isLightBg = badge.bgColor === '#a7f3d0' || badge.bgColor === '#fce7f3'
             const textColor = isLightBg ? '#000' : '#fff'
             

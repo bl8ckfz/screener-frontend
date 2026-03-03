@@ -140,8 +140,8 @@ src/
 - `evaluateRule(coin, rule, marketMode?)` - Single rule evaluation
 - `evaluateCondition(coin, condition, marketMode?)` - Condition dispatcher
 - **18 Evaluator Functions**:
-  1. `evaluatePioneerBull()` - Price/3m > 1.01, volume increasing
-  2. `evaluatePioneerBear()` - Price/3m < 0.99, sell pressure
+  1. `evaluateScoutBull()` - Price/3m > 1.01, volume increasing
+  2. `evaluateScoutBear()` - Price/3m < 0.99, sell pressure
   3. `evaluate5mBigBull()` - 5min volume spike >100k, ascending volumes
   4. `evaluate5mBigBear()` - 5min sell-off >100k volume
   5. `evaluate15mBigBull()` - 15min sustained rally >400k volume
@@ -446,7 +446,7 @@ interface Store {
 
 ## Legacy Alert Types Explained
 
-### 1. Pioneer Bull
+### 1. Scout Bull
 **Purpose**: Detect strong bullish momentum early  
 **Conditions**:
 - Price/3m > 1.01 (1% gain in 3 minutes)
@@ -458,7 +458,7 @@ interface Store {
 
 ---
 
-### 2. Pioneer Bear
+### 2. Scout Bear
 **Purpose**: Detect strong bearish momentum early  
 **Conditions**:
 - Price/3m < 0.99 (1% loss in 3 minutes)

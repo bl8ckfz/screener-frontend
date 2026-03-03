@@ -38,7 +38,7 @@ export function AlertBadges({ alertTypes, maxVisible = 3, latestAlertType }: Ale
     // Determine badge text
     let text = ''
     if (cleanType === 'pioneer_bull' || cleanType === 'pioneer_bear') {
-      text = 'P'
+      text = 'SC'
     } else if (cleanType === '5_big_bull' || cleanType === '5_big_bear') {
       text = '5'
     } else if (cleanType === '15_big_bull' || cleanType === '15_big_bear') {

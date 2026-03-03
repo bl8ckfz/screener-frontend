@@ -198,8 +198,8 @@ export class AlertHistory {
     const titles: Record<string, string> = {
       'big_bull_60m': 'Big Bull 60m',
       'big_bear_60m': 'Big Bear 60m',
-      'pioneer_bull': 'Pioneer Bull',
-      'pioneer_bear': 'Pioneer Bear',
+      'pioneer_bull': 'Scout Bull',
+      'pioneer_bear': 'Scout Bear',
       'whale': 'Whale Alert',
       'volume_spike': 'Volume Spike',
       'bubble_signal': 'Bubble Signal',

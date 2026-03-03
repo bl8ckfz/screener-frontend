@@ -1,12 +1,12 @@
 # Alert Debugging Guide
 
-## Issue: Pioneer Bull Alerts Not Triggering
+## Issue: Scout Bull Alerts Not Triggering
 
 ### Root Causes Identified
 
 1. **Market Cap Missing** ❌
    - Background klines fetch had `skipMarketCap: true`
-   - Pioneer Bull alert requires `marketCap` field
+   - Scout Bull alert requires `marketCap` field
    - Without market cap, alert evaluation always returns false
 
 2. **No Alert Re-Evaluation** ❌
@@ -51,12 +51,12 @@
    
    **Impact**: Better visibility into alert system status
 
-## Pioneer Bull Alert Requirements
+## Scout Bull Alert Requirements
 
 For reference, here are the exact conditions required:
 
 ```typescript
-export function evaluateFuturesPioneerBull(metrics: FuturesMetrics): boolean {
+export function evaluateFuturesScoutBull(metrics: FuturesMetrics): boolean {
   if (!metrics.marketCap) return false  // ← REQUIRES MARKET CAP
 
   return (
@@ -100,7 +100,7 @@ export function evaluateFuturesPioneerBull(metrics: FuturesMetrics): boolean {
    - Check coins with metrics ✅
    - Check coins with market cap ✅
    - Evaluate enabled rules ✅
-   - Pioneer Bull can now trigger ✅
+   - Scout Bull can now trigger ✅
 ```
 
 ### Subsequent Polls (Every 5s)
@@ -142,7 +142,7 @@ Look for this log:
 ```
 📊 Alert evaluation: 25/25 coins with metrics (25 with market cap)
                       ^^                      ^^
-                      Should match            Should be > 0 for Pioneer alerts
+                      Should match            Should be > 0 for Scout alerts
 ```
 
 ### 3. Alert Rules

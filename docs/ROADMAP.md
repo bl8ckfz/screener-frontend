@@ -328,7 +328,7 @@
   - Created src/services/alertEngine.ts (561 lines)
   - Implemented evaluateAlertRules(), evaluateRule(), evaluateCondition()
   - Built 18 evaluator functions for all alert types
-  - Legacy evaluators: Pioneer Bull/Bear, 5m/15m Big Bull/Bear, Bottom/Top Hunter
+  - Legacy evaluators: Scout Bull/Bear, 5m/15m Big Bull/Bear, Bottom/Top Hunter
   - Standard evaluators: Price Pump/Dump, Volume Spike/Drop, VCP Signal, Fibonacci Break
 - [x] Create alert configuration UI
   - Built AlertConfig component (259 lines)
@@ -693,7 +693,7 @@
   - [x] Format utilities (28 tests): Implemented formatTimeAgo, added comma separators, fixed decimals
   - [x] Indicator utilities (11 tests): Exported functions, fixed field aliases, volume-based dominance
   - [x] Sort utilities (13 tests): Updated mock data structure, fixed function signatures, bear mode tests
-  - [x] Pioneer alert tests (4): Bull/Bear trigger + gating volume delta thresholds
+  - [x] Scout alert tests (4): Bull/Bear trigger + gating volume delta thresholds
   - [x] Big momentum alerts (5): 5m/15m bull/bear with ascending price/volume patterns
   - [x] Core signal alerts (8): price pump/dump, volume spike/drop, VCP signal, Fibonacci break, bottom/top hunter
 - [ ] Unit tests for business logic (alert engine, services, sync)
@@ -1009,7 +1009,7 @@
 - ✅ **NEW**: Virtualized rendering for 1000+ coins (constant 50ms render) (Phase 5.1)
 - ✅ **NEW**: Smart polling with tab visibility (50% API reduction) (Phase 5.2)
 - ✅ **NEW**: IndexedDB storage with automatic migration (Phase 5.3)
-- ✅ **NEW**: Alert system with 8 legacy types (Pioneer, Big Bull/Bear, Hunters) (Phase 6.1)
+- ✅ **NEW**: Alert system with 8 legacy types (Scout, Big Bull/Bear, Hunters) (Phase 6.1)
 - ✅ **NEW**: Alert evaluation engine (18 evaluator functions, 561 lines) (Phase 6.1)
 - ✅ **NEW**: Alert configuration UI with preset selector (Phase 6.1)
 - ✅ **NEW**: Toast notifications with auto-dismiss and sounds (Phase 6.1)
@@ -1115,7 +1115,7 @@
 8. Bundle size analysis and optimization
 
 **After Phase 5**: Phase 6 - Advanced Features
-- Active alerts system (pioneer/top hunter notifications)
+- Active alerts system (scout/top hunter notifications)
 - User accounts and cloud sync
 - Customizable watchlists
 - Historical data playback

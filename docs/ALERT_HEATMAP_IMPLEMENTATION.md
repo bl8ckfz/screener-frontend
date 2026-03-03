@@ -41,7 +41,7 @@ The component combines two visualization approaches:
 ## Key Features
 
 ### Alert Grouping
-- Groups by alert type (Pioneer Bull, 60 Big Bull, etc.)
+- Groups by alert type (Scout Bull, 60 Big Bull, etc.)
 - Creates 1-minute time buckets
 - Preserves all individual alert records
 
@@ -92,10 +92,10 @@ interface AlertHeatmapTimelineProps {
 
 ## Example Scenarios
 
-### Scenario 1: Pioneer Bear - 13 Alerts in 1 Minute
+### Scenario 1: Scout Bear - 13 Alerts in 1 Minute
 **Collapsed View:**
 ```
-Pioneer Bear [13 alerts] 13.0/min
+Scout Bear [13 alerts] 13.0/min
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░█░░░░░░░░░░░░░░░░░░░░░░
                            ↑ (13 alerts at 0:45)
 ```
@@ -112,7 +112,7 @@ Shows all 13 individual alerts with timestamps:
 60 Big Bull [8 alerts] 8.0/min
 ░░░▓▓██▓░░░░░░░░░░░░░░░
 
-Pioneer Bull [5 alerts] 5.0/min
+Scout Bull [5 alerts] 5.0/min
 ░░░░░░░░░░░░▓██░░░░░░░░
 
 Bottom Hunter [2 alerts] 2.0/min

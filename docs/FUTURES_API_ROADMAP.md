@@ -142,8 +142,8 @@ Focus on integration testing, performance profiling, and documentation.
 **Tasks**:
 - [x] Implement `evaluateFuturesBigBull60(metrics)`
 - [x] Implement `evaluateFuturesBigBear60(metrics)`
-- [x] Implement `evaluateFuturesPioneerBull(metrics)`
-- [x] Implement `evaluateFuturesPioneerBear(metrics)`
+- [x] Implement `evaluateFuturesScoutBull(metrics)`
+- [x] Implement `evaluateFuturesScoutBear(metrics)`
 - [x] Implement `evaluateFutures5BigBull(metrics)`
 - [x] Implement `evaluateFutures5BigBear(metrics)`
 - [x] Implement `evaluateFutures15BigBull(metrics)`
@@ -208,7 +208,7 @@ Focus on integration testing, performance profiling, and documentation.
 **Tasks**:
 - [x] Create `coinToFuturesMetrics()` converter utility
 - [x] Rewrite `alertEngine.ts` to use futures evaluators only
-- [x] Remove all 8 legacy alert evaluators (pioneer, bigBull, bigBear, hunters)
+- [x] Remove all 8 legacy alert evaluators (scout, bigBull, bigBear, hunters)
 - [x] Remove all 6 standard evaluators (price_pump, volume_spike, VCP, Fibonacci)
 - [x] Update `evaluateCondition()` to convert Coin → FuturesMetrics
 - [x] Update switch statement with 10 futures alert cases

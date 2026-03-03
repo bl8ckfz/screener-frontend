@@ -17,9 +17,9 @@ This reference maps indices from `fast.html` monolithic array `FAST_DIZI[t][inde
 | 111/114/115      | Ultra-short snapshots (5s)  | `coin.history['5s'].*`                               |
 | 112              | 5s price                    | `coin.history['5s'].price`                           |
 |
-> Note: Some ultra-short (5s/10s/15s) mappings are approximations; legacy code used densely packed arrays with overlapping semantics. Only indices required for Pioneer / volume / VCP alerts are documented here.
+> Note: Some ultra-short (5s/10s/15s) mappings are approximations; legacy code used densely packed arrays with overlapping semantics. Only indices required for Scout / volume / VCP alerts are documented here.
 
-## Pioneer Alert Formula (Refactored)
+## Scout Alert Formula (Refactored)
 
 Bull:
 - priceRatio5m = current / price5m > 1.01

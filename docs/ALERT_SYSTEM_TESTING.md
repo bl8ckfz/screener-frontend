@@ -43,12 +43,12 @@ Navigate to alert settings (when UI is integrated) and verify:
 
 1. **Create Test Rule**
    - Click "Add Rule" button
-   - Select "Pioneer Bull" preset
+   - Select "Scout Bull" preset
    - Rule should appear in list with toggle enabled
    - Verify rule persists after page refresh (IndexedDB)
 
 2. **Monitor Console**
-   - Watch for evaluation logs: `🔔 Alert triggered: BTCUSDT - Pioneer Bull`
+   - Watch for evaluation logs: `🔔 Alert triggered: BTCUSDT - Scout Bull`
    - Should see "Failed to evaluate alerts" errors if any issues
 
 3. **Check Notification Display**
@@ -67,7 +67,7 @@ Navigate to alert settings (when UI is integrated) and verify:
 
 Test each of the 8 legacy alert types from fast.html:
 
-#### 1. Pioneer Bull Alert
+#### 1. Scout Bull Alert
 **Conditions**: Strong bullish momentum
 - Price/3m > 1.01
 - Price/15m > 1.01
@@ -75,7 +75,7 @@ Test each of the 8 legacy alert types from fast.html:
 - Accelerating momentum
 
 **Test Steps**:
-1. Create Pioneer Bull rule
+1. Create Scout Bull rule
 2. Watch for high-momentum coins (BTC, ETH during pumps)
 3. Verify alert triggers during strong upward movement
 4. Check message includes price ratios and volume data
@@ -84,7 +84,7 @@ Test each of the 8 legacy alert types from fast.html:
 
 ---
 
-#### 2. Pioneer Bear Alert
+#### 2. Scout Bear Alert
 **Conditions**: Strong bearish momentum
 - Price/3m < 0.99
 - Price/15m < 0.99
@@ -92,7 +92,7 @@ Test each of the 8 legacy alert types from fast.html:
 - Accelerating downward momentum
 
 **Test Steps**:
-1. Create Pioneer Bear rule
+1. Create Scout Bear rule
 2. Watch for high-momentum sell-offs
 3. Verify alert triggers during sharp drops
 4. Check message indicates bearish pressure
@@ -204,7 +204,7 @@ Test each of the 8 legacy alert types from fast.html:
 **Objective**: Verify cooldown and limit mechanisms work
 
 #### Test 3.1: Cooldown System
-1. Create Pioneer Bull rule
+1. Create Scout Bull rule
 2. Find volatile coin (e.g., BTCUSDT)
 3. Wait for first alert to trigger
 4. Within 60 seconds, verify NO duplicate alerts
@@ -321,7 +321,7 @@ Test each of the 8 legacy alert types from fast.html:
    - Timeframe references
 
 **Validation Checklist**:
-- ✅ Pioneer alerts trigger on same conditions
+- ✅ Scout alerts trigger on same conditions
 - ✅ Big alerts match volume thresholds
 - ✅ Hunter alerts catch same reversals
 - ✅ Alert messages are informative

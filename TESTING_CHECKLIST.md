@@ -18,13 +18,13 @@
 ### ✅ Step 2: Add Your First Alert
 1. **Look at the RIGHT SIDEBAR** - you should see "Market Overview" section
 2. **Scroll down** to find "Alert Configuration" section (below market summary)
-3. **Click "Pioneer Bull" button** (📈 icon)
+3. **Click "Scout Bull" button** (📈 icon)
 4. **Verify**: A new rule appears with a toggle switch (ON by default)
 5. **Check console**: Should see alert evaluation logs every 5 seconds
 
 ### ✅ Step 3: Monitor for Alert Triggers
 **What to watch for**:
-- Console logs: `🔔 Alert triggered: BTCUSDT - Pioneer Bull`
+- Console logs: `🔔 Alert triggered: BTCUSDT - Scout Bull`
 - Toast notifications in TOP-RIGHT corner
 - Look for coins with strong upward movement (>1% in 3 minutes)
 
@@ -36,8 +36,8 @@
 
 ### ✅ Step 4: Test Multiple Alert Types
 Add these alerts one by one:
-- [ ] Pioneer Bull (strong uptrend detection)
-- [ ] Pioneer Bear (strong downtrend detection)  
+- [ ] Scout Bull (strong uptrend detection)
+- [ ] Scout Bear (strong downtrend detection)  
 - [ ] Bottom Hunter (reversal from oversold)
 - [ ] 5m Big Bull (5-minute volume spike)
 
@@ -50,14 +50,14 @@ Add these alerts one by one:
 ┌─────────────────────────────────┐
 │ 🎯 Alert Configuration          │
 ├─────────────────────────────────┤
-│ [+ Pioneer Bull] [+ Pioneer Bear]│
+│ [+ Scout Bull] [+ Scout Bear]│
 │ [+ 5m Big Bull]  [+ 5m Big Bear] │
 │ [+ 15m Big Bull] [+ 15m Big Bear]│
 │ [+ Bottom Hunter] [+ Top Hunter] │
 │                                  │
 │ Active Rules:                    │
 │ ─────────────────────────────── │
-│ 📈 Pioneer Bull     [ON] [🗑️]   │
+│ 📈 Scout Bull     [ON] [🗑️]   │
 │    High severity • All symbols   │
 │    Price/3m > 1.01 + volume ↑   │
 └─────────────────────────────────┘
@@ -68,7 +68,7 @@ When an alert triggers:
 ```
 ┌─────────────────────────────────┐
 │ 🔔 BTCUSDT                    ✕ │
-│ Pioneer Bull Alert               │
+│ Scout Bull Alert               │
 │ Price: $42,156 (+1.2% in 3m)    │
 │ Volume increasing               │
 │ [==============   ] 25s         │
@@ -78,7 +78,7 @@ When an alert triggers:
 ### ✅ Console Logs
 Open DevTools (F12) and watch for:
 ```
-🔔 Alert triggered: BTCUSDT - Pioneer Bull
+🔔 Alert triggered: BTCUSDT - Scout Bull
 🔔 Alert triggered: ETHUSDT - 5m Big Bull
 ✅ Alert evaluation complete: 0 alerts triggered
 ```
@@ -87,7 +87,7 @@ Open DevTools (F12) and watch for:
 
 ## Testing Each Alert Type
 
-### 1. Pioneer Bull (Strong Uptrend)
+### 1. Scout Bull (Strong Uptrend)
 **Conditions**:
 - Price/3m ratio > 1.01 (1% gain in 3 minutes)
 - Price/15m ratio > 1.01 (sustained trend)
@@ -102,7 +102,7 @@ Open DevTools (F12) and watch for:
 
 ---
 
-### 2. Pioneer Bear (Strong Downtrend)
+### 2. Scout Bear (Strong Downtrend)
 **Conditions**:
 - Price/3m ratio < 0.99 (1% loss in 3 minutes)
 - Price/15m ratio < 0.99 (sustained decline)
@@ -175,7 +175,7 @@ Open DevTools (F12) and watch for:
 ## Anti-Spam Testing
 
 ### Test 1: Cooldown System (60 seconds)
-1. Trigger an alert (e.g., Pioneer Bull on BTCUSDT)
+1. Trigger an alert (e.g., Scout Bull on BTCUSDT)
 2. Wait for the SAME alert to fire again
 3. **Expected**: Won't fire again for 60 seconds
 4. **Check console**: Should see cooldown prevention logs
@@ -324,8 +324,8 @@ location.reload()
 **Tester**: _____________
 
 **Alerts Triggered**:
-- [ ] Pioneer Bull - Symbol: _______ Time: _______
-- [ ] Pioneer Bear - Symbol: _______ Time: _______
+- [ ] Scout Bull - Symbol: _______ Time: _______
+- [ ] Scout Bear - Symbol: _______ Time: _______
 - [ ] 5m Big Bull - Symbol: _______ Time: _______
 - [ ] Bottom Hunter - Symbol: _______ Time: _______
 

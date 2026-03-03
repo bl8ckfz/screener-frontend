@@ -1,7 +1,7 @@
-# Debug: Pioneer Bull Alert Not Disabling
+# Debug: Scout Bull Alert Not Disabling
 
 ## Issue
-When disabling or deleting the Pioneer Bull alert, alerts continue to trigger.
+When disabling or deleting the Scout Bull alert, alerts continue to trigger.
 
 ## Debug Steps Added
 
@@ -19,18 +19,18 @@ Added console.log statements to the alert evaluation effect in `useMarketData.ts
 ## How to Test
 
 1. Open browser DevTools console
-2. Enable the Pioneer Bull alert
+2. Enable the Scout Bull alert
 3. Wait for alerts to trigger (watch console)
-4. Disable the Pioneer Bull alert
+4. Disable the Scout Bull alert
 5. Watch console output:
 
 Expected output when toggling OFF:
 ```
 🔄 Toggling alert rule rule_xxx to DISABLED
-📝 Updated rules: [{ id: 'rule_xxx', name: 'Pioneer Bull', enabled: false }]
+📝 Updated rules: [{ id: 'rule_xxx', name: 'Scout Bull', enabled: false }]
 🔄 Alert evaluation effect triggered { hasData: true, alertsEnabled: true, ... }
 📊 Total alert rules: 1
-📋 All rules: [{ id: 'rule_xxx', name: 'Pioneer Bull', enabled: false, type: 'pioneer_bull' }]
+📋 All rules: [{ id: 'rule_xxx', name: 'Scout Bull', enabled: false, type: 'pioneer_bull' }]
 ⚠️ No enabled alert rules
 ```
 

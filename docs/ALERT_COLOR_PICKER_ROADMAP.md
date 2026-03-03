@@ -107,12 +107,12 @@ export function isValidHexColor(color: string): boolean {
 export function getAlertColorLabel(alertType: AlertColorKey): string {
   const labels: Record<AlertColorKey, string> = {
     futures_big_bull_60: '60 Big Bull',
-    futures_pioneer_bull: 'Pioneer Bull',
+    futures_pioneer_bull: 'Scout Bull',
     futures_5_big_bull: '5 Big Bull',
     futures_15_big_bull: '15 Big Bull',
     futures_bottom_hunter: 'Bottom Hunter',
     futures_big_bear_60: '60 Big Bear',
-    futures_pioneer_bear: 'Pioneer Bear',
+    futures_pioneer_bear: 'Scout Bear',
     futures_5_big_bear: '5 Big Bear',
     futures_15_big_bear: '15 Big Bear',
     futures_top_hunter: 'Top Hunter',
@@ -545,13 +545,13 @@ Alert colors are user-configurable and stored in localStorage. Default values:
   - 60 Big Bull: `#14532d`
   - 15 Big Bull: `#16a34a`
   - 5 Big Bull: `#84cc16`
-  - Pioneer Bull: `#a7f3d0`
+  - Scout Bull: `#a7f3d0`
 
 - **Bearish Alerts** (Red spectrum): Dark → Light
   - 60 Big Bear: `#7f1d1d`
   - 15 Big Bear: `#dc2626`
   - 5 Big Bear: `#f87171`
-  - Pioneer Bear: `#fce7f3`
+  - Scout Bear: `#fce7f3`
 
 - **Hunter Alerts**: Purple
   - Bottom/Top Hunter: `#a855f7`

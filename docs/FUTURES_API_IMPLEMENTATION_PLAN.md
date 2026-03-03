@@ -8,7 +8,7 @@ Implement a service to retrieve price-change and volume metrics for USDT-M futur
 
 This provides data for multiple alert types:
 - **60 Big Bull**: Uses 1h, 8h, 1d for sustained momentum detection (includes 1d volume)
-- **Pioneer Bull**: Uses 5m, 15m for early trend detection
+- **Scout Bull**: Uses 5m, 15m for early trend detection
 - **5 Big Bull**: Uses 5m, 15m, 1h, 8h, 1d for explosive moves
 - **15 Big Bull**: Uses 15m, 1h, 8h, 1d for strong trending moves
 - **Bottom Hunter**: Uses 5m, 15m, 1h for reversal detection
@@ -560,7 +560,7 @@ export const COINGECKO_CONFIG = {
 
 ---
 
-### 12.3 Pioneer Bull
+### 12.3 Scout Bull
 **Type:** `futures_pioneer_bull`  
 **Purpose:** Early detection of emerging trends with accelerating momentum
 
@@ -577,7 +577,7 @@ export const COINGECKO_CONFIG = {
 
 ---
 
-### 12.4 Pioneer Bear
+### 12.4 Scout Bear
 **Type:** `futures_pioneer_bear`  
 **Purpose:** Early detection of emerging downtrends with accelerating downward momentum
 
@@ -756,7 +756,7 @@ function evaluateFuturesBigBear60(metrics: FuturesMetrics): boolean {
   );
 }
 
-function evaluateFuturesPioneerBull(metrics: FuturesMetrics): boolean {
+function evaluateFuturesScoutBull(metrics: FuturesMetrics): boolean {
   if (!metrics.marketCap) return false;
   
   return (
@@ -769,7 +769,7 @@ function evaluateFuturesPioneerBull(metrics: FuturesMetrics): boolean {
   );
 }
 
-function evaluateFuturesPioneerBear(metrics: FuturesMetrics): boolean {
+function evaluateFuturesScoutBear(metrics: FuturesMetrics): boolean {
   if (!metrics.marketCap) return false;
   
   return (
@@ -912,8 +912,8 @@ export interface FuturesAlertConfig extends BaseAlertConfig {
 const FUTURES_ALERT_LABELS: Record<FuturesAlertType, string> = {
   futures_big_bull_60: '60 Big Bull',
   futures_big_bear_60: '60 Big Bear',
-  futures_pioneer_bull: 'Pioneer Bull',
-  futures_pioneer_bear: 'Pioneer Bear',
+  futures_pioneer_bull: 'Scout Bull',
+  futures_pioneer_bear: 'Scout Bear',
   futures_5_big_bull: '5 Big Bull',
   futures_5_big_bear: '5 Big Bear',
   futures_15_big_bull: '15 Big Bull',

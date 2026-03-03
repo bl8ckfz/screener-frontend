@@ -86,12 +86,12 @@ export const ALERT_COLOR_CATEGORIES = {
 export function getAlertColorLabel(alertType: AlertColorKey): string {
   const labels: Record<AlertColorKey, string> = {
     futures_big_bull_60: '60m Big Bull',
-    futures_pioneer_bull: 'Pioneer Bull',
+    futures_pioneer_bull: 'Scout Bull',
     futures_5_big_bull: '5m Big Bull',
     futures_15_big_bull: '15m Big Bull',
     futures_bottom_hunter: 'Bottom Hunter',
     futures_big_bear_60: '60m Big Bear',
-    futures_pioneer_bear: 'Pioneer Bear',
+    futures_pioneer_bear: 'Scout Bear',
     futures_5_big_bear: '5m Big Bear',
     futures_15_big_bear: '15m Big Bear',
     futures_top_hunter: 'Top Hunter',

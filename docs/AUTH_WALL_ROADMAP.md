@@ -45,7 +45,7 @@ Move all app functionality behind authentication, requiring users to sign in bef
   - CTA: "Get Started Free" / "Sign In"
   
 - [ ] Feature showcase sections:
-  - [ ] Alert System (Big Bull/Bear, Pioneer, Whale, Volume, Flat)
+  - [ ] Alert System (Big Bull/Bear, Scout, Whale, Volume, Flat)
   - [ ] Real-time Heatmap with intensity visualization
   - [ ] TradingView charts with indicators (Ichimoku, VWAP, Fibonacci)
   - [ ] Volume bubble detection

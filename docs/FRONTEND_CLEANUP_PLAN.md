@@ -41,7 +41,7 @@ The frontend currently has **dual data sources** with significant code duplicati
 14. `slidingWindowCalculator.ts` (263 lines)
 
 #### Alert Engine - **DELETE** (Backend handles)
-15. `alertEngine.ts` - Rule evaluation (Big Bull/Bear, Pioneer, Whale, etc.)
+15. `alertEngine.ts` - Rule evaluation (Big Bull/Bear, Scout, Whale, etc.)
 16. `alertBatcher.ts` - Alert batching logic
 17. `alertHistory.ts` - Legacy alert storage
 18. `bubbleDetectionService.ts` - Bubble/crash detection

@@ -17,7 +17,7 @@ export function EmptyAlertHistory() {
           💡 <span className="font-medium">Tip:</span> Configure alert rules to get notified about:
         </p>
         <ul className="mt-2 text-sm text-gray-400 space-y-1 ml-6">
-          <li>• Pioneer Bull/Bear signals</li>
+          <li>• Scout Bull/Bear signals</li>
           <li>• Price pumps and dumps</li>
           <li>• Volume spikes</li>
           <li>• Custom thresholds</li>

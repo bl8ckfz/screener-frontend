@@ -805,13 +805,13 @@ const [selectedAlert, setSelectedAlert] = useState<AlertStat | null>(null)
 │ Live     │  Alert History Table                 │ Low: ...     │
 │ Status   │  ┌──────────────────────────────┐   │ Volume: ...  │
 │          │  │ [WATCHLIST ALERTS] (3)       │   │              │
-│          │  │ ├─ BTC  Pioneer Bull  12:34  │   │ VCP: 0.234   │
+│          │  │ ├─ BTC  Scout Bull   12:34  │   │ VCP: 0.234   │
 │          │  │ ├─ ETH  Bottom Hunter 12:30  │   │              │
 │          │  │ └─ SOL  5m Big Bull   12:25  │   │ Fib Pivots   │
 │          │  │─────────────────────────────│   │ R1: ...      │
 │          │  │ [ALL ALERTS] (47)            │   │ P:  ...      │
 │          │  │ ├─ DOGE 60 Big Bull   12:20  │   │ S1: ...      │
-│          │  │ ├─ ADA  Pioneer Bear  12:15  │   │              │
+│          │  │ ├─ ADA  Scout Bear   12:15  │   │              │
 │          │  │ ├─ ... (more rows)           │   │ External     │
 │          │  │ └─ ... (scroll)              │   │ [CoinGlass]  │
 │          │  └──────────────────────────────┘   │ [Aggr.trade] │
@@ -838,12 +838,12 @@ const [selectedAlert, setSelectedAlert] = useState<AlertStat | null>(null)
 │ Alert History       │
 │ ┌─────────────────┐ │
 │ │[WATCHLIST] (2)  │ │
-│ │ BTC Pioneer Bull│ │
+│ │ BTC Scout Bull │ │
 │ │ ETH Bottom Hunt │ │
 │ ├─────────────────┤ │
 │ │[ALL ALERTS] (20)│ │
 │ │ DOGE 60 Bull    │ │
-│ │ ADA Pioneer Bear│ │
+│ │ ADA Scout Bear │ │
 │ │ ... (scroll)    │ │
 │ └─────────────────┘ │
 │                     │

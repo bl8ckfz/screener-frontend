@@ -202,14 +202,14 @@ npm run type-check
 - ✅ Type check clean
 - ⏳ No 429 errors in production console
 - ⏳ Cache hit rate >90% after warm-up
-- ⏳ Alert system continues working (Pioneer Bull, etc.)
+- ⏳ Alert system continues working (Scout Bull, etc.)
 - ⏳ Klines fetch time <60s for all symbols
 
 ## Notes
 
 **Why 24 hours vs shorter**:
 - Market cap is not time-sensitive for alert evaluation
-- Pioneer Bull alert cares about $300M+ threshold - doesn't need hourly updates
+- Scout Bull alert cares about $300M+ threshold - doesn't need hourly updates
 - Longer cache = more stability, fewer API dependencies
 
 **Why 20 calls/min vs 30**:
@@ -226,7 +226,7 @@ npm run type-check
 ## Related Issues
 
 - **Phase 4.4**: Original API optimization (boundary-aligned klines)
-- **Alert Debugging**: Pioneer Bull requires market cap field
+- **Alert Debugging**: Scout Bull requires market cap field
 - **Non-blocking Fetch**: UI doesn't wait for klines (instant display)
 
 ---
