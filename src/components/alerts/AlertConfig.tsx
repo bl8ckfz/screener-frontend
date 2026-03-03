@@ -277,8 +277,8 @@ export function AlertConfig({
       '5m_big_bear': '⚡ Surge 5 Bear',
       '15m_big_bull': '🔥 Surge 15 Bull',
       '15m_big_bear': '🔥 Surge 15 Bear',
-      bottom_hunter: '🎣 Bottom Hunter',
-      top_hunter: '🎣 Top Hunter',
+      bottom_hunter: '🎣 Bottom Raid',
+      top_hunter: '🎣 Top Raid',
     }
     return labels[type as AlertType] || type
   }

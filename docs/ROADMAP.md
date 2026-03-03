@@ -328,7 +328,7 @@
   - Created src/services/alertEngine.ts (561 lines)
   - Implemented evaluateAlertRules(), evaluateRule(), evaluateCondition()
   - Built 18 evaluator functions for all alert types
-  - Legacy evaluators: Scout Bull/Bear, 5m/15m Surge Bull/Bear, Bottom/Top Hunter
+  - Legacy evaluators: Scout Bull/Bear, 5m/15m Surge Bull/Bear, Bottom/Top Raid
   - Standard evaluators: Price Pump/Dump, Volume Spike/Drop, VCP Signal, Fibonacci Break
 - [x] Create alert configuration UI
   - Built AlertConfig component (259 lines)

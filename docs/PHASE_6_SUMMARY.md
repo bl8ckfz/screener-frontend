@@ -516,7 +516,7 @@ interface Store {
 
 ---
 
-### 7. Bottom Hunter
+### 7. Bottom Raid
 **Purpose**: Reversal from oversold  
 **Conditions**:
 - Price/15m < 0.994 (recent decline)
@@ -527,7 +527,7 @@ interface Store {
 
 ---
 
-### 8. Top Hunter
+### 8. Top Raid
 **Purpose**: Distribution at peaks  
 **Conditions**:
 - Price/15m > 1.006 (recent pump)

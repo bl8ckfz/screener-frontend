@@ -806,7 +806,7 @@ const [selectedAlert, setSelectedAlert] = useState<AlertStat | null>(null)
 │ Status   │  ┌──────────────────────────────┐   │ Volume: ...  │
 │          │  │ [WATCHLIST ALERTS] (3)       │   │              │
 │          │  │ ├─ BTC  Scout Bull   12:34  │   │ VCP: 0.234   │
-│          │  │ ├─ ETH  Bottom Hunter 12:30  │   │              │
+│          │  │ ├─ ETH  Bottom Raid 12:30  │   │              │
 │          │  │ └─ SOL  Surge 5 Bull   12:25  │   │ Fib Pivots   │
 │          │  │─────────────────────────────│   │ R1: ...      │
 │          │  │ [ALL ALERTS] (47)            │   │ P:  ...      │

@@ -38,7 +38,7 @@
 Add these alerts one by one:
 - [ ] Scout Bull (strong uptrend detection)
 - [ ] Scout Bear (strong downtrend detection)  
-- [ ] Bottom Hunter (reversal from oversold)
+- [ ] Bottom Raid (reversal from oversold)
 - [ ] Surge 5 Bull (5-minute volume spike)
 
 ---
@@ -53,7 +53,7 @@ Add these alerts one by one:
 │ [+ Scout Bull] [+ Scout Bear]│
 │ [+ Surge 5 Bull]  [+ Surge 5 Bear] │
 │ [+ 1Surge 5 Bull] [+ 1Surge 5 Bear]│
-│ [+ Bottom Hunter] [+ Top Hunter] │
+│ [+ Bottom Raid] [+ Top Raid] │
 │                                  │
 │ Active Rules:                    │
 │ ─────────────────────────────── │
@@ -117,7 +117,7 @@ Open DevTools (F12) and watch for:
 
 ---
 
-### 3. Bottom Hunter (Reversal from Oversold)
+### 3. Bottom Raid (Reversal from Oversold)
 **Conditions**:
 - Price/15m < 0.994 (recent decline of 0.6%+)
 - Price/1m > 1.004 (recovery starting, +0.4%)
@@ -327,7 +327,7 @@ location.reload()
 - [ ] Scout Bull - Symbol: _______ Time: _______
 - [ ] Scout Bear - Symbol: _______ Time: _______
 - [ ] Surge 5 Bull - Symbol: _______ Time: _______
-- [ ] Bottom Hunter - Symbol: _______ Time: _______
+- [ ] Bottom Raid - Symbol: _______ Time: _______
 
 **Issues Found**:
 ```

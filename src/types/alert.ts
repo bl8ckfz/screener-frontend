@@ -13,17 +13,17 @@ export type FuturesAlertType =
   | 'futures_5_big_bear' // Surge 5 Bear (short-term bearish spike)
   | 'futures_15_big_bull' // Surge 15 Bull (medium-term bullish spike)
   | 'futures_15_big_bear' // Surge 15 Bear (medium-term bearish spike)
-  | 'futures_bottom_hunter' // Bottom Hunter (potential bottom reversal)
-  | 'futures_top_hunter' // Top Hunter (potential top reversal)
+  | 'futures_bottom_hunter' // Bottom Raid (potential bottom reversal)
+  | 'futures_top_hunter' // Top Raid (potential top reversal)
   // V2 optimized rules
-  | 'futures_bottom_hunter_v2' // Bottom Hunter V2 (deeper + RSI oversold)
-  | 'futures_top_hunter_v2' // Top Hunter V2 (deeper + RSI overbought)
+  | 'futures_bottom_hunter_v2' // Bottom Raid V2 (deeper + RSI oversold)
+  | 'futures_top_hunter_v2' // Top Raid V2 (deeper + RSI overbought)
   | 'futures_big_bull_60_v2' // Surge 60 Bull V2 (daily floor + BTC-relative)
   | 'futures_big_bear_60_v2' // Surge 60 Bear V2 (daily floor + BTC-relative)
   // Whale detection
   | 'futures_whale_detector' // Whale Detector (volume anomaly, no price move)
-  | 'futures_whale_accumulation' // Whale Accumulation (volume anomaly, bullish context)
-  | 'futures_whale_distribution' // Whale Distribution (volume anomaly, bearish context)
+  | 'futures_whale_accumulation' // Whale Accu (volume anomaly, bullish context)
+  | 'futures_whale_distribution' // Whale Dist (volume anomaly, bearish context)
 
 /**
  * Legacy alert types (DEPRECATED - kept for backwards compatibility only)
@@ -363,7 +363,7 @@ export const LEGACY_ALERT_PRESETS: LegacyAlertPreset[] = [
   },
   {
     type: 'bottom_hunter',
-    name: 'Bottom Hunter',
+    name: 'Bottom Raid',
     description: 'Potential bottom reversal - price declining but showing support',
     conditions: {
       priceRatios: {
@@ -382,7 +382,7 @@ export const LEGACY_ALERT_PRESETS: LegacyAlertPreset[] = [
   },
   {
     type: 'top_hunter',
-    name: 'Top Hunter',
+    name: 'Top Raid',
     description: 'Potential top reversal - price rising but losing momentum',
     conditions: {
       priceRatios: {
@@ -476,14 +476,14 @@ export const FUTURES_ALERT_PRESETS: FuturesAlertPreset[] = [
   },
   {
     type: 'futures_bottom_hunter',
-    name: 'Bottom Hunter',
+    name: 'Bottom Raid',
     description: 'Bottom reversal: 1h/15m declining but 5m reversing upward with volume spike',
     severity: 'medium',
     marketMode: 'both',
   },
   {
     type: 'futures_top_hunter',
-    name: 'Top Hunter',
+    name: 'Top Raid',
     description: 'Top reversal: 1h/15m rallying but 5m reversing downward with volume spike',
     severity: 'medium',
     marketMode: 'both',
@@ -491,14 +491,14 @@ export const FUTURES_ALERT_PRESETS: FuturesAlertPreset[] = [
   // V2 Optimized Rules
   {
     type: 'futures_bottom_hunter_v2',
-    name: 'Bottom Hunter V2',
+    name: 'Bottom Raid V2',
     description: 'Improved: deeper thresholds (-1.5%/-1.0%/+0.7%) + RSI < 35 oversold',
     severity: 'medium',
     marketMode: 'both',
   },
   {
     type: 'futures_top_hunter_v2',
-    name: 'Top Hunter V2',
+    name: 'Top Raid V2',
     description: 'Improved: deeper thresholds (+1.5%/+1.0%/-0.7%) + RSI > 65 overbought',
     severity: 'medium',
     marketMode: 'both',
@@ -527,14 +527,14 @@ export const FUTURES_ALERT_PRESETS: FuturesAlertPreset[] = [
   },
   {
     type: 'futures_whale_accumulation',
-    name: 'Whale Accumulation',
+    name: 'Whale Accu',
     description: 'Whale volume anomaly with bullish context (15m trend positive or RSI > 50)',
     severity: 'high',
     marketMode: 'bull',
   },
   {
     type: 'futures_whale_distribution',
-    name: 'Whale Distribution',
+    name: 'Whale Dist',
     description: 'Whale volume anomaly with bearish context (15m trend negative or RSI < 50)',
     severity: 'high',
     marketMode: 'bear',
@@ -553,17 +553,17 @@ export const FUTURES_ALERT_LABELS: Record<FuturesAlertType, string> = {
   futures_5_big_bear: 'Surge 5 Bear',
   futures_15_big_bull: 'Surge 15 Bull',
   futures_15_big_bear: 'Surge 15 Bear',
-  futures_bottom_hunter: 'Bottom Hunter',
-  futures_top_hunter: 'Top Hunter',
+  futures_bottom_hunter: 'Bottom Raid',
+  futures_top_hunter: 'Top Raid',
   // V2 optimized
-  futures_bottom_hunter_v2: '🟢 Bottom Hunter V2',
-  futures_top_hunter_v2: '🔴 Top Hunter V2',
+  futures_bottom_hunter_v2: '🟢 Bottom Raid V2',
+  futures_top_hunter_v2: '🔴 Top Raid V2',
   futures_big_bull_60_v2: '🟢 Surge 60 Bull V2',
   futures_big_bear_60_v2: '🔴 Surge 60 Bear V2',
   // Whale
   futures_whale_detector: '🐋 Whale Detector',
-  futures_whale_accumulation: '🐋⬆️ Whale Accumulation',
-  futures_whale_distribution: '🐋⬇️ Whale Distribution',
+  futures_whale_accumulation: '🐋⬆️ Whale Accu',
+  futures_whale_distribution: '🐋⬇️ Whale Dist',
 }
 
 /**

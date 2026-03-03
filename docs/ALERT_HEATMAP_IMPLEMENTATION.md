@@ -115,7 +115,7 @@ Surge 60 Bull [8 alerts] 8.0/min
 Scout Bull [5 alerts] 5.0/min
 ░░░░░░░░░░░░▓██░░░░░░░░
 
-Bottom Hunter [2 alerts] 2.0/min
+Bottom Raid [2 alerts] 2.0/min
 ░░░░░░░•░░░░░░░•░░░░░░░
 ```
 

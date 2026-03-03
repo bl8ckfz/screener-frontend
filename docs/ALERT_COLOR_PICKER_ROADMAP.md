@@ -110,12 +110,12 @@ export function getAlertColorLabel(alertType: AlertColorKey): string {
     futures_pioneer_bull: 'Scout Bull',
     futures_5_big_bull: 'Surge 5 Bull',
     futures_15_big_bull: '1Surge 5 Bull',
-    futures_bottom_hunter: 'Bottom Hunter',
+    futures_bottom_hunter: 'Bottom Raid',
     futures_big_bear_60: 'Surge 60 Bear',
     futures_pioneer_bear: 'Scout Bear',
     futures_5_big_bear: 'Surge 5 Bear',
     futures_15_big_bear: '1Surge 5 Bear',
-    futures_top_hunter: 'Top Hunter',
+    futures_top_hunter: 'Top Raid',
   }
   return labels[alertType]
 }
@@ -554,7 +554,7 @@ Alert colors are user-configurable and stored in localStorage. Default values:
   - Scout Bear: `#fce7f3`
 
 - **Hunter Alerts**: Purple
-  - Bottom/Top Hunter: `#a855f7`
+  - Bottom/Top Raid: `#a855f7`
 
 ### Customization
 Users can customize colors via Settings → Colors tab. Changes apply to:

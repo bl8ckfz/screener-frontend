@@ -232,9 +232,9 @@ export function AlertHistory() {
     } else if (cleanType === 'big_bull_60' || cleanType === 'big_bear_60') {
       text = '60'
     } else if (cleanType === 'bottom_hunter') {
-      text = 'BH'
+      text = 'BR'
     } else if (cleanType === 'top_hunter') {
-      text = 'TH'
+      text = 'TR'
     } else if (cleanType === 'bottom_hunter_v2') {
       text = 'B2'
     } else if (cleanType === 'top_hunter_v2') {
@@ -266,17 +266,17 @@ export function AlertHistory() {
       '5_big_bear': 'Surge 5 Bear',
       '15_big_bull': 'Surge 15 Bull',
       '15_big_bear': 'Surge 15 Bear',
-      bottom_hunter: 'Bottom Hunter',
-      top_hunter: 'Top Hunter',
+      bottom_hunter: 'Bottom Raid',
+      top_hunter: 'Top Raid',
       // V2 Optimized
-      bottom_hunter_v2: '🟢 Bottom Hunter V2',
-      top_hunter_v2: '🔴 Top Hunter V2',
+      bottom_hunter_v2: '🟢 Bottom Raid V2',
+      top_hunter_v2: '🔴 Top Raid V2',
       big_bull_60_v2: '🟢 Surge 60 Bull V2',
       big_bear_60_v2: '🔴 Surge 60 Bear V2',
       // Whale
       whale_detector: '🐋 Whale Detector',
-      whale_accumulation: '🐋⬆ Whale Accumulation',
-      whale_distribution: '🐋⬇ Whale Distribution',
+      whale_accumulation: '🐋⬆ Whale Accu',
+      whale_distribution: '🐋⬇ Whale Dist',
     }
     return names[cleanType] || cleanType.split('_').map(w => 
       w.charAt(0).toUpperCase() + w.slice(1)
@@ -425,19 +425,19 @@ export function AlertHistory() {
               <option value="futures_5_big_bear">Surge 5 Bear (Futures)</option>
               <option value="futures_15_big_bull">Surge 15 Bull (Futures)</option>
               <option value="futures_15_big_bear">Surge 15 Bear (Futures)</option>
-              <option value="futures_bottom_hunter">Bottom Hunter (Futures)</option>
-              <option value="futures_top_hunter">Top Hunter (Futures)</option>
+              <option value="futures_bottom_hunter">Bottom Raid (Futures)</option>
+              <option value="futures_top_hunter">Top Raid (Futures)</option>
             </optgroup>
             <optgroup label="Optimized V2">
-              <option value="futures_bottom_hunter_v2">Bottom Hunter V2</option>
-              <option value="futures_top_hunter_v2">Top Hunter V2</option>
+              <option value="futures_bottom_hunter_v2">Bottom Raid V2</option>
+              <option value="futures_top_hunter_v2">Top Raid V2</option>
               <option value="futures_big_bull_60_v2">Surge 60 Bull V2</option>
               <option value="futures_big_bear_60_v2">Surge 60 Bear V2</option>
             </optgroup>
             <optgroup label="Whale Detection">
               <option value="futures_whale_detector">Whale Detector</option>
-              <option value="futures_whale_accumulation">Whale Accumulation</option>
-              <option value="futures_whale_distribution">Whale Distribution</option>
+              <option value="futures_whale_accumulation">Whale Accu</option>
+              <option value="futures_whale_distribution">Whale Dist</option>
             </optgroup>
             <optgroup label="Legacy Alerts">
               <option value="pioneer_bull">Scout Bull (Legacy)</option>
@@ -446,8 +446,8 @@ export function AlertHistory() {
               <option value="5m_big_bear">Surge 5 Bear (Legacy)</option>
               <option value="15m_big_bull">Surge 15 Bull (Legacy)</option>
               <option value="15m_big_bear">Surge 15 Bear (Legacy)</option>
-              <option value="bottom_hunter">Bottom Hunter (Legacy)</option>
-              <option value="top_hunter">Top Hunter (Legacy)</option>
+              <option value="bottom_hunter">Bottom Raid (Legacy)</option>
+              <option value="top_hunter">Top Raid (Legacy)</option>
               <option value="price_pump">Price Pump</option>
               <option value="price_dump">Price Dump</option>
               <option value="volume_spike">Volume Spike</option>

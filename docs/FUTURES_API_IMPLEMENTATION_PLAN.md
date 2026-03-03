@@ -11,7 +11,7 @@ This provides data for multiple alert types:
 - **Scout Bull**: Uses 5m, 15m for early trend detection
 - **Surge 5 Bull**: Uses 5m, 15m, 1h, 8h, 1d for explosive moves
 - **1Surge 5 Bull**: Uses 15m, 1h, 8h, 1d for strong trending moves
-- **Bottom Hunter**: Uses 5m, 15m, 1h for reversal detection
+- **Bottom Raid**: Uses 5m, 15m, 1h for reversal detection
 
 ---
 
@@ -680,7 +680,7 @@ export const COINGECKO_CONFIG = {
 
 ---
 
-### 12.9 Bottom Hunter
+### 12.9 Bottom Raid
 **Type:** `futures_bottom_hunter`  
 **Purpose:** Detect reversal from bottom with volume confirmation
 
@@ -698,7 +698,7 @@ export const COINGECKO_CONFIG = {
 
 ---
 
-### 12.10 Top Hunter
+### 12.10 Top Raid
 **Type:** `futures_top_hunter`  
 **Purpose:** Detect reversal from top with volume confirmation
 
@@ -918,8 +918,8 @@ const FUTURES_ALERT_LABELS: Record<FuturesAlertType, string> = {
   futures_5_big_bear: 'Surge 5 Bear',
   futures_15_big_bull: '1Surge 5 Bull',
   futures_15_big_bear: '1Surge 5 Bear',
-  futures_bottom_hunter: 'Bottom Hunter',
-  futures_top_hunter: 'Top Hunter',
+  futures_bottom_hunter: 'Bottom Raid',
+  futures_top_hunter: 'Top Raid',
 };
 ```
 

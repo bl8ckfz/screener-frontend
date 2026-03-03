@@ -167,14 +167,14 @@ Test each of the 8 legacy alert types from fast.html:
 
 ---
 
-#### 7. Bottom Hunter Alert
+#### 7. Bottom Raid Alert
 **Conditions**: Potential reversal from bottom
 - Price/15m < 0.994 (recent decline)
 - Price/1m > 1.004 (recovery starting)
 - Volume confirmation
 
 **Test Steps**:
-1. Create Bottom Hunter rule
+1. Create Bottom Raid rule
 2. Look for oversold coins recovering
 3. Verify catches early reversal signals
 4. Check timeframe combination (15m + 1m)
@@ -183,14 +183,14 @@ Test each of the 8 legacy alert types from fast.html:
 
 ---
 
-#### 8. Top Hunter Alert
+#### 8. Top Raid Alert
 **Conditions**: Potential top/distribution
 - Price/15m > 1.006 (recent pump)
 - Slowing momentum
 - Distribution patterns
 
 **Test Steps**:
-1. Create Top Hunter rule
+1. Create Top Raid rule
 2. Watch coins after strong runs
 3. Verify catches distribution signals
 4. Check for momentum slowdown detection

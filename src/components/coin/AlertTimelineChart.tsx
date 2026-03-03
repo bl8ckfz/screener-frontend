@@ -50,17 +50,17 @@ const getAlertTypeName = (type: string): string => {
     '5_big_bear': 'Surge 5 Bear',
     '15_big_bull': 'Surge 15 Bull',
     '15_big_bear': 'Surge 15 Bear',
-    bottom_hunter: 'Bottom Hunter',
-    top_hunter: 'Top Hunter',
+    bottom_hunter: 'Bottom Raid',
+    top_hunter: 'Top Raid',
     // V2 Optimized
-    bottom_hunter_v2: '🟢 Bottom Hunter V2',
-    top_hunter_v2: '🔴 Top Hunter V2',
+    bottom_hunter_v2: '🟢 Bottom Raid V2',
+    top_hunter_v2: '🔴 Top Raid V2',
     big_bull_60_v2: '🟢 Surge 60 Bull V2',
     big_bear_60_v2: '🔴 Surge 60 Bear V2',
     // Whale
     whale_detector: '🐋 Whale Detector',
-    whale_accumulation: '🐋⬆ Whale Accumulation',
-    whale_distribution: '🐋⬇ Whale Distribution',
+    whale_accumulation: '🐋⬆ Whale Accu',
+    whale_distribution: '🐋⬇ Whale Dist',
   }
   
   return names[cleanType] || cleanType.split('_').map(w => 
