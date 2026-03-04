@@ -6,12 +6,40 @@
  * Provides info about subscribing and a logout button.
  */
 
+import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
+
+type RequestState = 'idle' | 'loading' | 'success' | 'error'
 
 export function ExpiredPage() {
   const { user, logout } = useAuth()
+  const [requestState, setRequestState] = useState<RequestState>('idle')
+  const [errorMsg, setErrorMsg] = useState('')
 
   const wasTrial = user?.status === 'trial' || (user?.status === 'expired' && !user?.plan)
+
+  async function handleSubscriptionRequest() {
+    if (requestState === 'loading' || requestState === 'success') return
+    setRequestState('loading')
+    setErrorMsg('')
+    try {
+      const res = await fetch('/api/request-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user?.email, userId: user?.id }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setErrorMsg(data.error ?? 'Failed to send request. Please try again.')
+        setRequestState('error')
+      } else {
+        setRequestState('success')
+      }
+    } catch {
+      setErrorMsg('Network error. Please try again.')
+      setRequestState('error')
+    }
+  }
 
   return (
     <div className="min-h-screen bg-black flex flex-col">
@@ -64,12 +92,29 @@ export function ExpiredPage() {
           </div>
 
           {/* Contact CTA */}
-          <a
-            href="mailto:chyaro@gmail.com?subject=Crypto%20Screener%20Subscription"
-            className="inline-block px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors shadow-lg shadow-blue-600/20"
-          >
-            Contact for Subscription
-          </a>
+          {requestState === 'success' ? (
+            <div className="inline-flex items-center gap-2 px-8 py-3 bg-green-700/30 border border-green-600/40 text-green-400 font-semibold rounded-xl">
+              ✓ Request sent! We'll be in touch soon.
+            </div>
+          ) : (
+            <button
+              onClick={handleSubscriptionRequest}
+              disabled={requestState === 'loading'}
+              className="inline-flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors shadow-lg shadow-blue-600/20"
+            >
+              {requestState === 'loading' ? (
+                <>
+                  <span className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
+                  Sending…
+                </>
+              ) : (
+                'Contact for Subscription'
+              )}
+            </button>
+          )}
+          {requestState === 'error' && (
+            <p className="mt-3 text-sm text-red-400">{errorMsg}</p>
+          )}
 
           {/* User info */}
           <p className="mt-6 text-sm text-gray-500">
