@@ -13,6 +13,7 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { SubscriptionGuard } from '@/components/auth/SubscriptionGuard'
 import { LandingPage } from '@/pages/LandingPage'
 import { LoginPage } from '@/pages/LoginPage'
+import { SignupPage } from '@/pages/SignupPage'
 import { InvitePage } from '@/pages/InvitePage'
 import { ScreenerApp } from '@/pages/ScreenerApp'
 import { BillingPage } from '@/pages/BillingPage'
@@ -24,10 +25,8 @@ function App() {
         {/* Public routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
         <Route path="/invite/:code" element={<InvitePage />} />
-
-        {/* Redirect old signup to landing */}
-        <Route path="/signup" element={<Navigate to="/" replace />} />
 
         {/* Protected routes */}
         <Route

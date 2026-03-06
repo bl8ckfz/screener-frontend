@@ -1,8 +1,8 @@
 /**
  * Signup Page
  * 
- * Full-page registration form. Redirects to /app on success.
- * Links to /login for existing users.
+ * Open registration form. After signup, user is redirected to /app
+ * where SubscriptionGuard shows the pricing/trial page.
  */
 
 import { useState, useEffect } from 'react'
@@ -37,7 +37,7 @@ export function SignupPage() {
     setLoading(true)
 
     try {
-      await register(email, password, '')
+      await register(email, password)
       navigate('/app', { replace: true })
     } catch (err: any) {
       setError(err.message || 'Registration failed')
@@ -70,7 +70,7 @@ export function SignupPage() {
       <div className="flex-1 flex items-center justify-center px-4">
         <div className="w-full max-w-md">
           <h1 className="text-3xl font-bold text-white mb-2">Create your account</h1>
-          <p className="text-gray-400 mb-8">Start monitoring the market in seconds</p>
+          <p className="text-gray-400 mb-8">Start your 7-day free trial — no credit card required to sign up</p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>

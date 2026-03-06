@@ -25,7 +25,7 @@ interface AuthContextType {
   trialDaysRemaining: number | null
   // Actions
   login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string, inviteCode: string) => Promise<void>
+  register: (email: string, password: string, inviteCode?: string) => Promise<void>
   logout: () => void
   refreshToken: () => Promise<void>
   syncWatchlist: () => Promise<void>
@@ -124,8 +124,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { isExpired: true, isTrial: false, isActive: false, isCanceled: false, isAdmin: false, hasTvAddon: false, currentPlan: null, trialDaysRemaining: null }
     }
 
-    // Trial status but no trial_ends_at yet (first login hasn't happened)
-    return { isExpired: false, isTrial: true, isActive: false, isCanceled: false, isAdmin: false, hasTvAddon, currentPlan, trialDaysRemaining: 7 }
+    // Legacy: trial status with no trial_ends_at yet
+    if (user.status === 'trial') {
+      return { isExpired: false, isTrial: true, isActive: false, isCanceled: false, isAdmin: false, hasTvAddon, currentPlan, trialDaysRemaining: 7 }
+    }
+
+    // Unknown status — treat as expired
+    return { isExpired: true, isTrial: false, isActive: false, isCanceled: false, isAdmin: false, hasTvAddon: false, currentPlan: null, trialDaysRemaining: null }
   }, [user, forceExpired])
 
   const syncWatchlist = async () => {
@@ -154,7 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await Promise.all([syncWatchlist(), syncWebhooks()])
   }
 
-  const register = async (email: string, password: string, inviteCode: string) => {
+  const register = async (email: string, password: string, inviteCode?: string) => {
     const response = await authService.register(email, password, inviteCode)
     setUser(response.user)
     setForceExpired(false)

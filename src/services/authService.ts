@@ -63,15 +63,14 @@ const USER_KEY = 'auth_user'
  */
 export const authService = {
   /**
-   * Register a new user account (requires invite code)
+   * Register a new user account (invite code optional)
    */
-  async register(email: string, password: string, inviteCode: string): Promise<AuthResponse> {
+  async register(email: string, password: string, inviteCode?: string): Promise<AuthResponse> {
     try {
-      const response = await axios.post<AuthResponse>(`${API_URL}/auth/register`, {
-        email,
-        password,
-        invite_code: inviteCode,
-      })
+      const body: Record<string, string> = { email, password }
+      if (inviteCode) body.invite_code = inviteCode
+
+      const response = await axios.post<AuthResponse>(`${API_URL}/auth/register`, body)
 
       // Store token and user
       this.setToken(response.data.token)

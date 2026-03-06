@@ -7,36 +7,11 @@
 
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 
 export function LandingPage() {
   const { isAuthenticated, loading } = useAuth()
   const navigate = useNavigate()
-
-  const [reqEmail, setReqEmail] = useState('')
-  const [reqLoading, setReqLoading] = useState(false)
-  const [reqSuccess, setReqSuccess] = useState(false)
-  const [reqError, setReqError] = useState('')
-
-  const handleRequestAccess = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setReqError('')
-    setReqLoading(true)
-    try {
-      const res = await fetch('/api/request-access', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: reqEmail }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? 'Something went wrong.')
-      setReqSuccess(true)
-    } catch (err: any) {
-      setReqError(err.message ?? 'Failed to send request. Please try again.')
-    } finally {
-      setReqLoading(false)
-    }
-  }
 
   // Redirect authenticated users to app
   useEffect(() => {
@@ -66,8 +41,14 @@ export function LandingPage() {
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/signup')}
               className="px-4 py-2 text-sm text-gray-300 hover:text-white transition-colors"
+            >
+              Sign Up
+            </button>
+            <button
+              onClick={() => navigate('/login')}
+              className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
             >
               Sign In
             </button>
@@ -87,8 +68,14 @@ export function LandingPage() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/signup')}
               className="w-full sm:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold rounded-xl transition-colors shadow-lg shadow-blue-600/20"
+            >
+              Start Free Trial
+            </button>
+            <button
+              onClick={() => navigate('/login')}
+              className="w-full sm:w-auto px-8 py-4 bg-gray-800 hover:bg-gray-700 text-white text-lg font-semibold rounded-xl transition-colors border border-gray-600"
             >
               Sign In
             </button>
@@ -152,38 +139,15 @@ export function LandingPage() {
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-3xl font-bold mb-4">Ready to start?</h2>
           <p className="text-gray-400 mb-8">
-            Request early access to start your 7-day free trial.
+            Create an account and try Pulsaryx free for 7 days. No charge until your trial ends.
           </p>
 
-          {reqSuccess ? (
-            <div className="bg-green-500/10 border border-green-500/40 rounded-xl p-6 text-green-400">
-              <div className="text-2xl mb-2">✅</div>
-              <p className="font-semibold">Request received!</p>
-              <p className="text-sm mt-1 text-green-400/80">We'll send your invite link shortly.</p>
-            </div>
-          ) : (
-            <form onSubmit={handleRequestAccess} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-              <input
-                type="email"
-                value={reqEmail}
-                onChange={(e) => setReqEmail(e.target.value)}
-                required
-                placeholder="your@email.com"
-                className="flex-1 px-4 py-3 bg-gray-900 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <button
-                type="submit"
-                disabled={reqLoading}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors shadow-lg shadow-blue-600/20 whitespace-nowrap"
-              >
-                {reqLoading ? 'Sending…' : 'Request Access'}
-              </button>
-            </form>
-          )}
-
-          {reqError && (
-            <p className="mt-3 text-sm text-red-400">{reqError}</p>
-          )}
+          <button
+            onClick={() => navigate('/signup')}
+            className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold rounded-xl transition-colors shadow-lg shadow-blue-600/20"
+          >
+            Start Free Trial
+          </button>
 
           <p className="mt-6 text-sm text-gray-500">
             Already have an account?{' '}

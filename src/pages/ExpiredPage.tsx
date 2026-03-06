@@ -84,7 +84,9 @@ export function ExpiredPage() {
   const [errorMsg, setErrorMsg] = useState('')
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
 
-  const wasTrial = user?.status === 'trial' || (user?.status === 'expired' && !user?.plan)
+  // New user = never had a plan and never had a local trial end
+  const isNewUser = user?.status === 'expired' && !user?.plan && !user?.plan_expires_at && !user?.trial_ends_at
+  const wasTrial = !isNewUser && (user?.status === 'trial' || (user?.status === 'expired' && !user?.plan))
 
   async function handleCheckout(planSlug: string) {
     if (checkoutState === 'loading') return
@@ -124,12 +126,18 @@ export function ExpiredPage() {
           {/* Title */}
           <div className="text-5xl mb-4">⚡</div>
           <h1 className="text-3xl font-bold text-white mb-3">
-            {wasTrial ? 'Your trial has expired' : 'Your subscription has expired'}
+            {isNewUser
+              ? 'Start your free trial'
+              : wasTrial
+                ? 'Your trial has expired'
+                : 'Your subscription has expired'}
           </h1>
           <p className="text-gray-400 mb-10 max-w-lg mx-auto leading-relaxed">
-            {wasTrial
-              ? 'Your 7-day free trial has ended. Choose a plan to continue using Pulsaryx.'
-              : 'Renew your subscription to continue accessing real-time alerts and market analysis.'}
+            {isNewUser
+              ? 'Try Pulsaryx free for 7 days. No charge until your trial ends.'
+              : wasTrial
+                ? 'Your 7-day free trial has ended. Choose a plan to continue using Pulsaryx.'
+                : 'Renew your subscription to continue accessing real-time alerts and market analysis.'}
           </p>
 
           {/* Pricing Grid */}
@@ -176,6 +184,8 @@ export function ExpiredPage() {
                       <span className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
                       Redirecting…
                     </span>
+                  ) : isNewUser ? (
+                    'Start Free Trial'
                   ) : (
                     'Subscribe'
                   )}
