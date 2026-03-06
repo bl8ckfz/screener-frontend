@@ -15,6 +15,7 @@ import { LandingPage } from '@/pages/LandingPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { InvitePage } from '@/pages/InvitePage'
 import { ScreenerApp } from '@/pages/ScreenerApp'
+import { BillingPage } from '@/pages/BillingPage'
 
 function App() {
   return (
@@ -36,6 +37,16 @@ function App() {
               <SubscriptionGuard>
                 <ScreenerApp />
               </SubscriptionGuard>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Billing — auth required but no subscription guard (expired users need access) */}
+        <Route
+          path="/billing"
+          element={
+            <ProtectedRoute>
+              <BillingPage />
             </ProtectedRoute>
           }
         />

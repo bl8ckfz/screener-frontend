@@ -18,7 +18,10 @@ interface AuthContextType {
   isExpired: boolean
   isTrial: boolean
   isActive: boolean
+  isCanceled: boolean
   isAdmin: boolean
+  hasTvAddon: boolean
+  currentPlan: string | null
   trialDaysRemaining: number | null
   // Actions
   login: (email: string, password: string) => Promise<void>
@@ -74,18 +77,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Compute subscription state
   const subscriptionState = useMemo(() => {
     if (!user) {
-      return { isExpired: false, isTrial: false, isActive: false, isAdmin: false, trialDaysRemaining: null }
+      return { isExpired: false, isTrial: false, isActive: false, isCanceled: false, isAdmin: false, hasTvAddon: false, currentPlan: null, trialDaysRemaining: null }
     }
 
     if (forceExpired && user.role !== 'admin') {
-      return { isExpired: true, isTrial: false, isActive: false, isAdmin: false, trialDaysRemaining: null }
+      return { isExpired: true, isTrial: false, isActive: false, isCanceled: false, isAdmin: false, hasTvAddon: false, currentPlan: null, trialDaysRemaining: null }
     }
 
     const isAdmin = user.role === 'admin'
+    const hasTvAddon = user.tv_addon_active ?? false
+    const currentPlan = user.plan ?? null
 
     // Admins are always active
     if (isAdmin) {
-      return { isExpired: false, isTrial: false, isActive: true, isAdmin: true, trialDaysRemaining: null }
+      return { isExpired: false, isTrial: false, isActive: true, isCanceled: false, isAdmin: true, hasTvAddon, currentPlan, trialDaysRemaining: null }
     }
 
     // Check trial expiry client-side
@@ -93,24 +98,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const trialEnd = new Date(user.trial_ends_at)
       const now = new Date()
       if (trialEnd <= now) {
-        return { isExpired: true, isTrial: false, isActive: false, isAdmin: false, trialDaysRemaining: 0 }
+        return { isExpired: true, isTrial: false, isActive: false, isCanceled: false, isAdmin: false, hasTvAddon, currentPlan, trialDaysRemaining: 0 }
       }
       const msRemaining = trialEnd.getTime() - now.getTime()
       const daysRemaining = Math.ceil(msRemaining / (1000 * 60 * 60 * 24))
-      return { isExpired: false, isTrial: true, isActive: false, isAdmin: false, trialDaysRemaining: daysRemaining }
+      return { isExpired: false, isTrial: true, isActive: false, isCanceled: false, isAdmin: false, hasTvAddon, currentPlan, trialDaysRemaining: daysRemaining }
     }
 
     if (user.status === 'active') {
-      return { isExpired: false, isTrial: false, isActive: true, isAdmin: false, trialDaysRemaining: null }
+      return { isExpired: false, isTrial: false, isActive: true, isCanceled: false, isAdmin: false, hasTvAddon, currentPlan, trialDaysRemaining: null }
     }
 
-    // status === 'expired' or trial hasn't started yet
+    // Canceled = access continues until period end, then expires
+    if (user.status === 'canceled') {
+      const periodEnd = user.plan_expires_at ? new Date(user.plan_expires_at) : null
+      const stillHasAccess = periodEnd ? periodEnd > new Date() : false
+      if (stillHasAccess) {
+        return { isExpired: false, isTrial: false, isActive: true, isCanceled: true, isAdmin: false, hasTvAddon, currentPlan, trialDaysRemaining: null }
+      }
+      return { isExpired: true, isTrial: false, isActive: false, isCanceled: true, isAdmin: false, hasTvAddon, currentPlan: null, trialDaysRemaining: null }
+    }
+
+    // status === 'expired'
     if (user.status === 'expired') {
-      return { isExpired: true, isTrial: false, isActive: false, isAdmin: false, trialDaysRemaining: null }
+      return { isExpired: true, isTrial: false, isActive: false, isCanceled: false, isAdmin: false, hasTvAddon: false, currentPlan: null, trialDaysRemaining: null }
     }
 
     // Trial status but no trial_ends_at yet (first login hasn't happened)
-    return { isExpired: false, isTrial: true, isActive: false, isAdmin: false, trialDaysRemaining: 7 }
+    return { isExpired: false, isTrial: true, isActive: false, isCanceled: false, isAdmin: false, hasTvAddon, currentPlan, trialDaysRemaining: 7 }
   }, [user, forceExpired])
 
   const syncWatchlist = async () => {

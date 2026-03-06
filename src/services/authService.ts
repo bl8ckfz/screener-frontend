@@ -16,13 +16,28 @@ export interface User {
   id: string
   email: string
   role: 'user' | 'admin'
-  status: 'trial' | 'active' | 'expired'
+  status: 'trial' | 'active' | 'expired' | 'canceled'
   trial_ends_at: string | null
   plan: 'monthly' | 'yearly' | null
   plan_activated_at: string | null
   plan_expires_at: string | null
+  tv_addon_active: boolean
   created_at: string
   last_login_at?: string
+}
+
+export interface BillingInfo {
+  plan: string | null
+  status: string
+  plan_expires_at: string | null
+  whop_membership_id: string | null
+  tv_addon_active: boolean
+  tv_username: string | null
+  manage_url: string
+}
+
+export interface CheckoutResponse {
+  checkout_url: string
 }
 
 export interface InviteValidation {
@@ -243,5 +258,63 @@ export const authService = {
         return Promise.reject(error)
       }
     )
+  },
+
+  // ── Billing ────────────────────────────────────────────────────────────────
+
+  /**
+   * Create a Whop checkout URL for the given plan slug.
+   * Plan slugs: screener_monthly, screener_yearly, tv_monthly, tv_yearly, bundle_monthly, bundle_yearly
+   */
+  async createCheckout(plan: string): Promise<CheckoutResponse> {
+    const token = this.getToken()
+    if (!token) throw new Error('Not authenticated')
+
+    try {
+      const response = await axios.post<CheckoutResponse>(
+        `${API_URL}/api/checkout`,
+        { plan },
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      return response.data
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to create checkout')
+    }
+  },
+
+  /**
+   * Get billing info for the current user.
+   */
+  async getBillingInfo(): Promise<BillingInfo> {
+    const token = this.getToken()
+    if (!token) throw new Error('Not authenticated')
+
+    try {
+      const response = await axios.get<BillingInfo>(
+        `${API_URL}/api/billing`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      return response.data
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to get billing info')
+    }
+  },
+
+  /**
+   * Set TradingView username for indicator access.
+   */
+  async setTVUsername(tvUsername: string): Promise<void> {
+    const token = this.getToken()
+    if (!token) throw new Error('Not authenticated')
+
+    try {
+      await axios.put(
+        `${API_URL}/api/settings/tv-username`,
+        { tv_username: tvUsername },
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to update TV username')
+    }
   },
 }
