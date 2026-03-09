@@ -316,4 +316,48 @@ export const authService = {
       throw new Error(error.response?.data?.error || 'Failed to update TV username')
     }
   },
+
+  /**
+   * Request a password-reset email. Always resolves (to avoid email enumeration).
+   */
+  async forgotPassword(email: string): Promise<void> {
+    try {
+      await axios.post(`${API_URL}/auth/forgot-password`, { email })
+    } catch (error: any) {
+      // Propagate rate-limit errors only
+      if (error.response?.status === 429) {
+        throw new Error(error.response?.data?.error || 'Too many requests. Please wait.')
+      }
+      // All other errors are silent — same message as success
+    }
+  },
+
+  /**
+   * Exchange a raw reset token for a new password.
+   */
+  async resetPassword(token: string, password: string): Promise<void> {
+    try {
+      await axios.post(`${API_URL}/auth/reset-password`, { token, password })
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to reset password')
+    }
+  },
+
+  /**
+   * Change password for the currently authenticated user.
+   */
+  async changePassword(oldPassword: string, newPassword: string): Promise<void> {
+    const token = this.getToken()
+    if (!token) throw new Error('Not authenticated')
+
+    try {
+      await axios.post(
+        `${API_URL}/api/change-password`,
+        { old_password: oldPassword, new_password: newPassword },
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to change password')
+    }
+  },
 }
