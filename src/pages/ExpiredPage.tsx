@@ -202,10 +202,10 @@ export function ExpiredPage() {
                 <p className="text-gray-500 text-xs">8 premium Pine Script indicators</p>
               </div>
               <div className="text-right">
-                <span className="text-lg font-bold text-white">$12</span>
+                <span className="text-lg font-bold text-white">$59</span>
                 <span className="text-gray-400 text-sm">/mo</span>
                 <span className="text-gray-600 mx-1">·</span>
-                <span className="text-lg font-bold text-white">$120</span>
+                <span className="text-lg font-bold text-white">$599</span>
                 <span className="text-gray-400 text-sm">/yr</span>
               </div>
             </div>
@@ -222,7 +222,7 @@ export function ExpiredPage() {
                 disabled={checkoutState === 'loading'}
                 className="flex-1 py-2 rounded-lg text-sm font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-600 disabled:opacity-50"
               >
-                {loadingPlan === 'tv_yearly' ? 'Redirecting…' : 'Yearly (Save $24)'}
+                {loadingPlan === 'tv_yearly' ? 'Redirecting…' : 'Yearly (Save $109)'}
               </button>
             </div>
           </div>
