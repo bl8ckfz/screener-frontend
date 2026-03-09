@@ -196,14 +196,14 @@ export function BillingPage() {
                       disabled={!!checkoutLoading}
                       className="px-4 py-2 text-sm font-medium bg-gray-800 hover:bg-gray-700 text-white rounded-lg border border-gray-600 transition-colors disabled:opacity-50"
                     >
-                      {checkoutLoading === 'tv_monthly' ? 'Redirecting…' : '$12/mo'}
+                      {checkoutLoading === 'tv_monthly' ? 'Redirecting…' : '$59/mo'}
                     </button>
                     <button
                       onClick={() => handleCheckout('tv_yearly')}
                       disabled={!!checkoutLoading}
                       className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
                     >
-                      {checkoutLoading === 'tv_yearly' ? 'Redirecting…' : '$120/yr (Save $24)'}
+                      {checkoutLoading === 'tv_yearly' ? 'Redirecting…' : '$599/yr (Save $109)'}
                     </button>
                   </div>
                 </div>
@@ -252,7 +252,7 @@ export function BillingPage() {
                     disabled={!!checkoutLoading}
                     className="px-6 py-2.5 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
                   >
-                    {checkoutLoading === 'bundle_monthly' ? 'Redirecting…' : 'Bundle — $39/mo'}
+                    {checkoutLoading === 'bundle_monthly' ? 'Redirecting…' : 'Bundle — $139/mo'}
                   </button>
                 </div>
               )}

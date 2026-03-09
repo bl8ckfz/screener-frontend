@@ -26,7 +26,7 @@ const PLANS: PlanCard[] = [
   {
     slug: 'screener_monthly',
     name: 'Screener',
-    price: '$29',
+    price: '$89',
     period: '/mo',
     description: 'Real-time crypto futures screener',
     features: [
@@ -40,9 +40,9 @@ const PLANS: PlanCard[] = [
   {
     slug: 'screener_yearly',
     name: 'Screener',
-    price: '$290',
+    price: '$899',
     period: '/yr',
-    savings: 'Save $58',
+    savings: 'Save $169',
     description: 'Real-time crypto futures screener',
     features: [
       'Everything in monthly',
@@ -53,7 +53,7 @@ const PLANS: PlanCard[] = [
   {
     slug: 'bundle_monthly',
     name: 'Bundle',
-    price: '$39',
+    price: '$139',
     period: '/mo',
     description: 'Screener + TradingView indicators',
     features: [
@@ -66,9 +66,9 @@ const PLANS: PlanCard[] = [
   {
     slug: 'bundle_yearly',
     name: 'Bundle',
-    price: '$390',
+    price: '$1250',
     period: '/yr',
-    savings: 'Save $78',
+    savings: 'Save $418',
     description: 'Screener + TradingView indicators',
     features: [
       'Everything in Bundle monthly',
