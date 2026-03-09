@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useStore } from '@/hooks/useStore'
 import { authService } from '@/services/authService'
 
@@ -13,6 +13,36 @@ import { authService } from '@/services/authService'
 export function GeneralSettings() {
   const config = useStore((state) => state.config)
   const updateConfig = useStore((state) => state.updateConfig)
+
+  // TV username state
+  const [tvAddonActive, setTvAddonActive] = useState(false)
+  const [tvUsername, setTvUsername] = useState('')
+  const [tvSaving, setTvSaving] = useState(false)
+  const [tvError, setTvError] = useState('')
+  const [tvSuccess, setTvSuccess] = useState(false)
+
+  useEffect(() => {
+    authService.getBillingInfo().then((info) => {
+      setTvAddonActive(info.tv_addon_active)
+      if (info.tv_username) setTvUsername(info.tv_username)
+    }).catch(() => {})
+  }, [])
+
+  const handleTVUsernameSave = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setTvError('')
+    setTvSuccess(false)
+    if (!tvUsername.trim()) return
+    setTvSaving(true)
+    try {
+      await authService.setTVUsername(tvUsername.trim())
+      setTvSuccess(true)
+    } catch (err: any) {
+      setTvError(err.message || 'Failed to save username.')
+    } finally {
+      setTvSaving(false)
+    }
+  }
 
   // Change password state
   const [oldPw, setOldPw] = useState('')
@@ -98,6 +128,44 @@ export function GeneralSettings() {
           </div>
         </div>
       </div>
+
+      {/* TradingView Username — only shown when TV addon is active */}
+      {tvAddonActive && (
+        <div className="bg-gray-800 rounded-lg p-6 space-y-4">
+          <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
+            TradingView Indicators
+          </h4>
+          <p className="text-xs text-gray-500">
+            Your username is used to grant access to the invite-only Pine Script indicators.
+          </p>
+          <form onSubmit={handleTVUsernameSave} className="flex gap-2">
+            <input
+              type="text"
+              value={tvUsername}
+              onChange={(e) => { setTvUsername(e.target.value); setTvSuccess(false) }}
+              placeholder="TradingView username"
+              className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white
+                         placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500
+                         focus:border-transparent transition-colors"
+            />
+            <button
+              type="submit"
+              disabled={tvSaving || !tvUsername.trim()}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800
+                         disabled:opacity-50 text-white text-sm font-medium rounded-lg
+                         transition-colors whitespace-nowrap"
+            >
+              {tvSaving ? 'Saving…' : tvSuccess ? '✓ Saved' : 'Save'}
+            </button>
+          </form>
+          {tvError && <p className="text-red-400 text-xs">{tvError}</p>}
+          {tvSuccess && (
+            <p className="text-green-400 text-xs">
+              Username saved. Access will be granted within 24 hours.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Security — Change Password */}
       <div className="bg-gray-800 rounded-lg p-6 space-y-4">
