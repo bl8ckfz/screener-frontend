@@ -70,7 +70,7 @@ export function SignupPage() {
       <div className="flex-1 flex items-center justify-center px-4">
         <div className="w-full max-w-md">
           <h1 className="text-3xl font-bold text-white mb-2">Create your account</h1>
-          <p className="text-gray-400 mb-8">Start your 7-day free trial — no credit card required to sign up</p>
+          <p className="text-gray-400 mb-8">Start your 3-day free trial — no credit card required to sign up</p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>

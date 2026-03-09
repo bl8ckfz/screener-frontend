@@ -139,7 +139,7 @@ export function LandingPage() {
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-3xl font-bold mb-4">Ready to start?</h2>
           <p className="text-gray-400 mb-8">
-            Create an account and try Coin Sniffer free for 7 days. No charge until your trial ends.
+            Create an account and try Coin Sniffer free for 3 days. No charge until your trial ends.
           </p>
 
           <button

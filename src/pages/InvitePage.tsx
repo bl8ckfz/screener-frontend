@@ -150,12 +150,12 @@ export function InvitePage() {
         <div className="w-full max-w-md">
           <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 mb-6 text-center">
             <p className="text-green-400 text-sm font-medium">
-              ✓ Valid invite — create your account to start a 7-day free trial
+              ✓ Valid invite — create your account to start a 3-day free trial
             </p>
           </div>
 
           <h1 className="text-3xl font-bold text-white mb-2">Create your account</h1>
-          <p className="text-gray-400 mb-8">Start monitoring the market with a 7-day free trial</p>
+          <p className="text-gray-400 mb-8">Start monitoring the market with a 3-day free trial</p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>

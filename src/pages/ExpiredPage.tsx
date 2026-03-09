@@ -134,9 +134,9 @@ export function ExpiredPage() {
           </h1>
           <p className="text-gray-400 mb-10 max-w-lg mx-auto leading-relaxed">
             {isNewUser
-              ? 'Try Coin Sniffer free for 7 days. No charge until your trial ends.'
+              ? 'Try Coin Sniffer free for 3 days. No charge until your trial ends.'
               : wasTrial
-                ? 'Your 7-day free trial has ended. Choose a plan to continue using Coin Sniffer.'
+                ? 'Your 3-day free trial has ended. Choose a plan to continue using Coin Sniffer.'
                 : 'Renew your subscription to continue accessing real-time alerts and market analysis.'}
           </p>
 
