@@ -69,7 +69,7 @@ export function GeneralSettings() {
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-gray-400">Application</span>
-            <span className="text-white font-semibold">Pulsaryx</span>
+            <span className="text-white font-semibold">Coin Sniffer</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-400">Version</span>

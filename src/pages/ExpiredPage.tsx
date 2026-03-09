@@ -110,7 +110,7 @@ export function ExpiredPage() {
       {/* Header */}
       <header className="px-4 sm:px-6 py-4 border-b border-gray-800">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <span className="text-xl font-bold text-white">⚡ Pulsaryx</span>
+          <span className="text-xl font-bold text-white">🔍 Coin Sniffer</span>
           <button
             onClick={logout}
             className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
@@ -134,9 +134,9 @@ export function ExpiredPage() {
           </h1>
           <p className="text-gray-400 mb-10 max-w-lg mx-auto leading-relaxed">
             {isNewUser
-              ? 'Try Pulsaryx free for 7 days. No charge until your trial ends.'
+              ? 'Try Coin Sniffer free for 7 days. No charge until your trial ends.'
               : wasTrial
-                ? 'Your 7-day free trial has ended. Choose a plan to continue using Pulsaryx.'
+                ? 'Your 7-day free trial has ended. Choose a plan to continue using Coin Sniffer.'
                 : 'Renew your subscription to continue accessing real-time alerts and market analysis.'}
           </p>
 

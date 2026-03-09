@@ -37,7 +37,7 @@ export function LandingPage() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-gray-900/80 backdrop-blur-md border-b border-gray-800">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-xl sm:text-2xl font-bold">⚡ Pulsaryx</span>
+            <span className="text-xl sm:text-2xl font-bold">🔍 Coin Sniffer</span>
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -139,7 +139,7 @@ export function LandingPage() {
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-3xl font-bold mb-4">Ready to start?</h2>
           <p className="text-gray-400 mb-8">
-            Create an account and try Pulsaryx free for 7 days. No charge until your trial ends.
+            Create an account and try Coin Sniffer free for 7 days. No charge until your trial ends.
           </p>
 
           <button
@@ -164,7 +164,7 @@ export function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-gray-800 py-8 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto text-center text-sm text-gray-500">
-          <p>&copy; {new Date().getFullYear()} Pulsaryx. Real-time crypto market analysis.</p>
+          <p>&copy; {new Date().getFullYear()} Coin Sniffer. Real-time crypto market analysis.</p>
         </div>
       </footer>
     </div>

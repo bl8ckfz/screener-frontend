@@ -73,14 +73,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const payload = {
     embeds: [
       {
-        title: '📬 New Access Request — Pulsaryx',
+        title: '📬 New Access Request — Coin Sniffer',
         color: 0x3b82f6, // blue-500
         fields: [
           { name: 'Email', value: cleanEmail, inline: false },
           { name: 'IP', value: ip, inline: true },
           { name: 'Time', value: new Date().toUTCString(), inline: true },
         ],
-        footer: { text: 'pulsaryx.com — waitlist' },
+        footer: { text: 'coin-sniffer.com — waitlist' },
       },
     ],
   }

@@ -70,7 +70,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const payload = {
     embeds: [
       {
-        title: '💳 Subscription Request — Pulsaryx',
+        title: '💳 Subscription Request — Coin Sniffer',
         color: 0xf97316, // orange-500
         fields: [
           { name: 'Email', value: cleanEmail, inline: false },
@@ -78,7 +78,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           { name: 'IP', value: ip, inline: true },
           { name: 'Time', value: new Date().toUTCString(), inline: false },
         ],
-        footer: { text: 'pulsaryx.com — subscription request' },
+        footer: { text: 'coin-sniffer.com — subscription request' },
       },
     ],
   }

@@ -8,7 +8,7 @@ import type { Coin } from '@/types/coin'
 /**
  * Convert coins array to CSV format
  */
-export function exportToCSV(coins: Coin[], filename: string = 'pulsaryx-export.csv'): void {
+export function exportToCSV(coins: Coin[], filename: string = 'coin-sniffer-export.csv'): void {
   if (!coins || coins.length === 0) {
     debug.warn('No data to export')
     return
@@ -62,7 +62,7 @@ export function exportToCSV(coins: Coin[], filename: string = 'pulsaryx-export.c
 /**
  * Convert coins array to JSON format
  */
-export function exportToJSON(coins: Coin[], filename: string = 'pulsaryx-export.json'): void {
+export function exportToJSON(coins: Coin[], filename: string = 'coin-sniffer-export.json'): void {
   if (!coins || coins.length === 0) {
     debug.warn('No data to export')
     return
@@ -90,7 +90,7 @@ function downloadFile(content: string, filename: string, mimeType: string): void
 /**
  * Generate filename with timestamp
  */
-export function generateFilename(prefix: string = 'pulsaryx', extension: string = 'csv'): string {
+export function generateFilename(prefix: string = 'coin-sniffer', extension: string = 'csv'): string {
   const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
   return `${prefix}-${timestamp}.${extension}`
 }

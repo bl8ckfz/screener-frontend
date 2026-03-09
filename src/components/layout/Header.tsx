@@ -14,7 +14,7 @@ interface HeaderProps {
 }
 
 export function Header({ 
-  title = 'Pulsaryx', 
+  title = 'Coin Sniffer', 
   subtitle, 
   onOpenSettings,
   isVisible = true,
