@@ -262,34 +262,6 @@ export function GeneralSettings() {
         </div>
       </div>
 
-      {/* Planned Features */}
-      <div className="bg-gray-800 rounded-lg p-6 space-y-4">
-        <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
-          Coming Soon
-        </h4>
-        <ul className="space-y-2 text-sm text-gray-400">
-          <li className="flex items-start gap-2">
-            <span className="text-accent">•</span>
-            <span>Theme selection (Dark / Light modes)</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-accent">•</span>
-            <span>Language preferences (English / Turkish)</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-accent">•</span>
-            <span>Notification preferences and sound controls</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-accent">•</span>
-            <span>Data management (Export / Import / Clear cache)</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-accent">•</span>
-            <span>Keyboard shortcuts customization</span>
-          </li>
-        </ul>
-      </div>
     </div>
   )
 }

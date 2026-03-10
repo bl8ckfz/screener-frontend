@@ -490,27 +490,6 @@ export function AlertConfig({
         </div>
       </div>
 
-      {/* Toast Notification Controls */}
-      <div className="rounded-lg border border-gray-700 bg-gray-800/50 p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h4 className="text-sm font-medium text-white">Toast Notifications</h4>
-            <p className="text-xs text-gray-400 mt-0.5">
-              Show in-app popup alerts (may cover UI on small screens)
-            </p>
-          </div>
-          <label className="relative inline-flex cursor-pointer items-center">
-            <input
-              type="checkbox"
-              checked={alertSettings.notificationEnabled}
-              onChange={(e) => updateAlertSettings({ notificationEnabled: e.target.checked })}
-              className="peer sr-only"
-            />
-            <div className="peer h-5 w-9 rounded-full bg-gray-700 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-gray-600 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-800"></div>
-          </label>
-        </div>
-      </div>
-
       {/* Browser Notification Controls */}
       {isNotificationSupported() && (
         <div className="rounded-lg border border-gray-700 bg-gray-800/50 p-4">

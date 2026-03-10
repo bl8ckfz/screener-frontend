@@ -21,7 +21,7 @@ import { MarketSummary } from '@/components/market'
 import { SearchBar } from '@/components/controls'
 import { ShortcutHelp, BackendStatus } from '@/components/ui'
 import { StorageMigration } from '@/components/StorageMigration'
-import { AlertNotificationContainer, AlertHistoryTable } from '@/components/alerts'
+import { AlertHistoryTable } from '@/components/alerts'
 import { SettingsModal } from '@/components/settings'
 import { FEATURE_FLAGS } from '@/config'
 
@@ -347,9 +347,6 @@ export function ScreenerApp() {
             { key: '?', description: 'Show keyboard shortcuts', callback: () => {} },
           ]}
         />
-        
-        {/* Alert Notifications */}
-        <AlertNotificationContainer />
         
         {/* Memory Stats (dev only) */}
         {import.meta.env.DEV && <MemoryStats />}
