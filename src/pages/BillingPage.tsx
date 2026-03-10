@@ -9,14 +9,19 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { authService, type BillingInfo } from '@/services/authService'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 export function BillingPage() {
-  const { user, logout, isCanceled } = useAuth()
+  const { user, logout, isCanceled, refreshToken } = useAuth()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [billing, setBilling] = useState<BillingInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  // Post-checkout confirmation
+  const [confirming, setConfirming] = useState(false)
+  const [confirmError, setConfirmError] = useState('')
 
   // TV username form
   const [tvUsername, setTvUsername] = useState('')
@@ -27,7 +32,21 @@ export function BillingPage() {
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null)
 
   useEffect(() => {
-    loadBilling()
+    const session = searchParams.get('session')
+    if (session) {
+      // Came back from Whop checkout — confirm the session immediately
+      setConfirming(true)
+      setSearchParams({}, { replace: true }) // clear ?session= from URL
+      authService.confirmCheckout(session)
+        .then(() => refreshToken()) // refresh JWT so user.status reflects new plan
+        .catch((err: any) => setConfirmError(err.message || 'Could not activate plan — it will activate shortly.'))
+        .finally(() => {
+          setConfirming(false)
+          loadBilling()
+        })
+    } else {
+      loadBilling()
+    }
   }, [])
 
   async function loadBilling() {
@@ -113,6 +132,18 @@ export function BillingPage() {
       <div className="flex-1 px-4 py-8">
         <div className="max-w-2xl mx-auto space-y-6">
           <h1 className="text-2xl font-bold text-white">Billing & Subscription</h1>
+
+          {/* Post-checkout confirmation banner */}
+          {confirming && (
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg px-4 py-3 text-blue-300 text-sm">
+              Activating your plan…
+            </div>
+          )}
+          {confirmError && (
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-4 py-3 text-yellow-300 text-sm">
+              {confirmError}
+            </div>
+          )}
 
           {loading ? (
             <div className="text-gray-400 py-8 text-center">Loading billing info…</div>

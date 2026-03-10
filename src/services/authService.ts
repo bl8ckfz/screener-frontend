@@ -300,6 +300,25 @@ export const authService = {
   },
 
   /**
+   * Confirm a Whop checkout session after redirect back from payment.
+   * Activates the subscription immediately without waiting for webhook.
+   */
+  async confirmCheckout(session: string): Promise<void> {
+    const token = this.getToken()
+    if (!token) throw new Error('Not authenticated')
+
+    try {
+      await axios.post(
+        `${API_URL}/api/billing/confirm?session=${encodeURIComponent(session)}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to confirm checkout')
+    }
+  },
+
+  /**
    * Set TradingView username for indicator access.
    */
   async setTVUsername(tvUsername: string): Promise<void> {
