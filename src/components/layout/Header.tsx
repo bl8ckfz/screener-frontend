@@ -1,4 +1,4 @@
-import { ThemeToggle } from '@/components/controls'
+// import { ThemeToggle } from '@/components/controls' // Hidden until light theme is implemented
 import { UserMenu } from '@/components/auth'
 import { TrialBanner } from '@/components/auth'
 import { SettingsButton } from '@/components/settings'
@@ -45,7 +45,7 @@ export function Header({
               <TrialBanner />
               <UserMenu />
               {onOpenSettings && <SettingsButton onClick={onOpenSettings} />}
-              <ThemeToggle />
+              {/* <ThemeToggle /> — hidden until light theme is implemented */}
             </div>
           </div>
         </div>
