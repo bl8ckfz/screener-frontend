@@ -27,6 +27,7 @@ export function InvitePage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -210,6 +211,21 @@ export function InvitePage() {
               />
             </div>
 
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={agreedToTerms}
+                onChange={(e) => setAgreedToTerms(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-gray-600 bg-gray-800 text-blue-600 focus:ring-blue-500 focus:ring-offset-0"
+              />
+              <span className="text-sm text-gray-400">
+                I agree to the{' '}
+                <Link to="/terms" target="_blank" className="text-blue-400 hover:text-blue-300 underline">Terms of Service</Link>
+                {' '}and{' '}
+                <Link to="/privacy" target="_blank" className="text-blue-400 hover:text-blue-300 underline">Privacy Policy</Link>
+              </span>
+            </label>
+
             {error && (
               <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3 text-red-400 text-sm">
                 {error}
@@ -218,7 +234,7 @@ export function InvitePage() {
 
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || !agreedToTerms}
               className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors"
             >
               {submitting ? (

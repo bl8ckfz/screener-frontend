@@ -15,6 +15,7 @@ export function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
   const { register, isAuthenticated, loading: authLoading } = useAuth()
   const navigate = useNavigate()
 
@@ -125,6 +126,21 @@ export function SignupPage() {
               />
             </div>
 
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={agreedToTerms}
+                onChange={(e) => setAgreedToTerms(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-gray-600 bg-gray-800 text-blue-600 focus:ring-blue-500 focus:ring-offset-0"
+              />
+              <span className="text-sm text-gray-400">
+                I agree to the{' '}
+                <Link to="/terms" target="_blank" className="text-blue-400 hover:text-blue-300 underline">Terms of Service</Link>
+                {' '}and{' '}
+                <Link to="/privacy" target="_blank" className="text-blue-400 hover:text-blue-300 underline">Privacy Policy</Link>
+              </span>
+            </label>
+
             {error && (
               <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3 text-red-400 text-sm">
                 {error}
@@ -133,7 +149,7 @@ export function SignupPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !agreedToTerms}
               className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors"
             >
               {loading ? (
@@ -160,6 +176,11 @@ export function SignupPage() {
           <p className="mt-6 text-xs text-gray-500 text-center leading-relaxed max-w-sm mx-auto">
             <span className="font-semibold text-gray-400">Disclaimer:</span> Coin-Sniffer provides market data, alerts, and analytical tools for informational and educational purposes only. It does not provide financial, investment, or trading advice. Trading cryptocurrencies and futures involves substantial risk, and losses can exceed deposits. Past performance and alerts do not guarantee future results.
           </p>
+          <div className="mt-4 flex items-center justify-center gap-4 text-xs text-gray-500">
+            <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+            <span className="text-gray-700">·</span>
+            <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+          </div>
         </div>
       </div>
     </div>

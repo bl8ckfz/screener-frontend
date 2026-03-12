@@ -162,6 +162,11 @@ export function LandingPage() {
           <p className="text-xs text-gray-500 leading-relaxed max-w-lg mx-auto">
             <span className="font-semibold text-gray-400">Disclaimer:</span> Coin-Sniffer provides market data, alerts, and analytical tools for informational and educational purposes only. It does not provide financial, investment, or trading advice. Trading cryptocurrencies and futures involves substantial risk, and losses can exceed deposits. Past performance and alerts do not guarantee future results.
           </p>
+          <div className="flex items-center justify-center gap-4 text-sm">
+            <a href="/terms" className="text-gray-400 hover:text-white transition-colors">Terms of Service</a>
+            <span className="text-gray-700">·</span>
+            <a href="/privacy" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</a>
+          </div>
           <p className="text-sm text-gray-500">&copy; {new Date().getFullYear()} Coin Sniffer. Real-time crypto market analysis.</p>
         </div>
       </footer>

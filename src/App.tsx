@@ -19,6 +19,8 @@ import { ScreenerApp } from '@/pages/ScreenerApp'
 import { BillingPage } from '@/pages/BillingPage'
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage'
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage'
+import { TermsPage } from '@/pages/TermsPage'
+import { PrivacyPage } from '@/pages/PrivacyPage'
 
 function App() {
   return (
@@ -31,6 +33,8 @@ function App() {
         <Route path="/invite/:code" element={<InvitePage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
 
         {/* Protected routes */}
         <Route
