@@ -22,9 +22,16 @@ interface PlanCard {
   highlight?: boolean
 }
 
+/**
+ * IMPORTANT — Manual price sync required!
+ * These prices must match the Whop dashboard.
+ * Whop plan IDs are set via env vars: WHOP_PLAN_SCREENER_MONTHLY, etc.
+ * If you change prices on Whop, update them here too.
+ * Last verified: 2026-03-12
+ */
 const PLANS: PlanCard[] = [
   {
-    slug: 'screener_monthly',
+    slug: 'screener_monthly',  // env: WHOP_PLAN_SCREENER_MONTHLY
     name: 'Screener',
     price: '$89',
     period: '/mo',
@@ -38,7 +45,7 @@ const PLANS: PlanCard[] = [
     ],
   },
   {
-    slug: 'screener_yearly',
+    slug: 'screener_yearly',  // env: WHOP_PLAN_SCREENER_YEARLY
     name: 'Screener',
     price: '$899',
     period: '/yr',
@@ -51,7 +58,7 @@ const PLANS: PlanCard[] = [
     highlight: true,
   },
   {
-    slug: 'bundle_monthly',
+    slug: 'bundle_monthly',  // env: WHOP_PLAN_BUNDLE_MONTHLY
     name: 'Bundle',
     price: '$139',
     period: '/mo',
@@ -64,7 +71,7 @@ const PLANS: PlanCard[] = [
     ],
   },
   {
-    slug: 'bundle_yearly',
+    slug: 'bundle_yearly',  // env: WHOP_PLAN_BUNDLE_YEARLY
     name: 'Bundle',
     price: '$1250',
     period: '/yr',
@@ -84,8 +91,8 @@ export function ExpiredPage() {
   const [errorMsg, setErrorMsg] = useState('')
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
 
-  // New user = never had a plan and never had a local trial end
-  const isNewUser = user?.status === 'expired' && !user?.plan && !user?.plan_expires_at && !user?.trial_ends_at
+  // New user = never activated a paid plan (plan_activated_at is set on first Whop checkout confirm)
+  const isNewUser = !user?.plan_activated_at
   const wasTrial = !isNewUser && (user?.status === 'trial' || (user?.status === 'expired' && !user?.plan))
 
   async function handleCheckout(planSlug: string) {

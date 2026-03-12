@@ -16,8 +16,6 @@ import { useAuth } from '@/hooks/useAuth'
 import { ExpiredPage } from '@/pages/ExpiredPage'
 import { authService } from '@/services/authService'
 
-const API_URL = import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:8080'
-
 interface SubscriptionGuardProps {
   children: React.ReactNode
 }
@@ -39,16 +37,8 @@ export function SubscriptionGuard({ children }: SubscriptionGuardProps) {
 
     setConfirming(true)
 
-    fetch(`${API_URL}/api/billing/confirm?session=${encodeURIComponent(session)}`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(async (res) => {
-        if (res.ok) {
-          // Refresh user state to pick up new status
-          await refreshToken()
-        }
-      })
+    authService.confirmCheckout(session)
+      .then(() => refreshToken())
       .catch(() => { /* non-critical */ })
       .finally(() => {
         // Remove session param from URL so refreshing doesn't re-trigger
