@@ -295,6 +295,11 @@ export function BillingPage() {
             </>
           ) : null}
 
+          {/* Disclaimer */}
+          <p className="text-xs text-gray-500 text-center pt-6 leading-relaxed max-w-lg mx-auto">
+            <span className="font-semibold text-gray-400">Disclaimer:</span> Coin-Sniffer provides market data, alerts, and analytical tools for informational and educational purposes only. It does not provide financial, investment, or trading advice. Trading cryptocurrencies and futures involves substantial risk, and losses can exceed deposits. Past performance and alerts do not guarantee future results.
+          </p>
+
           {/* Footer */}
           <p className="text-sm text-gray-600 text-center pt-4">
             Payments processed by Whop · {user?.email}
