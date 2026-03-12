@@ -232,6 +232,11 @@ export function ExpiredPage() {
             <p className="text-sm text-red-400 mb-4">{errorMsg}</p>
           )}
 
+          {/* Disclaimer */}
+          <p className="text-xs text-gray-500 text-center leading-relaxed max-w-lg mx-auto mt-6">
+            <span className="font-semibold text-gray-400">Disclaimer:</span> Coin-Sniffer provides market data, alerts, and analytical tools for informational and educational purposes only. It does not provide financial, investment, or trading advice. Trading cryptocurrencies and futures involves substantial risk, and losses can exceed deposits. Past performance and alerts do not guarantee future results.
+          </p>
+
           {/* Footer info */}
           <p className="text-sm text-gray-500">
             Logged in as {user?.email} · Secure checkout powered by Whop

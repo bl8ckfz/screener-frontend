@@ -158,8 +158,11 @@ export function LandingPage() {
 
       {/* Footer */}
       <footer className="border-t border-gray-800 py-8 px-4 sm:px-6">
-        <div className="max-w-6xl mx-auto text-center text-sm text-gray-500">
-          <p>&copy; {new Date().getFullYear()} Coin Sniffer. Real-time crypto market analysis.</p>
+        <div className="max-w-6xl mx-auto text-center space-y-4">
+          <p className="text-xs text-gray-500 leading-relaxed max-w-lg mx-auto">
+            <span className="font-semibold text-gray-400">Disclaimer:</span> Coin-Sniffer provides market data, alerts, and analytical tools for informational and educational purposes only. It does not provide financial, investment, or trading advice. Trading cryptocurrencies and futures involves substantial risk, and losses can exceed deposits. Past performance and alerts do not guarantee future results.
+          </p>
+          <p className="text-sm text-gray-500">&copy; {new Date().getFullYear()} Coin Sniffer. Real-time crypto market analysis.</p>
         </div>
       </footer>
     </div>

@@ -156,6 +156,10 @@ export function SignupPage() {
               Sign in
             </Link>
           </p>
+
+          <p className="mt-6 text-xs text-gray-500 text-center leading-relaxed max-w-sm mx-auto">
+            <span className="font-semibold text-gray-400">Disclaimer:</span> Coin-Sniffer provides market data, alerts, and analytical tools for informational and educational purposes only. It does not provide financial, investment, or trading advice. Trading cryptocurrencies and futures involves substantial risk, and losses can exceed deposits. Past performance and alerts do not guarantee future results.
+          </p>
         </div>
       </div>
     </div>
