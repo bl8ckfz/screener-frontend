@@ -91,8 +91,8 @@ export function PrivacyPage() {
 
           <div className="bg-gray-900/50 border border-gray-700/50 rounded-lg p-4 space-y-3">
             <div>
-              <strong className="text-white">Supabase</strong> — Authentication & database
-              <p className="text-sm text-gray-500">Stores account data. Subject to <a href="https://supabase.com/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">Supabase Privacy Policy</a>.</p>
+              <strong className="text-white">Railway</strong> — Backend hosting
+              <p className="text-sm text-gray-500">Hosts backend services and PostgreSQL database. Subject to <a href="https://railway.app/legal/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">Railway Privacy Policy</a>.</p>
             </div>
             <div>
               <strong className="text-white">Whop</strong> — Payment processing
@@ -103,7 +103,7 @@ export function PrivacyPage() {
               <p className="text-sm text-gray-500">Alert notifications are sent to webhook URLs you provide. We do not access your Discord or Telegram accounts.</p>
             </div>
             <div>
-              <strong className="text-white">Vercel</strong> — Hosting
+              <strong className="text-white">Vercel</strong> — Frontend hosting
               <p className="text-sm text-gray-500">Frontend hosting and CDN. Subject to <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">Vercel Privacy Policy</a>.</p>
             </div>
           </div>
