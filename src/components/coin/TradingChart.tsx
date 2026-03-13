@@ -189,7 +189,14 @@ export function TradingChart({
         chartInitializedRef.current = false
       }
     }
-  }, [height, showVolume])
+  }, [showVolume]) // height intentionally excluded — handled below via applyOptions
+
+  // Resize chart height without destroying/recreating the instance
+  useEffect(() => {
+    if (chartRef.current) {
+      chartRef.current.applyOptions({ height })
+    }
+  }, [height])
 
   // Update main chart series when data or chart type changes
   // Separated from markers to avoid unnecessary series recreation
