@@ -30,23 +30,22 @@ export interface ChartSectionProps {
  * 
  * Phase 8.1.1: Extract Chart Section Component
  */
-const TOTAL_HEIGHT = 480
 const MIN_CHART_HEIGHT = 80
+const MAX_CHART_HEIGHT = 800
 
 function clampTradingH(h: number) {
-  return Math.min(Math.max(h, MIN_CHART_HEIGHT), TOTAL_HEIGHT - MIN_CHART_HEIGHT)
+  return Math.min(Math.max(h, MIN_CHART_HEIGHT), MAX_CHART_HEIGHT)
 }
 
 export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSectionProps) {
   const [interval, setInterval] = useState<KlineInterval>('5m')
   const [showAlerts, setShowAlerts] = useState(true)
 
-  // Split height state — persisted to localStorage
+  // TradingChart height — persisted to localStorage; timeline grows freely below
   const [tradingH, setTradingH] = useState<number>(() => {
     const saved = localStorage.getItem('chart-split-px')
     return saved ? clampTradingH(Number(saved)) : 280
   })
-  const timelineH = TOTAL_HEIGHT - tradingH
 
   useEffect(() => {
     localStorage.setItem('chart-split-px', String(tradingH))
@@ -364,9 +363,9 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
       </div>
 
       {/* Charts with a single vertical splitter between them */}
-      <div className="flex flex-col" style={{ height: TOTAL_HEIGHT }}>
-        {/* Trading Chart */}
-        <div className="px-1 md:px-4 w-full max-w-full overflow-hidden flex-shrink-0" style={{ height: tradingH }}>
+      <div className="flex flex-col w-full">
+        {/* Trading Chart - fixed height, controlled by splitter */}
+        <div className="px-1 md:px-4 pt-1 md:pt-4 w-full max-w-full overflow-hidden" style={{ height: tradingH }}>
           <div className="bg-gray-900 rounded-lg p-1 md:p-3 w-full max-w-full overflow-hidden h-full">
             <TradingChart
               data={chartData}
@@ -382,8 +381,8 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
         {/* Drag handle */}
         <VerticalSplitter onDrag={handleSplitterDrag} />
 
-        {/* Alert Timeline Chart */}
-        <div className="px-1 md:px-4 w-full max-w-full flex-shrink-0" style={{ height: timelineH, overflowY: 'auto' }}>
+        {/* Alert Timeline Chart - grows freely with content, no scroll */}
+        <div className="px-1 md:px-4 pb-1 md:pb-4 w-full max-w-full overflow-hidden">
           <div className="bg-gray-900 rounded-lg p-1 md:p-3 w-full max-w-full overflow-hidden">
             <AlertTimelineChart
               symbol={selectedCoin.symbol}
