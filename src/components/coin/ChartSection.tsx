@@ -12,7 +12,7 @@ import { useStore } from '@/hooks/useStore'
 import type { Coin } from '@/types/coin'
 import type { AlertHistoryEntry } from '@/types/alertHistory'
 import type { AlertHistoryItem, CombinedAlertType, Alert } from '@/types/alert'
-import { ChartSkeleton, ErrorState, EmptyState } from '@/components/ui'
+import { ChartSkeleton, ErrorState, EmptyState, VerticalSplitter } from '@/components/ui'
 import { debug } from '@/utils/debug'
 
 export interface ChartSectionProps {
@@ -30,9 +30,31 @@ export interface ChartSectionProps {
  * 
  * Phase 8.1.1: Extract Chart Section Component
  */
+const TOTAL_HEIGHT = 480
+const MIN_CHART_HEIGHT = 80
+
+function clampTradingH(h: number) {
+  return Math.min(Math.max(h, MIN_CHART_HEIGHT), TOTAL_HEIGHT - MIN_CHART_HEIGHT)
+}
+
 export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSectionProps) {
   const [interval, setInterval] = useState<KlineInterval>('5m')
   const [showAlerts, setShowAlerts] = useState(true)
+
+  // Split height state — persisted to localStorage
+  const [tradingH, setTradingH] = useState<number>(() => {
+    const saved = localStorage.getItem('chart-split-px')
+    return saved ? clampTradingH(Number(saved)) : 280
+  })
+  const timelineH = TOTAL_HEIGHT - tradingH
+
+  useEffect(() => {
+    localStorage.setItem('chart-split-px', String(tradingH))
+  }, [tradingH])
+
+  const handleSplitterDrag = useCallback((delta: number) => {
+    setTradingH(h => clampTradingH(h + delta))
+  }, [])
   
   const [chartData, setChartData] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -341,28 +363,34 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
         </div>
       </div>
 
-      {/* Trading Chart */}
-      <div className="px-1 md:px-4 pt-1 md:pt-4 w-full max-w-full overflow-hidden">
-        <div className="bg-gray-900 rounded-lg p-1 md:p-3 w-full max-w-full overflow-hidden">
-          <TradingChart
-            data={chartData}
-            height={260}
-            livePrice={selectedCoin.lastPrice}
-            showVolume={true}
-            showAlerts={showAlerts}
-            alerts={chartAlerts}
-          />
+      {/* Charts with a single vertical splitter between them */}
+      <div className="flex flex-col" style={{ height: TOTAL_HEIGHT }}>
+        {/* Trading Chart */}
+        <div className="px-1 md:px-4 w-full max-w-full overflow-hidden flex-shrink-0" style={{ height: tradingH }}>
+          <div className="bg-gray-900 rounded-lg p-1 md:p-3 w-full max-w-full overflow-hidden h-full">
+            <TradingChart
+              data={chartData}
+              height={tradingH - 16}
+              livePrice={selectedCoin.lastPrice}
+              showVolume={true}
+              showAlerts={showAlerts}
+              alerts={chartAlerts}
+            />
+          </div>
         </div>
-      </div>
 
-      {/* Alert Timeline Chart - dot-based visualization */}
-      <div className="px-1 md:px-4 pt-1 md:pt-4 w-full max-w-full overflow-hidden">
-        <div className="bg-gray-900 rounded-lg p-1 md:p-3 w-full max-w-full overflow-hidden">
-          <AlertTimelineChart
-            symbol={selectedCoin.symbol}
-            fullSymbol={selectedCoin.fullSymbol}
-            alerts={allCombinedAlerts}
-          />
+        {/* Drag handle */}
+        <VerticalSplitter onDrag={handleSplitterDrag} />
+
+        {/* Alert Timeline Chart */}
+        <div className="px-1 md:px-4 w-full max-w-full flex-shrink-0" style={{ height: timelineH, overflowY: 'auto' }}>
+          <div className="bg-gray-900 rounded-lg p-1 md:p-3 w-full max-w-full overflow-hidden">
+            <AlertTimelineChart
+              symbol={selectedCoin.symbol}
+              fullSymbol={selectedCoin.fullSymbol}
+              alerts={allCombinedAlerts}
+            />
+          </div>
         </div>
       </div>
 
