@@ -401,7 +401,7 @@ Backend:
 ```
 src/services/backendApi.ts      # Auth header injection ✅
 src/services/websocketService.ts # WebSocket auth (TODO)
-src/hooks/useMarketData.ts      # API calls via backendApi ✅
+src/hooks/useBackendData.ts     # API calls via backendApi ✅
 ```
 
 ---
@@ -588,14 +588,14 @@ tests/e2e/
 ## Phase 8: Deployment & Migration (Week 4)
 
 ### 8.1 Database Migration
-**Goal**: Add auth-related tables if not exists
+**Goal**: Confirm auth-related tables exist in backend PostgreSQL (Supabase removed — auth is Go backend JWT)
 
 **Tasks**:
-- [ ] Ensure Supabase tables exist:
+- [ ] Ensure backend PostgreSQL tables exist:
   ```sql
-  -- user_settings (should exist)
-  -- user_alert_subscriptions (should exist)
-  -- Add missing columns if needed
+  -- user_settings (should exist in Go backend)
+  -- user_alert_subscriptions (should exist in Go backend)
+  -- Add missing columns via backend migrations if needed
   ```
 ---
 

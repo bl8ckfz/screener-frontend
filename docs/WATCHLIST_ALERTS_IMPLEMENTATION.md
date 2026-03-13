@@ -10,13 +10,7 @@ Extended the alert system to support separate alert history and webhook configur
 - Added `watchlistId?: string` field to track which watchlist triggered the alert
 - Added `watchlistWebhooks: WebhookConfig[]` to `AlertSettings` for separate webhook configurations
 
-### 2. Alert Engine Updates (`src/services/alertEngine.ts`)
-- Modified `evaluateAlertRules()` to accept optional `watchlistId` parameter
-- Updated function to tag alerts with `source: 'main' | 'watchlist'`
-- Enhanced logging to distinguish between main and watchlist alert evaluations
-- Alerts from watchlist coins now include `watchlistId` reference
-
-### 3. Webhook Service Enhancement (`src/services/webhookService.ts`)
+### 2. Webhook Service Enhancement (`src/services/webhookService.ts`)
 - Updated `sendToWebhooks()` to accept `source` parameter
 - Added logging to show webhook routing based on alert source
 - Webhooks now route correctly based on whether alert is from main list or watchlist
@@ -35,13 +29,7 @@ Extended the alert system to support separate alert history and webhook configur
 - Added visual distinction between main and watchlist webhook configurations
 - Each tab shows independent webhook lists with separate configurations
 
-### 6. Market Data Hook (`src/hooks/useMarketData.ts`)
-- Updated webhook routing logic in 3 places to check `alert.source`
-- Main alerts use `alertSettings.webhooks`
-- Watchlist alerts use `alertSettings.watchlistWebhooks`
-- Legacy Discord webhook only applies to main alerts (backwards compatibility)
-
-### 7. Store Configuration (`src/hooks/useStore.ts`)
+### 6. Store Configuration (`src/hooks/useStore.ts`)
 - Added `watchlistWebhooks: []` to default alert settings
 - Ensures empty array is initialized for new installations
 
@@ -63,18 +51,6 @@ Extended the alert system to support separate alert history and webhook configur
    - **Watchlist Alerts**: Shows only alerts from watchlist coins
 
 ### For Developers
-
-#### Triggering Watchlist Alerts
-When evaluating alerts for watchlist coins, pass the `watchlistId`:
-
-```typescript
-const watchlistAlerts = evaluateAlertRules(
-  watchlistCoins,
-  alertRules,
-  marketMode,
-  watchlistId // Pass watchlist ID
-)
-```
 
 #### Alert Object Structure
 Alerts now include source tracking:
@@ -147,17 +123,14 @@ No database migration required. Changes are fully backwards compatible:
 
 ### Modified Files
 1. `src/types/alert.ts` - Extended Alert and AlertSettings types
-2. `src/services/alertEngine.ts` - Added watchlist tracking
-3. `src/services/webhookService.ts` - Added source-based routing
-4. `src/components/alerts/AlertHistory.tsx` - Added source tabs
-5. `src/components/alerts/WebhookManager.tsx` - Added webhook source tabs
-6. `src/hooks/useMarketData.ts` - Updated webhook routing (3 locations)
-7. `src/hooks/useStore.ts` - Added watchlistWebhooks default
+2. `src/services/webhookService.ts` - Added source-based routing
+3. `src/components/alerts/AlertHistory.tsx` - Added source tabs
+4. `src/components/alerts/WebhookManager.tsx` - Added webhook source tabs
+5. `src/hooks/useStore.ts` - Added watchlistWebhooks default
 
 ### Created Files
 - `docs/WATCHLIST_ALERTS_IMPLEMENTATION.md` (this file)
 
 ## Related Documentation
-- See `docs/ALERT_SYSTEM_TESTING.md` for alert system test coverage
-- See `docs/PHASE_6_SUMMARY.md` for Phase 6 completion (alert system foundation)
+- See `docs/TESTING_GUIDE.md` for current testing guidance
 - See `src/types/screener.ts` for Watchlist interface definition

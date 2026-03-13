@@ -652,7 +652,7 @@ export async function sendDiscordAlert(alert: Alert) {
 - **Per-Alert Brightness**: Adjust opacity for less important alerts
 - **Gradient Backgrounds**: Animated gradients for hunter alerts
 - **Color Accessibility**: Auto-suggest WCAG-compliant alternatives
-- **Sync to Backend**: Save colors to Supabase for cross-device sync
+- **Sync to Backend**: Save colors via backend API for cross-device sync
 
 ---
 

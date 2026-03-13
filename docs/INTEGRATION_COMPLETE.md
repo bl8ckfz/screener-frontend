@@ -49,10 +49,6 @@ Edit `.env.local`:
 VITE_USE_BACKEND_API=true
 VITE_BACKEND_API_URL=http://localhost:8080
 VITE_BACKEND_WS_URL=ws://localhost:8080/ws/alerts
-
-# Keep existing Supabase config
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_key
 ```
 
 **2. Add Backend Alerts Hook to App.tsx**

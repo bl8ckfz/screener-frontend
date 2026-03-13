@@ -74,9 +74,12 @@ src/
 │
 ├── services/            # External service integrations
 │   ├── backendApi.ts        # Backend HTTP client
+│   ├── authService.ts       # Custom JWT auth
 │   ├── chartData.ts         # Binance chart data (172 lines)
-│   ├── storage.ts           # LocalStorage/IndexedDB
-│   └── syncService.ts       # Supabase sync
+│   ├── watchlistService.ts  # Watchlist CRUD
+│   ├── alertHistoryService.ts # Local alert history
+│   ├── webhookService.ts    # Discord/Telegram webhooks
+│   └── storage.ts           # LocalStorage wrapper
 │
 ├── utils/               # Utility functions
 │   ├── format.ts            # Number/date formatting
@@ -243,7 +246,6 @@ Frontend: { symbol, fullSymbol, lastPrice, vcp, rsi, macd, resistance1, support1
 - clsx 2.1.1
 
 **Backend Integration**:
-- @supabase/supabase-js 2.47.10
 - websocket (browser native)
 
 ## Environment Variables
@@ -252,10 +254,6 @@ Frontend: { symbol, fullSymbol, lastPrice, vcp, rsi, macd, resistance1, support1
 # Backend API (Production)
 VITE_BACKEND_API_URL=https://api-gateway-production-f4ba.up.railway.app
 VITE_BACKEND_WS_URL=wss://api-gateway-production-f4ba.up.railway.app
-
-# Supabase (User authentication & sync)
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
 ```
 
 ## Deployment
@@ -267,7 +265,7 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 
 ## Migration Notes
 
-**From Legacy (`fast.html`) to Current**:
+**From Legacy (monolithic HTML) to Current**:
 1. All Binance API calls moved to `chartData.ts` (charts only)
 2. Real-time data now comes from backend
 3. Alert evaluation happens server-side

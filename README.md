@@ -115,8 +115,8 @@ screener-frontend/
 │   ├── services/        # External service integrations
 │   │   ├── backendApi.ts        # Backend HTTP client
 │   │   ├── chartData.ts         # Binance chart data (172 lines)
-│   │   ├── storage.ts           # LocalStorage wrapper
-│   │   └── syncService.ts       # Supabase integration
+│   │   ├── watchlistService.ts  # Watchlist CRUD
+│   │   └── storage.ts           # LocalStorage wrapper
 │   ├── utils/           # Utility functions
 │   │   ├── format.ts            # Number/date formatting
 │   │   ├── sort.ts              # Client-side sorting
@@ -127,11 +127,10 @@ screener-frontend/
 │   │   └── config.ts            # User preferences
 │   └── App.tsx          # Root component (~450 lines)
 ├── docs/                # Documentation
-│   ├── ARCHITECTURE.md         # Architecture overview (NEW)
-│   ├── WEEK2_CLEANUP_COMPLETE.md  # Cleanup summary
+│   ├── ARCHITECTURE.md         # Architecture overview
+│   ├── WEEK2_CLEANUP_COMPLETE.md  # Jan 27 2026 cleanup record
 │   ├── ROADMAP.md              # Development roadmap
-│   └── STATE.md                # Project state tracking
-├── fast.html            # Legacy monolithic version (DO NOT MODIFY)
+│   └── TESTING_GUIDE.md        # Manual testing guide
 └── tests/              # Test files (Vitest + RTL)
 ```
 
@@ -140,9 +139,9 @@ screener-frontend/
 ## 📚 Key Documentation
 
 - **[ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - System architecture, data flow, components
-- **[WEEK2_CLEANUP_COMPLETE.md](./docs/WEEK2_CLEANUP_COMPLETE.md)** - Details of 31-file cleanup
+- **[WEEK2_CLEANUP_COMPLETE.md](./docs/WEEK2_CLEANUP_COMPLETE.md)** - Details of 31-file cleanup (Jan 27, 2026)
 - **[ROADMAP.md](./docs/ROADMAP.md)** - Development phases and progress
-- **[STATE.md](./docs/STATE.md)** - Current project state and pending tasks
+- **[TESTING_GUIDE.md](./docs/TESTING_GUIDE.md)** - Manual testing guide for current features
 
 ## 🧑‍💻 Development Guidelines
 
@@ -288,9 +287,9 @@ VITE_BACKEND_WS_URL=wss://api-gateway-production-f4ba.up.railway.app
 
 ## 📝 Migration Notes
 
-### From Legacy (`fast.html`)
+### From Monolithic HTML to Backend-First
 
-The original 3,029-line monolithic HTML file has been completely refactored:
+The original 3,029-line monolithic HTML file was fully refactored (Jan 2026):
 
 **What Changed**:
 - All data processing moved to backend (Go microservices)

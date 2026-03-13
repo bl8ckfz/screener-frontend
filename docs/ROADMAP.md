@@ -10,7 +10,7 @@
 - ~~3,029 lines in a single HTML file~~ → Modular React application ✅
 - ~~No separation of concerns~~ → Clean architecture with services/components/hooks ✅
 - ~~No module system~~ → ES modules with TypeScript ✅
-- ~~LocalStorage-only persistence~~ → Supabase + IndexedDB ✅
+- ~~LocalStorage-only persistence~~ → Backend TimescaleDB + localStorage (Zustand) ✅
 - ~~Outdated UI/UX~~ → Modern Tailwind CSS components ✅
 - ~~No error handling~~ → Comprehensive error boundaries ✅
 - ~~No testing~~ → Vitest + React Testing Library ✅
@@ -605,9 +605,9 @@
   - Build command: npm run build
   - Output directory: dist
   - Environment variables configuration
-- [ ] Set up environment variables in Vercel dashboard
-  - VITE_SUPABASE_URL
-  - VITE_SUPABASE_ANON_KEY
+- [x] Set up environment variables in Vercel dashboard
+  - VITE_BACKEND_API_URL
+  - VITE_BACKEND_WS_URL
 - [ ] Configure deployment settings
   - Auto-deploy from main branch
   - Preview deployments for PRs
@@ -734,9 +734,11 @@
 - [ ] Rate limiting on API calls
 - [ ] Environment variable security
 
-### 7.4 State Persistence Fixes (CRITICAL) 🚨
+### 7.4 State Persistence Fixes ~~(CRITICAL)~~ — ⚠️ Partially Superseded
 
-**Problem**: Alert configuration not persisting across page refreshes due to dual-storage pattern causing state contamination between IndexedDB and localStorage.
+> **Note (March 2026)**: The IndexedDB dual-storage pattern was simplified to localStorage-only in the Week 2 cleanup. References to Supabase session persistence below are N/A — Supabase auth was removed Jan 27, 2026. The core concern (reliable config persistence) was resolved by moving to a single storage source.
+
+**Problem** (historical): Alert configuration not persisting across page refreshes due to dual-storage pattern causing state contamination between IndexedDB and localStorage.
 
 **Root Cause Analysis**:
 - `storage.ts` writes to BOTH IndexedDB AND localStorage on every save (line 94-95)
@@ -818,8 +820,8 @@
 ## Phase 9: Migration Strategy (Parallel with refactoring)
 
 ### 9.1 Incremental Migration
-- [ ] Keep fast.html as fallback during development
-- [ ] Create feature parity checklist (all 134 screening lists)
+- [x] ~~Keep fast.html as fallback during development~~ (fast.html deleted Jan 2026 — migration complete)
+- [x] ~~Create feature parity checklist (all 134 screening lists)~~ (backend-first architecture supersedes this)
 - [ ] Beta testing with subset of users
 - [ ] Gradual rollout with feature flags
 
@@ -936,7 +938,7 @@
 - This roadmap is flexible and can be adjusted based on feedback
 - Phases can overlap where appropriate
 - Consider MVP approach: get basic version working, then iterate
-- Keep original fast.html until new version is production-ready
+- Keep the codebase modular — backend handles data, frontend handles presentation
 - Document decisions and learnings throughout the process
 
 ---
@@ -1056,70 +1058,31 @@
   - Requires clearing both IndexedDB AND localStorage to fix
   - Long-term fixes needed (see Phase 7.4 below)
 
-### Current Phase: Phase 6.4 - Production Deployment (Vercel) 🎯
-**Phase 6.3 Complete! User accounts and cloud sync fully implemented.**
+### Current Status (March 2026) 🎯
 
-**Phase 6.3 Achievements:**
-- ✅ Supabase infrastructure with PostgreSQL + Auth + Real-time
-- ✅ Database schema with 6 tables and Row Level Security (30 policies)
-- ✅ Authentication UI with email/password + magic link
-- ✅ Bidirectional sync service (~500 lines) for all user data
-- ✅ Auto-sync on sign-in with last-write-wins conflict resolution
-- ✅ Real-time WebSocket subscriptions for multi-device sync
-- ✅ TypeScript type-safe with 100% type coverage
+**Architecture**: Backend-first. Frontend is a pure presentation layer. All metrics computed by Go backend.
 
-**Phase 6.2 Achievements:**
-- ✅ Customizable watchlists with CRUD operations
-- ✅ Full webhook system (Discord + Telegram) with rate limiting
-- ✅ Browser desktop notifications with Web Audio alerts
-- ✅ WebhookManager UI with multi-platform support
+**Completed (Phases 1 → Backend Integration):**
+- ✅ Phases 1-6: Foundation, modularization, components, UI, performance, alert system
+- ✅ Deployed to Vercel (production)
+- ✅ Go backend on Railway (data-collector, metrics-calculator, alert-engine, api-gateway)
+- ✅ Custom JWT auth (replaced Supabase — removed Jan 27, 2026)
+- ✅ Week 2 Cleanup (Jan 27, 2026): deleted 31 legacy files, migrated to backend-first
+- ✅ Backend API polling every 5s for 43 symbols (VCP, RSI, MACD, Fibonacci)
+- ✅ WebSocket alert stream (`useBackendAlerts`) — no cooldown, backend-evaluated
+- ✅ Watchlist CRUD (`watchlistService.ts`)
+- ✅ Webhook delivery (`webhookService.ts`, Discord + Telegram)
+- ✅ Alert history with source tabs (main / watchlist)
+- ✅ TradingView charts via direct Binance Futures API (on-demand)
+- ✅ Bundle: 71.84KB gzipped | TypeScript errors: 0
 
-**Phase 6.1 Achievements:**
-- ✅ 8 legacy alert types with 18 evaluator functions
-- ✅ Alert configuration UI with preset selector
-- ✅ Toast notifications with color coding and sounds
-- ✅ Alert history viewer with filtering/export
-- ✅ Anti-spam system (60s cooldown, max 5 per symbol)
+**Metrics (March 2026):**
+- **Bundle**: 71.84KB gzipped
+- **Symbols**: 43 Binance Futures pairs
+- **Services deleted in cleanup**: 31+ (local alert engine, ring buffer, Binance API client, CoinGecko, timeframe service, etc.)
+- **TypeScript errors**: 0
 
-**Phase 5 Achievements:**
-- ✅ 70% faster renders with virtualization
-- ✅ 56% memory reduction with optimized data structures
-- ✅ 50% fewer API calls with smart polling
-- ✅ 90% cache hit rate on expensive calculations
-- ✅ Constant-time rendering for 1000+ coins
-- ✅ IndexedDB storage with automatic migration
-- ✅ Comprehensive performance utilities
-
-**Phase 6.4 Priorities (Next):**
-1. Create vercel.json with build configuration
-2. Set up environment variables in Vercel dashboard
-3. Configure CORS proxy for Binance API (Vercel Functions)
-4. Set up GitHub Actions CI/CD pipeline
-5. Add error tracking (Sentry) and analytics
-6. Create deployment documentation (docs/DEPLOYMENT.md)
-
-**Phase 7 Priorities (After Deployment):**
-1. ✅ **DONE**: Fixed all 52 utility tests (100% passing) - format, indicator, sort
-2. Create alert engine test suite (18 evaluator functions + anti-spam)
-3. Add sync service tests (bidirectional sync, conflict resolution, real-time)
-4. Add auth flow tests (sign in/out, session persistence, auto-sync)
-5. Add component tests (Auth, AlertConfig, AlertHistory, Watchlists, CoinTable)
-6. Integration tests for API services (binanceApi, dataProcessor, supabase)
-7. E2E tests for critical flows (auth, sync, alerts, multi-device)
-8. Run coverage analysis and achieve 80%+ coverage
-9. Performance testing (Lighthouse CI)
-
-**After Phase 5:** Phase 6 - Advanced Features (Alert System, Column Customization)
-6. Smart polling (only when tab is active)
-7. Request deduplication
-8. Bundle size analysis and optimization
-
-**After Phase 5**: Phase 6 - Advanced Features
-- Active alerts system (scout/top hunter notifications)
-- User accounts and cloud sync
-- Customizable watchlists
-- Historical data playback
-- Backtesting screening criteria
-- Heatmap and advanced visualizations
-
-**Next Review**: After Phase 5 completion
+**Next Priorities:**
+1. Auth wall / landing page — `docs/AUTH_WALL_ROADMAP.md`
+2. Alert-centric UI redesign — `docs/UI_REDESIGN_ALERT_CENTRIC_ROADMAP.md`
+3. Alert color picker — `docs/ALERT_COLOR_PICKER_ROADMAP.md`

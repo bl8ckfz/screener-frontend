@@ -1,5 +1,10 @@
 # Phase 5: Performance Optimization - Complete Summary
 
+> **⚠️ Historical Document** (March 2026): Phase 5.1 (rendering/memoization/virtualization) is still relevant. 
+> Phase 5.2 (smart polling in `useMarketData.ts`) and Phase 5.3 (IndexedDB) were superseded in the 
+> Week 2 Cleanup (Jan 27, 2026): `useMarketData.ts` was deleted; polling now lives in `useBackendData.ts`. 
+> `storage.ts` was simplified to a localStorage wrapper.
+
 **Date**: 2025-11-28  
 **Status**: ✅ COMPLETE (100%)  
 **Duration**: ~4 hours  

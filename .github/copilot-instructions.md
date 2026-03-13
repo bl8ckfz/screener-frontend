@@ -1,249 +1,170 @@
-# AI Coding Agent Instructions - Crypto Screener
+# AI Coding Agent Instructions - Crypto Screener Frontend
 
 ## Project Overview
-Real-time cryptocurrency market screener refactored from a 3,029-line monolithic HTML file into a modern React/TypeScript application. Fetches data from Binance API, processes 134+ screening criteria, and provides multi-timeframe technical analysis for 25+ trading pairs.
 
-**Legacy Version**: `fast.html` (preserved for reference) - do NOT modify  
-**Current Status**: Phase 7 in progress (67% overall)  
-**Project Tracking**: See `docs/ROADMAP.md` for 9-phase plan and `docs/STATE.md` for detailed action log
+Real-time cryptocurrency market screener — a React/TypeScript **presentation layer** consuming a Go backend (Railway). All market data processing, indicator calculations (VCP, RSI, MACD, Fibonacci), and alert evaluation are done server-side.
 
-### Project Lifecycle Context
-- **Start Date**: November 28, 2025
-- **Completed Phases**: 1-6 (Foundation through Alert System)
-- **Current Phase**: Phase 7 - Quality Assurance (Testing)
-- **Current Focus**: Fix 36 failing tests, add alert engine tests, achieve 80%+ coverage
-- **Files Created**: 97+ files from 1 monolithic HTML file
-- **Bundle Size**: 71.84KB gzipped (target: <500KB) ✅
+**Current State** (March 2026):
+- **Architecture**: Backend-first. Frontend fetches pre-computed metrics from the Go backend every 5 seconds.
+- **Auth**: Custom JWT (Go backend). Supabase was removed January 27, 2026.
+- **Symbols**: 43 Binance Futures pairs
+- **Bundle**: 71.84KB gzipped | TypeScript errors: 0
+- **Major cleanup (Jan 27, 2026)**: 31 legacy files deleted — local alertEngine, ring buffer, Binance API client, CoinGecko, timeframe service, `useMarketData`, `indicators.ts`, `dataProcessor.ts`, etc.
+
+**Next planned work**: Auth wall / landing page (`AUTH_WALL_ROADMAP.md`), alert-centric UI redesign (`UI_REDESIGN_ALERT_CENTRIC_ROADMAP.md`).
 
 ## Core Architecture
 
 ### Data Flow Pipeline
-1. **Fetch** → `binanceApi.ts` (with retry logic + CORS proxy in dev)
-2. **Parse** → `BinanceApiClient.parseTickerBatch()` converts strings to numbers
-3. **Filter** → `dataProcessor.ts` filters by currency pair, excludes delisted coins
-4. **Enrich** → `indicators.ts` calculates VCP, Fibonacci pivots, technical ratios
-5. **Track** → `timeframeService.ts` manages snapshots at 5s/15s/30s/1m/3m/5m/15m intervals
-6. **Cache** → TanStack Query handles caching with `['marketData', pair]` key
-7. **Store** → Zustand persists user preferences (pair/sort/config) to localStorage
 
-### State Management Strategy
-- **Server State**: TanStack Query in `useMarketData` hook (auto-refresh, caching)
-- **Global State**: Zustand store in `useStore` hook (user settings, persisted)
-- **Local State**: React useState/useMemo for UI-only state (search, modals)
+```
+Go Backend (Railway)
+  └─ GET /api/metrics (every 5s)
+       ↓ useBackendData.ts (TanStack Query)
+       ↓ transform → Coin[]
+       ↓ useStore.ts (Zustand — sorting, filters, config)
+       ↓ Components (CoinTable, CoinModal, MarketSummary, etc.)
 
-**Critical**: Never duplicate state between Query and Zustand - Query owns data, Zustand owns preferences
+Go Backend (Railway)
+  └─ WebSocket /ws/alerts
+       ↓ useBackendAlerts.ts
+       ↓ store.addAlert()
+       ↓ AlertHistory, toast notifications, webhook delivery
+```
 
-### Type System Organization
-All types centralized in `src/types/` with barrel exports via `index.ts`:
-- `coin.ts` - Core data models (35 currency pairs, 10 timeframes)
-- `api.ts` - Binance API contracts (raw + processed)
-- `market.ts` - Aggregated market stats
-- `screener.ts` - 134+ filtering presets
-- `config.ts` - User preferences with defaults
+**Charts only**: `chartData.ts` → Binance Futures API `fapi.binance.com/fapi/v1/klines` (on-demand, when user opens chart modal)
 
-**Pattern**: Import from `@/types` only, never from individual files
+### Active Services (`src/services/`)
+- `backendApi.ts` — HTTP client for Go backend (metrics, auth, watchlists)
+- `authService.ts` — Custom JWT auth (login, refresh, logout)
+- `watchlistService.ts` — Watchlist CRUD
+- `alertHistoryService.ts` — Local alert history (localStorage)
+- `webhookService.ts` — Discord/Telegram webhook delivery
+- `chartData.ts` — Binance Futures klines for TradingView charts
+- `storage.ts` — LocalStorage wrapper
+- `notification.ts` / `audioNotification.ts` — Browser notifications + audio
+
+### Active Hooks (`src/hooks/`)
+- `useBackendData.ts` — Primary data source; polls `/api/metrics` every 5s
+- `useBackendAlerts.ts` — WebSocket alert listener; pushes to Zustand store
+- `useAuth.tsx` — Auth context (login/logout/session)
+- `useStore.ts` — Global Zustand state (coins, settings, alerts, config)
+- `useAlertRules.ts` / `useAlertStats.ts` — Alert rule management
+- `useMarketStats.ts` — Aggregated market statistics
+- `usePriceFlash.ts` — Price change flash animations
+- `useAutoHideHeader.ts` — Auto-hide toolbar on scroll
+
+### State Management
+- **Server state**: TanStack Query in `useBackendData` — caching, polling, error handling
+- **Global state**: Zustand (`useStore`) — coins, config, alerts, watchlists (persisted to localStorage)
+- **Local state**: React `useState`/`useMemo` for UI-only state
+
+**Rule**: TanStack Query owns server data. Zustand owns user preferences and UI state. Never duplicate.
 
 ## Development Workflows
 
-### Running the App
 ```bash
-npm run dev          # Starts on localhost:3000 with CORS proxy
-npm run build        # TypeScript compilation + Vite bundling
-npm run preview      # Test production build locally
-```
-
-### Testing & Quality
-```bash
-npm run type-check   # ALWAYS run before commits (strict mode enabled)
-npm run lint:fix     # Auto-fix ESLint issues
-npm run format       # Prettier formatting
+npm run dev          # localhost:3000
+npm run build        # production build
+npm run type-check   # ALWAYS run before commits (strict mode)
+npm run lint:fix     # auto-fix ESLint
+npm run format       # Prettier
 npm test             # Vitest watch mode
-npm run test:coverage # Generate coverage reports
+npm run test:coverage
 ```
 
-**Required**: All PRs must pass `npm run type-check && npm run lint` without warnings
+**Required**: All commits must pass `npm run type-check && npm run lint` with 0 errors.
 
-### Path Aliases (configured in vite.config.ts)
-Use `@/` prefix for all imports:
+### Path Aliases
+Use `@/` prefix for all imports (configured in `vite.config.ts`):
 ```typescript
-import { Coin } from '@/types/coin'           // NOT '../../../types/coin'
-import { Button } from '@/components/ui'      // Use barrel exports
-import { useMarketData } from '@/hooks'       // Consistent aliases
+import { useBackendData } from '@/hooks'
+import { Button } from '@/components/ui'
+import type { Coin } from '@/types'
 ```
 
-## Project-Specific Conventions
+## Component Architecture
 
-### Technical Indicator Calculations
-**VCP (Volatility Contraction Pattern)** - Primary sorting metric:
-```typescript
-// Formula: (P/WA) * [((close-low)-(high-close))/(high-low)]
-// See utils/indicators.ts for full implementation
-calculateVCP(coin) // Returns weighted volatility score
+```
+<Layout>
+  ├── Header (auto-hide on scroll)
+  ├── Controls (PairSelector, TimeframeSelector)
+  ├── MarketSummary
+  ├── CoinTable → CoinRow (sortable, filterable)
+  ├── CoinModal → ChartSection (TradingView) + metrics
+  └── AlertHistory / WebhookManager
 ```
 
-**Fibonacci Pivots** - 7 support/resistance levels calculated from 24hr high/low/close
+- **UI Components** (`src/components/ui/`): Presentational only, no hooks except `useState`
+- **Feature Components**: Can use any hooks; handle business logic
+- **Barrel exports**: Every component directory has `index.ts`
+- **Styling**: Tailwind utility classes, semantic vars (`text-bullish`, `text-bearish`)
 
-### Currency Pair Parsing Logic
-Symbol parsing handles variable-length suffixes (3-5 chars):
-```typescript
-// BTCUSDT → { coin: 'BTC', pair: 'USDT' } (4-char suffix)
-// ETHFDUSD → { coin: 'ETH', pair: 'FDUSD' } (5-char suffix)
-// See dataProcessor.ts CURRENCY_PAIRS map - sorted longest-first
-```
+## Type System
 
-**Excluded Coins**: Filters out delisted/problematic coins (`LUNA`, `LUNC`, `USTC`, etc.)
+All types in `src/types/` with barrel export via `index.ts`. Import from `@/types` only:
+- `coin.ts` — Core data model (43 symbols, 6 timeframes)
+- `alert.ts` — Alert types (includes `source: 'main' | 'watchlist'`)
+- `config.ts` — User preferences with defaults
+- `api.ts` — Backend API contracts
 
-### Component Architecture Patterns
+## Performance Optimizations
 
-#### Layout Structure
-```
-<Layout> (Header/Footer wrapper)
-  ├── Controls (Sidebar: PairSelector, RefreshControl, TimeframeSelector)
-  ├── MarketSummary (Aggregated stats)
-  ├── CoinTable (Sortable data grid)
-  └── CoinModal (Detailed view with charts)
-```
-
-#### Component Guidelines
-- **UI Components** (`src/components/ui/`): Presentational only, no hooks except useState
-- **Feature Components** (coin/market/controls): Can use any hooks, handle business logic
-- **Props Pattern**: Always define TypeScript interfaces, export if reusable
-- **Styling**: Use Tailwind utility classes, semantic color vars (`text-bullish`, `text-bearish`)
-
-#### Barrel Exports Pattern
-Every component directory has `index.ts`:
-```typescript
-export { CoinTable } from './CoinTable'
-export { CoinModal } from './CoinModal'
-// Allows: import { CoinTable, CoinModal } from '@/components/coin'
-```
-
-### API Integration & Error Handling
-
-#### CORS Strategy
-**Development**: Uses `allorigins.win` proxy (see `config/api.ts`)  
-**Production**: Requires backend proxy (CORS not supported by Binance)
-
-#### Retry Logic
-`binanceApi.ts` implements exponential backoff (3 retries, 10s timeout):
-```typescript
-// Falls back to mockData.ts on failure
-// NEVER remove fallback - enables offline development
-```
-
-#### Mock Data Toggle
-Set `USE_MOCK_DATA = true` in `services/mockData.ts` to work offline
-
-### Timeframe Snapshot System
-`timeframeService.ts` maintains historical snapshots:
-- Tracks last update timestamp per timeframe
-- `shouldUpdate(timeframe)` checks if interval elapsed
-- `createSnapshot()` captures price/volume/VCP at update time
-- `calculateDelta()` computes % changes from snapshot
-
-**Why**: Enables "vs 15s ago" comparisons without storing full history
-
-### Performance Optimizations
-
-#### Code Splitting (vite.config.ts)
 ```javascript
+// vite.config.ts code splitting
 manualChunks: {
   'react-vendor': ['react', 'react-dom'],
   'query-vendor': ['@tanstack/react-query'],
-  'chart-vendor': ['lightweight-charts'],  // Heavy dependency
+  'chart-vendor': ['lightweight-charts'],
 }
 ```
 
-#### Memoization Strategy
 ```typescript
-// GOOD: Memoize filtered/sorted arrays
-const filtered = useMemo(() => coins.filter(...), [coins, query])
-
-// BAD: Don't memoize simple calculations
-const isPending = isLoading || isFetching  // No useMemo needed
+// Memoize expensive filtered/sorted arrays
+const sorted = useMemo(() => sortCoins(coins, sortKey), [coins, sortKey])
+// Don't memoize trivial derivations
 ```
 
-## Critical "Gotchas"
+VirtualizedCoinTable activates for 50+ coins (`@tanstack/react-virtual`).
 
-1. **Weighted Average Price**: Binance's `weightedAvgPrice` is VWAP - central to VCP calculations
-2. **Quote Volume**: Volume measured in quote currency (TRY/USDT), NOT base currency
-3. **Symbol Parsing Order**: MUST check longest suffixes first (`FDUSD` before `USD`)
-4. **Timeframe Independence**: Each timeframe tracked separately - updates don't cascade
-5. **Zustand Persistence**: Changes to `DEFAULT_CONFIG` won't override existing localStorage
+## Critical Gotchas
 
-## Essential Files to Review First
+1. **No local indicators**: `indicators.ts`, `dataProcessor.ts`, `binanceApi.ts` were deleted Jan 2026. All VCP/RSI/Fibonacci come from the backend as pre-computed values.
+2. **No Supabase**: Auth and persistence are via custom JWT + localStorage. No Supabase env vars.
+3. **Chart data is separate**: `chartData.ts` calls Binance Futures API directly for klines. This is the only place the frontend talks to Binance.
+4. **CORS proxy dev-only**: `allorigins.win` proxy is only used for development chart fetches.
+5. **Zustand persistence**: Changes to `DEFAULT_CONFIG` won't override existing localStorage — users may need to clear storage after breaking changes.
+6. **Alert source field**: All `Alert` objects have `source: 'main' | 'watchlist'`. Legacy alerts without this field are treated as `'main'`.
+7. **Timeframes**: `5m | 15m | 1h | 4h | 8h | 1d` — all computed by backend, stored in each `Coin` object.
 
-### For Understanding Data Flow
-1. **`src/hooks/useMarketData.ts`** - Complete data pipeline from API to UI
-2. **`src/services/dataProcessor.ts`** - Currency pair parsing logic (handles 3-5 char suffixes)
-3. **`src/utils/indicators.ts`** - VCP/Fibonacci calculations (core business logic)
-4. **`src/types/coin.ts`** - Core data model (228 lines, 32+ fields)
+## Essential Files
 
-### For Understanding Project State
-1. **`docs/ROADMAP.md`** - 9-phase refactor plan with checkmarks showing completed work
-2. **`docs/STATE.md`** - Current phase status with pending tasks (150 lines, cleaned up)
-3. **`README.md`** - Setup instructions and architecture overview
-4. **`fast.html`** - Legacy version (DO NOT MODIFY - reference only)
+### Understand data flow
+1. `src/hooks/useBackendData.ts` — polls backend, transforms response to `Coin[]`
+2. `src/services/backendApi.ts` — HTTP client (endpoints, types, error handling)
+3. `src/hooks/useBackendAlerts.ts` — WebSocket listener for real-time alerts
+4. `src/types/coin.ts` — core data model
 
-### For Adding Features
-- Check `docs/ROADMAP.md` Phase 7-9 tasks to align with planned work
-- Review `docs/STATE.md` "Pending Tasks" section for current priorities
-- Verify against "Working Features" and "Known Issues" in ROADMAP status
+### Understand current state
+1. `docs/ARCHITECTURE.md` — backend-first architecture diagram and data flow
+2. `docs/ROADMAP.md` — completed phases + current priorities
+3. `docs/WEEK2_CLEANUP_COMPLETE.md` — audit of what was deleted Jan 27, 2026
+4. `README.md` — setup, env vars, scripts
 
-## Debugging Tips
-- Check browser console for "Using mock data" - indicates API failure
-- If types break, run `npm run type-check` to see all errors (not just VSCode hints)
-- TanStack Query DevTools available in dev mode (see React DevTools panel)
-- Zustand state visible in browser localStorage: `appConfig` key
+### For active feature work
+- Auth wall: `docs/AUTH_WALL_ROADMAP.md`
+- UI redesign: `docs/UI_REDESIGN_ALERT_CENTRIC_ROADMAP.md`
+- Alert colors: `docs/ALERT_COLOR_PICKER_ROADMAP.md`
+- Deployment: `docs/DEPLOYMENT.md`
 
-## Migration Context
-This refactor transforms a monolithic HTML/CSS/JS file into modular architecture while preserving:
-- All 134+ screening criteria logic
-- Turkish locale support (future phase)
-- Original VCP/Fibonacci calculations
-- localStorage compatibility
+## Before Starting Any Task
 
-**Do NOT**: Reference `fast.html` patterns - it represents the OLD architecture
+1. Check `docs/ROADMAP.md` — is this already planned?
+2. Check `docs/ARCHITECTURE.md` — understand current data flow constraints
+3. Run `npm run type-check` to get baseline (must be 0 errors)
 
-## Working with docs/ROADMAP.md and docs/STATE.md
+## When to Update docs/ROADMAP.md
 
-### Before Starting Any Task
-1. **Check docs/ROADMAP.md** - Is this task already planned? Which phase?
-2. **Check docs/STATE.md** - Has similar work been done? Any relevant decisions?
-3. **Update both files** after completing significant work
-
-### docs/ROADMAP.md Structure
-- **9 Phases**: Foundation → Modularization → Components → UI/UX → Performance → Advanced Features → QA → Deployment → Migration
-- **Phase Status**: Uses checkmarks (✅) for completed tasks
-- **Current Status Summary**: Bottom section with metrics (bundle size, file count, features)
-- **Known Issues**: Lists limitations and planned improvements
-
-### docs/STATE.md Structure
-- **Current Status**: Phase tracking, dates, progress percentages
-- **Completed Phases**: List of finished phases (1-6)
-- **Phase 7 Progress**: Detailed test status and pending tasks
-- **Failing Tests Breakdown**: 36 tests categorized by utility (format/indicator/sort)
-- **Key Technical Context**: Alert system features, test infrastructure, critical notes
-
-### When to Update These Files
-**Update docs/ROADMAP.md when**:
-- Completing a major task (add ✅)
-- Adding new features to track
-- Updating "Current Status Summary" metrics
-- Discovering new "Known Issues"
-
-**Update docs/STATE.md when**:
-- Starting/completing a phase
-- Updating test status (passing/failing counts)
-- Completing pending tasks (check off items)
-- Adding new technical context or critical notes
-
-### Example Workflow
-```
-1. Check docs/ROADMAP.md Phase 7 tasks → "Fix failing tests"
-2. Check docs/STATE.md → See breakdown of 36 failing tests
-3. Fix format utilities (implement formatTimeAgo, add comma separators)
-4. Update docs/STATE.md → Check off completed tasks, update test counts
-5. Update docs/ROADMAP.md → Add ✅ to task if fully complete
-6. Update "Current Status Summary" if test coverage changed
-```
+- Completing a major milestone (add ✅)
+- Discovering a new pattern or constraint worth tracking
+- Completing or starting one of the active feature roadmaps
