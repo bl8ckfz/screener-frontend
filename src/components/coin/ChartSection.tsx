@@ -365,11 +365,12 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
       {/* Charts with a single vertical splitter between them */}
       <div className="flex flex-col w-full">
         {/* Trading Chart - fixed height, controlled by splitter */}
-        <div className="px-1 md:px-4 pt-1 md:pt-4 w-full max-w-full overflow-hidden" style={{ height: tradingH }}>
+        {/* pt-1/pt-4 (4–16px) + pb (4–12px inner) = up to 28px vertical; subtract 36px to keep time axis visible */}
+        <div className="px-1 md:px-4 pt-1 md:pt-4 w-full max-w-full" style={{ height: tradingH }}>
           <div className="bg-gray-900 rounded-lg p-1 md:p-3 w-full max-w-full overflow-hidden h-full">
             <TradingChart
               data={chartData}
-              height={tradingH - 16}
+              height={tradingH - 36}
               livePrice={selectedCoin.lastPrice}
               showVolume={true}
               showAlerts={showAlerts}
