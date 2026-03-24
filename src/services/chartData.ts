@@ -24,6 +24,15 @@ export interface Candlestick {
 
 import { authService } from './authService'
 
+export class RateLimitError extends Error {
+  public retryAfterMs: number
+  constructor(retryAfterMs = 60_000) {
+    super('Rate limited by exchange API. Retrying shortly.')
+    this.name = 'RateLimitError'
+    this.retryAfterMs = retryAfterMs
+  }
+}
+
 const BINANCE_FUTURES_API = 'https://fapi.binance.com/fapi/v1'
 const BACKEND_API_BASE = import.meta.env.VITE_BACKEND_API_URL
 const USE_BACKEND_API = import.meta.env.VITE_USE_BACKEND_API === 'true'
@@ -64,6 +73,9 @@ export async function fetchKlines(
     const response = await fetch(url, { headers })
 
     if (!response.ok) {
+      if (response.status === 418 || response.status === 429) {
+        throw new RateLimitError()
+      }
       const apiSource = USE_BACKEND_API && BACKEND_API_BASE ? 'Backend' : 'Binance'
       throw new Error(`${apiSource} API error: ${response.status} ${response.statusText}`)
     }

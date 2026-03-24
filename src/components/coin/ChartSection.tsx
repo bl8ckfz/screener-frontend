@@ -4,7 +4,7 @@ import { TradingChart } from './TradingChart'
 import { AlertTimelineChart } from './AlertTimelineChart'
 // import { AlertHeatmapTimeline } from '@/components/alerts'
 import { ExternalLinks } from './ExternalLinks'
-import { fetchKlines, type KlineInterval, COMMON_INTERVALS, INTERVAL_LABELS } from '@/services/chartData'
+import { fetchKlines, RateLimitError, type KlineInterval, COMMON_INTERVALS, INTERVAL_LABELS } from '@/services/chartData'
 import { alertHistoryService } from '@/services/alertHistoryService'
 import { alertHistory } from '@/services/alertHistory'
 import { USE_BACKEND_API } from '@/services/backendApi'
@@ -60,6 +60,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
   const [error, setError] = useState<string | null>(null)
   const visibilityRef = useRef(!document.hidden)
   const driftTimerRef = useRef<number | null>(null)
+  const rateLimitedUntilRef = useRef<number>(0)
 
   // Get alerts for current coin from global store (WebSocket alerts)
   // NO HTTP POLLING - using real-time WebSocket data
@@ -177,17 +178,26 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
   }, [getIntervalSeconds])
 
   const loadChartData = useCallback(
-    async (options?: { limit?: number }) => {
+    async (options?: { limit?: number; isScheduled?: boolean }) => {
       if (!selectedCoin) return
+      // Skip scheduled fetches while rate-limited
+      if (options?.isScheduled && Date.now() < rateLimitedUntilRef.current) return
+
       setIsLoading(true)
       setError(null)
 
       try {
         const limit = options?.limit ?? getLimitForInterval(interval)
         const data = await fetchKlines(selectedCoin.fullSymbol, interval, limit)
+        rateLimitedUntilRef.current = 0
         setChartData(data)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load chart data')
+        if (err instanceof RateLimitError) {
+          rateLimitedUntilRef.current = Date.now() + err.retryAfterMs
+          setError('Rate limited — chart will retry in 60s')
+        } else {
+          setError(err instanceof Error ? err.message : 'Failed to load chart data')
+        }
         debug.error('Chart data error:', err)
       } finally {
         setIsLoading(false)
@@ -228,7 +238,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
       const delayMs = Math.max(500, (nextClose - nowSec + 1) * 1000)
 
       timeoutId = setTimeout(() => {
-        loadChartData({ limit: getLimitForInterval(interval) })
+        loadChartData({ limit: getLimitForInterval(interval), isScheduled: true })
         // Recursively schedule next fetch after this one
         scheduleNextFetch()
       }, delayMs)
@@ -245,7 +255,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
   useEffect(() => {
     if (!selectedCoin) return
     const intervalId = window.setInterval(() => {
-      loadChartData({ limit: getLimitForInterval(interval) })
+      loadChartData({ limit: getLimitForInterval(interval), isScheduled: true })
     }, 120000) // every 2 minutes
 
     driftTimerRef.current = intervalId
