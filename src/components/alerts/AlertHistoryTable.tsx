@@ -120,12 +120,43 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick }: Alert
     return <EmptyAlertHistory />
   }
 
+  const sortChips: { field: SortField; label: string }[] = [
+    { field: 'alerts', label: 'Alerts' },
+    { field: 'lastAlert', label: 'Latest' },
+    { field: 'price', label: 'Price' },
+    { field: 'change', label: 'Change' },
+    { field: 'symbol', label: 'A-Z' },
+  ]
+
   const showCards = FEATURE_FLAGS.mobileCardView
 
   const cardContent = showCards ? (
     <div className="space-y-2 md:hidden">
       <div className="flex items-center justify-between px-1 text-sm text-gray-300">
         <span className="font-semibold">Alert History</span>
+      </div>
+
+      {/* Mobile sort chips */}
+      <div className="flex gap-1.5 overflow-x-auto px-1 pb-1 scrollbar-hide">
+        {sortChips.map(({ field, label }) => {
+          const isActive = sortField === field
+          return (
+            <button
+              key={field}
+              onClick={() => handleSort(field)}
+              className={`flex shrink-0 items-center gap-0.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                isActive
+                  ? 'bg-accent/20 text-accent'
+                  : 'bg-gray-700/60 text-gray-400 hover:text-gray-200'
+              }`}
+            >
+              {label}
+              {isActive && (
+                <span className="text-[10px]">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+              )}
+            </button>
+          )
+        })}
       </div>
 
       {watchlistStats.map((stat) => renderCard(stat))}

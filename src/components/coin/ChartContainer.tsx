@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { TradingChart } from './TradingChart'
-import { fetchKlines, type KlineInterval, COMMON_INTERVALS, INTERVAL_LABELS } from '@/services/chartData'
+import { fetchKlines, RateLimitError, type KlineInterval, COMMON_INTERVALS, INTERVAL_LABELS } from '@/services/chartData'
 import { alertHistoryService } from '@/services/alertHistoryService'
 import { alertHistory } from '@/services/alertHistory'
 import type { Coin } from '@/types/coin'
@@ -24,6 +24,7 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
   
   // Ref for debouncing interval changes
   const intervalTimerRef = useRef<number | null>(null)
+  const rateLimitedUntilRef = useRef<number>(0)
   const [chartData, setChartData] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -117,11 +118,17 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
         const data = await fetchKlines(coin.fullSymbol, interval, 200)
         
         if (!isCancelled) {
+          rateLimitedUntilRef.current = 0
           setChartData(data)
         }
       } catch (err) {
         if (!isCancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to load chart data')
+          if (err instanceof RateLimitError) {
+            rateLimitedUntilRef.current = Date.now() + err.retryAfterMs
+            setError('Rate limited — chart will retry in 60s')
+          } else {
+            setError(err instanceof Error ? err.message : 'Failed to load chart data')
+          }
           debug.error('Chart data error:', err)
         }
       } finally {
@@ -162,13 +169,21 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
 
       timeoutId = setTimeout(async () => {
         if (isCancelled) return
+        if (Date.now() < rateLimitedUntilRef.current) {
+          if (!isCancelled) scheduleNextFetch()
+          return
+        }
 
         try {
           const data = await fetchKlines(coin.fullSymbol, interval, 200)
           if (!isCancelled && data.length > 0) {
+            rateLimitedUntilRef.current = 0
             setChartData(data)
           }
         } catch (err) {
+          if (err instanceof RateLimitError) {
+            rateLimitedUntilRef.current = Date.now() + err.retryAfterMs
+          }
           debug.warn('Chart refresh failed:', err)
         }
 
