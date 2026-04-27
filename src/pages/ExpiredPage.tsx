@@ -27,13 +27,13 @@ interface PlanCard {
  * These prices must match the Whop dashboard.
  * Whop plan IDs are set via env vars: WHOP_PLAN_SCREENER_MONTHLY, etc.
  * If you change prices on Whop, update them here too.
- * Last verified: 2026-03-12
+ * Last verified: 2026-04-27
  */
 const PLANS: PlanCard[] = [
   {
     slug: 'screener_monthly',  // env: WHOP_PLAN_SCREENER_MONTHLY
     name: 'Screener',
-    price: '$89',
+    price: '$39.99',
     period: '/mo',
     description: 'Real-time crypto futures screener',
     features: [
@@ -47,20 +47,20 @@ const PLANS: PlanCard[] = [
   {
     slug: 'screener_yearly',  // env: WHOP_PLAN_SCREENER_YEARLY
     name: 'Screener',
-    price: '$899',
+    price: '$439.99',
     period: '/yr',
-    savings: 'Save $169',
+    savings: 'Save $39.89',
     description: 'Real-time crypto futures screener',
     features: [
       'Everything in monthly',
-      '2 months free',
+      '1 month free',
     ],
     highlight: true,
   },
   {
     slug: 'bundle_monthly',  // env: WHOP_PLAN_BUNDLE_MONTHLY
     name: 'Bundle',
-    price: '$139',
+    price: '$54.99',
     period: '/mo',
     description: 'Screener + TradingView indicators',
     features: [
@@ -73,13 +73,13 @@ const PLANS: PlanCard[] = [
   {
     slug: 'bundle_yearly',  // env: WHOP_PLAN_BUNDLE_YEARLY
     name: 'Bundle',
-    price: '$1250',
+    price: '$604.99',
     period: '/yr',
-    savings: 'Save $418',
+    savings: 'Save $54.89',
     description: 'Screener + TradingView indicators',
     features: [
       'Everything in Bundle monthly',
-      '2 months free',
+      '1 month free',
     ],
     highlight: true,
   },
