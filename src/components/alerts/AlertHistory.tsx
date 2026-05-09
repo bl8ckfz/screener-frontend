@@ -247,11 +247,13 @@ export function AlertHistory() {
       text = '🐋'
     } else if (cleanType === 'whale_distribution') {
       text = '🐋'
+    } else if (cleanType === 'surge_42') {
+      text = '42'
     } else {
       // Fallback for legacy/other types
       text = '?'
     }
-    
+
     return { text, color, bgColor: color }
   }
 
@@ -277,6 +279,8 @@ export function AlertHistory() {
       whale_detector: '🐋 Whale Detector',
       whale_accumulation: '🐋⬆ Whale Accu',
       whale_distribution: '🐋⬇ Whale Dist',
+      // V4 long-bias contrarian
+      surge_42: '⚡ Surge 42',
     }
     return names[cleanType] || cleanType.split('_').map(w => 
       w.charAt(0).toUpperCase() + w.slice(1)

@@ -34,6 +34,8 @@ const ALERT_TEXT_CLASSES: Record<string, string> = {
   futures_whale_detector: 'text-cyan-400',
   futures_whale_accumulation: 'text-emerald-400',
   futures_whale_distribution: 'text-red-400',
+  // V4 long-bias contrarian
+  futures_surge_42: 'text-emerald-400',
 }
 
 // Display names for futures alert types - without "futures_" prefix
@@ -61,8 +63,10 @@ const getAlertTypeName = (type: string): string => {
     whale_detector: '🐋 Whale Detector',
     whale_accumulation: '🐋⬆ Whale Accu',
     whale_distribution: '🐋⬇ Whale Dist',
+    // V4 long-bias contrarian
+    surge_42: '⚡ Surge 42',
   }
-  
+
   return names[cleanType] || cleanType.split('_').map(w => 
     w.charAt(0).toUpperCase() + w.slice(1)
   ).join(' ')

@@ -112,6 +112,12 @@ const ALERT_TYPE_COLORS: Record<string, { bg: string; text: string; intensity: s
     text: 'text-red-400',
     intensity: ['bg-red-900/10', 'bg-red-800/30', 'bg-red-700/50', 'bg-red-600/70', 'bg-red-500/90'],
   },
+  // V4 long-bias contrarian
+  futures_surge_42: {
+    bg: 'bg-emerald-900/20',
+    text: 'text-emerald-400',
+    intensity: ['bg-emerald-900/10', 'bg-emerald-800/30', 'bg-emerald-700/50', 'bg-emerald-600/70', 'bg-emerald-500/90'],
+  },
 }
 
 const getAlertTypeName = (type: string): string => {
@@ -136,6 +142,8 @@ const getAlertTypeName = (type: string): string => {
     whale_detector: '🐋 Whale Detector',
     whale_accumulation: '🐋⬆ Whale Accu',
     whale_distribution: '🐋⬇ Whale Dist',
+    // V4 long-bias contrarian
+    surge_42: '⚡ Surge 42',
   }
   return names[cleanType] || cleanType.split('_').map(w => 
     w.charAt(0).toUpperCase() + w.slice(1)

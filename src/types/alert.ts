@@ -24,6 +24,8 @@ export type FuturesAlertType =
   | 'futures_whale_detector' // Whale Detector (volume anomaly, no price move)
   | 'futures_whale_accumulation' // Whale Accu (volume anomaly, bullish context)
   | 'futures_whale_distribution' // Whale Dist (volume anomaly, bearish context)
+  // V4 long-bias contrarian (research v4)
+  | 'futures_surge_42' // Surge 42 (capitulation drop after recent failed bounce, long-bias 1d)
 
 /**
  * Legacy alert types (DEPRECATED - kept for backwards compatibility only)
@@ -539,6 +541,14 @@ export const FUTURES_ALERT_PRESETS: FuturesAlertPreset[] = [
     severity: 'high',
     marketMode: 'bear',
   },
+  // V4 long-bias contrarian
+  {
+    type: 'futures_surge_42',
+    name: 'Surge 42',
+    description: 'Long entry on capitulation drop after recent failed bounce. Same predicate shape as Scout Bear (sharp 5m drop) but read as a 1-day mean-reversion long. Requires Bottom Raid within last 12h and excludes the asset_14d ∈ [-10%,-5%] regime. Excludes XMRUSDT.',
+    severity: 'critical',
+    marketMode: 'bull',
+  },
 ]
 
 /**
@@ -564,6 +574,8 @@ export const FUTURES_ALERT_LABELS: Record<FuturesAlertType, string> = {
   futures_whale_detector: '🐋 Whale Detector',
   futures_whale_accumulation: '🐋⬆️ Whale Accu',
   futures_whale_distribution: '🐋⬇️ Whale Dist',
+  // V4 long-bias contrarian
+  futures_surge_42: '⚡ Surge 42',
 }
 
 /**
@@ -591,6 +603,8 @@ export const DEFAULT_FUTURES_ALERT_CONFIG: FuturesAlertConfig = {
     futures_whale_detector: { enabled: false, severity: 'high' },
     futures_whale_accumulation: { enabled: true, severity: 'high' },
     futures_whale_distribution: { enabled: true, severity: 'high' },
+    // V4 long-bias contrarian — disabled by default; opt in via toggle
+    futures_surge_42: { enabled: false, severity: 'critical' },
   },
   globalThresholds: {
     priceChange_15m: 1.0, // 1%

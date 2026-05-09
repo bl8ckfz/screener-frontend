@@ -48,6 +48,10 @@ const WHALE_TYPES = new Set<FuturesAlertType>([
   'futures_whale_distribution',
 ])
 
+const V4_TYPES = new Set<FuturesAlertType>([
+  'futures_surge_42',
+])
+
 interface PresetGroup {
   label: string
   badge: string
@@ -168,6 +172,13 @@ export function AlertConfig({
       badgeClass: 'bg-cyan-500/20 text-cyan-400',
       description: 'Detects large volume anomalies with minimal price impact — potential accumulation or distribution.',
       presets: FUTURES_ALERT_PRESETS.filter(p => WHALE_TYPES.has(p.type)),
+    },
+    {
+      label: 'V4 Long-Bias Contrarian',
+      badge: 'V4',
+      badgeClass: 'bg-emerald-500/20 text-emerald-400',
+      description: 'Walk-forward validated long signal at 1-day horizon. Fires on capitulation drops following a recent failed bounce. Disabled by default — opt in to enable.',
+      presets: FUTURES_ALERT_PRESETS.filter(p => V4_TYPES.has(p.type)),
     },
   ], [])
 

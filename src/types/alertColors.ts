@@ -23,6 +23,8 @@ export interface AlertColorConfig {
   futures_whale_detector: string
   futures_whale_accumulation: string
   futures_whale_distribution: string
+  // V4 long-bias contrarian
+  futures_surge_42: string
 }
 
 export type AlertColorKey = keyof AlertColorConfig
@@ -49,6 +51,8 @@ export const DEFAULT_ALERT_COLORS: AlertColorConfig = {
   futures_whale_detector: '#22d3ee',
   futures_whale_accumulation: '#34d399',
   futures_whale_distribution: '#f87171',
+  // V4 long-bias contrarian
+  futures_surge_42: '#00c853',
 }
 
 /** Grouped categories for the settings UI */
@@ -80,6 +84,9 @@ export const ALERT_COLOR_CATEGORIES = {
     'futures_whale_distribution',
     'futures_whale_detector',
   ] as AlertColorKey[],
+  v4: [
+    'futures_surge_42',
+  ] as AlertColorKey[],
 }
 
 /** Human-readable label for each alert color key */
@@ -102,6 +109,7 @@ export function getAlertColorLabel(alertType: AlertColorKey): string {
     futures_whale_detector: 'Whale Detector',
     futures_whale_accumulation: 'Whale Accu',
     futures_whale_distribution: 'Whale Dist',
+    futures_surge_42: 'Surge 42',
   }
   return labels[alertType] ?? alertType
 }
