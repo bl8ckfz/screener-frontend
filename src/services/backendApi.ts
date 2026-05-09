@@ -22,7 +22,7 @@ interface UserSettings {
  */
 const BACKEND_CONFIG = {
   baseUrl: import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:8080',
-  timeout: 10000,
+  timeout: 5000,
   wsUrl: import.meta.env.VITE_BACKEND_WS_URL || 'ws://localhost:8080/ws/alerts',
 }
 
@@ -362,12 +362,12 @@ export class BackendWebSocketClient {
     if (this.refCount <= 0) {
       this.refCount = 0
       
-      // Delay disconnect by 100ms to allow StrictMode remount
+      // Delay disconnect by 500ms to allow StrictMode + auth guard remount cycles
       this.disconnectTimeout = setTimeout(() => {
         console.log('[BackendWS] No references, disconnecting')
         this.disconnect()
         this.disconnectTimeout = null
-      }, 100)
+      }, 500)
     }
   }
 
