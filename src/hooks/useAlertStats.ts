@@ -7,6 +7,7 @@ import { alertHistoryService } from '@/services/alertHistoryService'
 import { alertHistory } from '@/services/alertHistory'
 import { USE_BACKEND_API } from '@/services/backendApi'
 import { useStore } from './useStore'
+import { useAlertRules } from './useAlertRules'
 
 /**
  * Hook to compute alert statistics merged with current coin data
@@ -16,6 +17,7 @@ import { useStore } from './useStore'
  */
 export function useAlertStats(coins: Coin[]): CoinAlertStats[] {
   const refreshTrigger = useStore((state) => state.alertHistoryRefresh)
+  const { isRuleEnabled } = useAlertRules()
 
   const backendAlertsQuery = useQuery({
     queryKey: ['backendAlerts'],
@@ -29,8 +31,10 @@ export function useAlertStats(coins: Coin[]): CoinAlertStats[] {
   const backendEntries = useMemo(() => {
     if (!USE_BACKEND_API) return []
     const alerts = backendAlertsQuery.data || []
-    return alerts.map((alert) => toAlertHistoryEntry(alert))
-  }, [backendAlertsQuery.data])
+    return alerts
+      .filter((alert) => isRuleEnabled(alert.type))
+      .map((alert) => toAlertHistoryEntry(alert))
+  }, [backendAlertsQuery.data, isRuleEnabled])
 
   return useMemo(() => {
     if (USE_BACKEND_API) {
