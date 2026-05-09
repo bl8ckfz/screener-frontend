@@ -183,12 +183,15 @@ export function useBackendData() {
   return useQuery({
     queryKey: ['backendMetrics'],
     queryFn: async () => {
-      const metrics = await backendApi.getAllMetrics()
+      // Fetch metrics and tickers in parallel to halve round-trip time
+      const [metrics, allTickers] = await Promise.all([
+        backendApi.getAllMetrics(),
+        backendApi.getAllTickers().catch(() => [] as any[]),
+      ])
       const coins = transformBackendToCoin(metrics)
 
       try {
-        const symbols = coins.map((coin) => coin.fullSymbol)
-        const tickers = await backendApi.getAllTickers(symbols)
+        const tickers = allTickers
         const tickerMap = new Map<string, any>()
         tickers.forEach((ticker) => {
           if (ticker?.symbol) {
