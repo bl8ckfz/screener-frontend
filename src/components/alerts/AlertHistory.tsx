@@ -213,7 +213,9 @@ export function AlertHistory() {
 
   const getAlertBadge = (type: CombinedAlertType): { text: string; color: string; bgColor: string } => {
     const cleanType = type.replace(/^futures_/, '').replace(/^5m_/, '5_').replace(/^15m_/, '15_')
+    // surge_42 and the Catcher family fire on bear-shaped predicates but are long signals
     const isBullish = cleanType.includes('bull') || cleanType === 'bottom_hunter' || cleanType === 'whale_accumulation'
+      || cleanType === 'surge_42' || cleanType === 'knife_catcher' || cleanType === 'capitulation_catcher'
     
     // Normalize type for color lookup (ensure futures_ prefix)
     const normalizedType = type.startsWith('futures_') ? type : `futures_${cleanType}`
@@ -249,6 +251,10 @@ export function AlertHistory() {
       text = '🐋'
     } else if (cleanType === 'surge_42') {
       text = '42'
+    } else if (cleanType === 'knife_catcher') {
+      text = '🔪'
+    } else if (cleanType === 'capitulation_catcher') {
+      text = '🩸'
     } else {
       // Fallback for legacy/other types
       text = '?'
@@ -281,6 +287,9 @@ export function AlertHistory() {
       whale_distribution: '🐋⬇ Whale Dist',
       // V4 long-bias contrarian
       surge_42: '⚡ Surge 42',
+      // Catcher family
+      knife_catcher: '🔪 Knife Catcher',
+      capitulation_catcher: '🩸 Capitulation Catcher',
     }
     return names[cleanType] || cleanType.split('_').map(w => 
       w.charAt(0).toUpperCase() + w.slice(1)

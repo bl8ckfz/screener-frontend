@@ -118,6 +118,17 @@ const ALERT_TYPE_COLORS: Record<string, { bg: string; text: string; intensity: s
     text: 'text-emerald-400',
     intensity: ['bg-emerald-900/10', 'bg-emerald-800/30', 'bg-emerald-700/50', 'bg-emerald-600/70', 'bg-emerald-500/90'],
   },
+  // Catcher family
+  futures_knife_catcher: {
+    bg: 'bg-green-900/20',
+    text: 'text-green-400',
+    intensity: ['bg-green-900/10', 'bg-green-800/30', 'bg-green-700/50', 'bg-green-600/70', 'bg-green-500/90'],
+  },
+  futures_capitulation_catcher: {
+    bg: 'bg-fuchsia-900/20',
+    text: 'text-fuchsia-400',
+    intensity: ['bg-fuchsia-900/10', 'bg-fuchsia-800/30', 'bg-fuchsia-700/50', 'bg-fuchsia-600/70', 'bg-fuchsia-500/90'],
+  },
 }
 
 const getAlertTypeName = (type: string): string => {
@@ -144,6 +155,9 @@ const getAlertTypeName = (type: string): string => {
     whale_distribution: '🐋⬇ Whale Dist',
     // V4 long-bias contrarian
     surge_42: '⚡ Surge 42',
+    // Catcher family
+    knife_catcher: '🔪 Knife Catcher',
+    capitulation_catcher: '🩸 Capitulation Catcher',
   }
   return names[cleanType] || cleanType.split('_').map(w => 
     w.charAt(0).toUpperCase() + w.slice(1)

@@ -36,6 +36,9 @@ const ALERT_TEXT_CLASSES: Record<string, string> = {
   futures_whale_distribution: 'text-red-400',
   // V4 long-bias contrarian
   futures_surge_42: 'text-emerald-400',
+  // Catcher family
+  futures_knife_catcher: 'text-green-400',
+  futures_capitulation_catcher: 'text-fuchsia-400',
 }
 
 // Display names for futures alert types - without "futures_" prefix
@@ -65,6 +68,9 @@ const getAlertTypeName = (type: string): string => {
     whale_distribution: '🐋⬇ Whale Dist',
     // V4 long-bias contrarian
     surge_42: '⚡ Surge 42',
+    // Catcher family
+    knife_catcher: '🔪 Knife Catcher',
+    capitulation_catcher: '🩸 Capitulation Catcher',
   }
 
   return names[cleanType] || cleanType.split('_').map(w => 

@@ -27,11 +27,13 @@ export function AlertBadges({ alertTypes, maxVisible = 3, latestAlertType }: Ale
     shouldHighlight: boolean
   } => {
     const cleanType = type.replace(/^futures_/, '').replace(/^5m_/, '5_').replace(/^15m_/, '15_')
-    // surge_42 fires on a bear-shaped predicate but is a long signal
+    // surge_42 and the Catcher family fire on bear-shaped predicates but are long signals
     const isBullish = cleanType.includes('bull')
       || cleanType.includes('bottom_hunter')
       || cleanType === 'whale_accumulation'
       || cleanType === 'surge_42'
+      || cleanType === 'knife_catcher'
+      || cleanType === 'capitulation_catcher'
     
     // Normalize type for color lookup (ensure futures_ prefix)
     const normalizedType = type.startsWith('futures_') ? type : `futures_${cleanType}`
@@ -67,6 +69,10 @@ export function AlertBadges({ alertTypes, maxVisible = 3, latestAlertType }: Ale
       text = '🐋'
     } else if (cleanType === 'surge_42') {
       text = '42'
+    } else if (cleanType === 'knife_catcher') {
+      text = '🔪'
+    } else if (cleanType === 'capitulation_catcher') {
+      text = '🩸'
     } else {
       // Fallback for legacy/other types
       text = '?'

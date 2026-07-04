@@ -26,6 +26,9 @@ export type FuturesAlertType =
   | 'futures_whale_distribution' // Whale Dist (volume anomaly, bearish context)
   // V4 long-bias contrarian (research v4)
   | 'futures_surge_42' // Surge 42 (capitulation drop after recent failed bounce, long-bias 1d)
+  // Catcher family (research holdout-validated capitulation longs)
+  | 'futures_knife_catcher' // Knife Catcher (deep capitulation flush after failed bounce, long-bias 1d)
+  | 'futures_capitulation_catcher' // Capitulation Catcher complement (deep-drawdown capitulation, no bounce, long-bias 1d)
 
 /**
  * Legacy alert types (DEPRECATED - kept for backwards compatibility only)
@@ -549,6 +552,21 @@ export const FUTURES_ALERT_PRESETS: FuturesAlertPreset[] = [
     severity: 'critical',
     marketMode: 'bull',
   },
+  // Catcher family (holdout-validated capitulation longs, 1-day horizon)
+  {
+    type: 'futures_knife_catcher',
+    name: 'Knife Catcher',
+    description: 'Deep capitulation flush long: sharp accelerating 5m/15m drop on volume, Bottom Raid within 12h, and depth gate (1h < -5% or 1d < -3%). Shallow flushes are skipped. Holdout: +3.3–3.8%/episode over 50 unseen symbols. Fires on closed 1m candles only.',
+    severity: 'critical',
+    marketMode: 'bull',
+  },
+  {
+    type: 'futures_capitulation_catcher',
+    name: 'Capitulation Catcher',
+    description: 'Complement leg: capitulation drop inside an established deep drawdown (14d < -20%) with NO bounce attempt in the last 12h — disjoint from Knife Catcher by construction. Holdout: +2.21%/episode, 46/48 symbols positive. Fires on closed 1m candles only.',
+    severity: 'critical',
+    marketMode: 'bull',
+  },
 ]
 
 /**
@@ -576,6 +594,9 @@ export const FUTURES_ALERT_LABELS: Record<FuturesAlertType, string> = {
   futures_whale_distribution: '🐋⬇️ Whale Dist',
   // V4 long-bias contrarian
   futures_surge_42: '⚡ Surge 42',
+  // Catcher family
+  futures_knife_catcher: '🔪 Knife Catcher',
+  futures_capitulation_catcher: '🩸 Capitulation Catcher',
 }
 
 /**
@@ -605,6 +626,9 @@ export const DEFAULT_FUTURES_ALERT_CONFIG: FuturesAlertConfig = {
     futures_whale_distribution: { enabled: true, severity: 'high' },
     // V4 long-bias contrarian — disabled by default; opt in via toggle
     futures_surge_42: { enabled: false, severity: 'critical' },
+    // Catcher family — disabled by default; opt in via toggle
+    futures_knife_catcher: { enabled: false, severity: 'critical' },
+    futures_capitulation_catcher: { enabled: false, severity: 'critical' },
   },
   globalThresholds: {
     priceChange_15m: 1.0, // 1%

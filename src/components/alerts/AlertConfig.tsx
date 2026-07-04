@@ -50,6 +50,8 @@ const WHALE_TYPES = new Set<FuturesAlertType>([
 
 const V4_TYPES = new Set<FuturesAlertType>([
   'futures_surge_42',
+  'futures_knife_catcher',
+  'futures_capitulation_catcher',
 ])
 
 interface PresetGroup {

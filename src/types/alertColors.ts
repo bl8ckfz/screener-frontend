@@ -25,6 +25,9 @@ export interface AlertColorConfig {
   futures_whale_distribution: string
   // V4 long-bias contrarian
   futures_surge_42: string
+  // Catcher family (long-bias capitulation longs)
+  futures_knife_catcher: string
+  futures_capitulation_catcher: string
 }
 
 export type AlertColorKey = keyof AlertColorConfig
@@ -53,6 +56,9 @@ export const DEFAULT_ALERT_COLORS: AlertColorConfig = {
   futures_whale_distribution: '#f87171',
   // V4 long-bias contrarian
   futures_surge_42: '#00c853',
+  // Catcher family (colors match the TradingView plot shapes)
+  futures_knife_catcher: '#00e676',
+  futures_capitulation_catcher: '#d633ff',
 }
 
 /** Grouped categories for the settings UI */
@@ -86,6 +92,8 @@ export const ALERT_COLOR_CATEGORIES = {
   ] as AlertColorKey[],
   v4: [
     'futures_surge_42',
+    'futures_knife_catcher',
+    'futures_capitulation_catcher',
   ] as AlertColorKey[],
 }
 
@@ -110,6 +118,8 @@ export function getAlertColorLabel(alertType: AlertColorKey): string {
     futures_whale_accumulation: 'Whale Accu',
     futures_whale_distribution: 'Whale Dist',
     futures_surge_42: 'Surge 42',
+    futures_knife_catcher: 'Knife Catcher',
+    futures_capitulation_catcher: 'Capitulation Catcher',
   }
   return labels[alertType] ?? alertType
 }
