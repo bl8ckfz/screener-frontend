@@ -9,6 +9,7 @@ import { alertHistoryService } from '@/services/alertHistoryService'
 import { alertHistory } from '@/services/alertHistory'
 import { USE_BACKEND_API } from '@/services/backendApi'
 import { useStore } from '@/hooks/useStore'
+import { useAlertRules } from '@/hooks/useAlertRules'
 import type { Coin } from '@/types/coin'
 import type { AlertHistoryEntry } from '@/types/alertHistory'
 import type { AlertHistoryItem, CombinedAlertType, Alert } from '@/types/alert'
@@ -66,6 +67,10 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
   // NO HTTP POLLING - using real-time WebSocket data
   const activeAlerts = useStore((state) => state.activeAlerts)
   const alertHistoryRefresh = useStore((state) => state.alertHistoryRefresh)
+
+  // Per-user rule toggles: alerts of disabled rules must not appear in the
+  // timeline/chart, matching the Alert History filtering (useAlertStats).
+  const { isRuleEnabled } = useAlertRules()
   
   const backendAlertsQuery = useQuery({
     queryKey: ['backendAlerts', selectedCoin?.fullSymbol],
@@ -126,11 +131,14 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
     realtimeAlerts.forEach((alert) => alertMap.set(alert.id, alert))
 
     // Return ALL alerts (no time filter) sorted by timestamp
-    // Exclude generic whale_detector — replaced by directional accumulation/distribution
+    // Exclude generic whale_detector — replaced by directional accumulation/distribution.
+    // Also drop alerts whose rule the user disabled: the WebSocket path filters
+    // at ingestion, but historical HTTP entries (and store alerts received
+    // before a rule was toggled off) would otherwise leak through.
     return Array.from(alertMap.values())
-      .filter(alert => alert.type !== 'futures_whale_detector')
+      .filter(alert => alert.type !== 'futures_whale_detector' && isRuleEnabled(alert.type))
       .sort((a, b) => b.timestamp - a.timestamp)
-  }, [selectedCoin, coinAlerts, activeAlerts])
+  }, [selectedCoin, coinAlerts, activeAlerts, isRuleEnabled])
 
   // Transform ALL alerts (Alert[]) to AlertHistoryEntry[] for TradingChart
   const chartAlerts = useMemo(() => {
