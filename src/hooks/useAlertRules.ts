@@ -18,7 +18,7 @@ export interface AlertRuleEntry {
   rule_type: string
   description: string
   enabled: boolean
-  category: 'original' | 'optimized' | 'whale' | 'v4'
+  category: 'original' | 'optimized' | 'whale' | 'v4' | 'dojo'
 }
 
 const QUERY_KEY = ['alertRules'] as const
@@ -102,6 +102,7 @@ export function useAlertRules() {
     optimized: rules.filter((r) => r.category === 'optimized'),
     whale: rules.filter((r) => r.category === 'whale'),
     v4: rules.filter((r) => r.category === 'v4'),
+    dojo: rules.filter((r) => r.category === 'dojo'),
   }
 
   return {

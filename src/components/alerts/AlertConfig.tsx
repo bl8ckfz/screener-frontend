@@ -54,6 +54,15 @@ const V4_TYPES = new Set<FuturesAlertType>([
   'futures_capitulation_catcher',
 ])
 
+// Dojo confluence zones. Ordered rarest first: on a weekly chart the only
+// higher-timeframe slot is monthly, so a confluence score of 2 demands a
+// monthly fibonacci level AND a live fair value gap on the same price.
+const DOJO_TYPES = new Set<FuturesAlertType>([
+  'futures_dojo_otz_long_1w', 'futures_dojo_otz_short_1w',
+  'futures_dojo_otz_long_5d', 'futures_dojo_otz_short_5d',
+  'futures_dojo_otz_long_1d', 'futures_dojo_otz_short_1d',
+])
+
 interface PresetGroup {
   label: string
   badge: string
@@ -181,6 +190,14 @@ export function AlertConfig({
       badgeClass: 'bg-emerald-500/20 text-emerald-400',
       description: 'Walk-forward validated long signal at 1-day horizon. Fires on capitulation drops following a recent failed bounce. Disabled by default — opt in to enable.',
       presets: FUTURES_ALERT_PRESETS.filter(p => V4_TYPES.has(p.type)),
+    },
+    {
+      label: 'Dojo Confluence Zones',
+      badge: 'Zones',
+      badgeClass: 'bg-amber-500/20 text-amber-400',
+      description:
+        'Smart-money zones on high timeframes. Unlike every rule above, these do not fire on a price move — they fire once a day when a zone becomes armed: an FVG-validated fib 0.62–0.79 band with higher-timeframe fibonacci confluence and agreeing structure, which price has not yet traded into. The entry is a resting limit at fib 0.705. For the moment price taps the zone, set a TradingView alert on the Dojo Fib Confluence indicator.',
+      presets: FUTURES_ALERT_PRESETS.filter(p => DOJO_TYPES.has(p.type)),
     },
   ], [])
 
