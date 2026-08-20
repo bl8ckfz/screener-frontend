@@ -9,6 +9,7 @@
 
 import { authService } from './authService'
 import type { Alert } from '@/types/alert'
+import type { DojoSetup, DojoOutcome } from '@/types/dojo'
 
 interface UserSettings {
   userId: string
@@ -208,6 +209,41 @@ export const backendApi = {
 
     const url = `${BACKEND_CONFIG.baseUrl}/api/alerts?${queryParams}`
     const response = await fetchWithTimeout(url)
+    return response.json()
+  },
+
+  /**
+   * Get Dojo confluence setups.
+   *
+   * Reads dojo_setups, not alert_history. Both hold the same events, but
+   * alert_history expires after 7 days — far too short for a weekly zone that
+   * may sit unfilled for months waiting for price to arrive.
+   *
+   * status filters on the derived outcome:
+   *   unfilled  price never reached the resting limit at fib 0.705
+   *   open      filled, still running
+   *   target    TP1 reached
+   *   stopped   stop reached (and it wins an ambiguous bar)
+   */
+  async getDojoSetups(params: {
+    symbol?: string
+    timeframe?: string
+    direction?: 'long' | 'short'
+    status?: DojoOutcome
+    since?: string
+    limit?: number
+  } = {}): Promise<{ setups: DojoSetup[]; count: number }> {
+    const q = new URLSearchParams()
+    if (params.symbol) q.set('symbol', params.symbol)
+    if (params.timeframe) q.set('timeframe', params.timeframe)
+    if (params.direction) q.set('direction', params.direction)
+    if (params.status) q.set('status', params.status)
+    if (params.since) q.set('since', params.since)
+    if (params.limit) q.set('limit', String(params.limit))
+
+    const response = await fetchWithTimeout(
+      `${BACKEND_CONFIG.baseUrl}/api/dojo/setups?${q}`
+    )
     return response.json()
   },
 

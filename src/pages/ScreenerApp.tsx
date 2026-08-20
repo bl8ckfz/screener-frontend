@@ -24,6 +24,7 @@ import { StorageMigration } from '@/components/StorageMigration'
 import { AlertHistoryTable } from '@/components/alerts'
 import { SettingsModal } from '@/components/settings'
 import { FEATURE_FLAGS } from '@/config'
+import { DojoSetupsTable } from '@/components/dojo/DojoSetupsTable'
 
 export function ScreenerApp() {
   // Backend data polling (every 5 seconds)
@@ -79,7 +80,7 @@ export function ScreenerApp() {
   const [selectedAlert, setSelectedAlert] = useState<any>(null)
   const [showShortcutHelp, setShowShortcutHelp] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'coins' | 'alerts'>('coins')
+  const [activeTab, setActiveTab] = useState<'coins' | 'alerts' | 'dojo'>('coins')
   const [isMobile, setIsMobile] = useState(false)
   
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -291,23 +292,37 @@ export function ScreenerApp() {
                     <span className="text-xs opacity-75">({alertStats.length})</span>
                   </div>
                 </button>
+                <button
+                  onClick={() => setActiveTab('dojo')}
+                  className={`flex-1 px-4 py-3 text-sm font-semibold transition-colors ${
+                    activeTab === 'dojo'
+                      ? 'bg-gray-700 text-white border-b-2 border-accent'
+                      : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
+                  }`}
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <span>🥋 Dojo Zones</span>
+                  </div>
+                </button>
               </div>
 
               {/* Tab Content */}
               <div className="overflow-y-auto scrollbar-hide flex-1 min-h-0">
-                {activeTab === 'coins' ? (
+                {activeTab === 'coins' && (
                   <CoinTable
                     coins={filteredCoins}
                     onCoinClick={handleCoinClick}
                     isLoading={isLoading}
                   />
-                ) : (
+                )}
+                {activeTab === 'alerts' && (
                   <AlertHistoryTable
                     stats={filteredAlertStats}
                     selectedSymbol={selectedAlert?.coin?.symbol}
                     onAlertClick={handleAlertClick}
                   />
                 )}
+                {activeTab === 'dojo' && <DojoSetupsTable />}
               </div>
             </div>
           </div>
