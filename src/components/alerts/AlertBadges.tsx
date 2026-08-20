@@ -1,7 +1,7 @@
 import type { CombinedAlertType } from '@/types/alert'
 import { FUTURES_ALERT_LABELS } from '@/types/alert'
 import { useStore } from '@/hooks/useStore'
-import { resolveAlertColor } from '@/types/alertColors'
+import { resolveAlertColor, isBullishAlertType } from '@/types/alertColors'
 
 interface AlertBadgesProps {
   alertTypes: Set<CombinedAlertType>
@@ -27,13 +27,7 @@ export function AlertBadges({ alertTypes, maxVisible = 3, latestAlertType }: Ale
     shouldHighlight: boolean
   } => {
     const cleanType = type.replace(/^futures_/, '').replace(/^5m_/, '5_').replace(/^15m_/, '15_')
-    // surge_42 and the Catcher family fire on bear-shaped predicates but are long signals
-    const isBullish = cleanType.includes('bull')
-      || cleanType.includes('bottom_hunter')
-      || cleanType === 'whale_accumulation'
-      || cleanType === 'surge_42'
-      || cleanType === 'knife_catcher'
-      || cleanType === 'capitulation_catcher'
+    const isBullish = isBullishAlertType(cleanType)
     
     // Normalize type for color lookup (ensure futures_ prefix)
     const normalizedType = type.startsWith('futures_') ? type : `futures_${cleanType}`
@@ -73,6 +67,10 @@ export function AlertBadges({ alertTypes, maxVisible = 3, latestAlertType }: Ale
       text = '🔪'
     } else if (cleanType === 'capitulation_catcher') {
       text = '🩸'
+    } else if (cleanType.startsWith('dojo_otz_')) {
+      // Show the timeframe: the direction is already carried by the colour,
+      // and which timeframe a zone sits on is what distinguishes them.
+      text = cleanType.endsWith('_1w') ? '1W' : cleanType.endsWith('_5d') ? '5D' : '1D'
     } else {
       // Fallback for legacy/other types
       text = '?'

@@ -141,3 +141,35 @@ export function resolveAlertColor(
   const key = type.startsWith('futures_') ? type : `futures_${type}`
   return (alertColors as unknown as Record<string, string>)[key] ?? fallback
 }
+
+
+/**
+ * Is this alert type a bullish (long) signal?
+ *
+ * Not as simple as looking for "bull". Three families break that assumption:
+ *
+ *  - surge_42 and the Catcher family fire on bear-SHAPED predicates
+ *    (capitulation drops) but are long signals at a 1-day horizon.
+ *  - Dojo confluence zones say "long"/"short" rather than "bull"/"bear", so a
+ *    naive match paints every Dojo long red.
+ *  - bottom_hunter is a reversal long despite containing neither word.
+ *
+ * This lived in four copies across AlertBadges, AlertHistory (twice) and
+ * TradingChart, and each new alert family had to be remembered in all of
+ * them. One of them had already fallen behind. Keep it here.
+ *
+ * Accepts either the raw rule type or one already stripped of "futures_".
+ */
+export function isBullishAlertType(type: string): boolean {
+  const clean = type.replace(/^futures_/, '')
+
+  return (
+    clean.includes('bull') ||
+    clean.includes('bottom_hunter') ||
+    clean.startsWith('dojo_otz_long') ||
+    clean === 'whale_accumulation' ||
+    clean === 'surge_42' ||
+    clean === 'knife_catcher' ||
+    clean === 'capitulation_catcher'
+  )
+}

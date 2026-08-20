@@ -16,7 +16,7 @@ import type { AlertHistoryEntry } from '@/types/alertHistory'
 import { debug } from '@/utils/debug'
 import { useStore } from '@/hooks/useStore'
 import type { AlertColorConfig } from '@/types/alertColors'
-import { resolveAlertColor } from '@/types/alertColors'
+import { resolveAlertColor, isBullishAlertType } from '@/types/alertColors'
 
 // Format epoch seconds to local time string for axis/crosshair consistency with timeline
 const formatLocalTimeLabel = (time: Time): string => {
@@ -51,7 +51,7 @@ const getAlertMarkerSize = (_alertType: string): 0 | 1 | 2 => {
 const getAlertMarkerStyle = (alertType: string, alertColors: AlertColorConfig): { color: string; position: 'aboveBar' | 'belowBar'; shape: 'circle' | 'arrowUp' | 'arrowDown' } => {
   const cleanType = alertType.replace(/^futures_/, '')
   const normalizedKey = alertType.startsWith('futures_') ? alertType : `futures_${alertType}`
-  const isBullish = cleanType.includes('bull') || cleanType.includes('bottom_hunter') || cleanType === 'whale_accumulation'
+  const isBullish = isBullishAlertType(cleanType)
   const isHunter = cleanType.includes('bottom_hunter') || cleanType.includes('top_hunter')
   const isWhale = cleanType === 'whale_detector' || cleanType === 'whale_accumulation' || cleanType === 'whale_distribution'
 
