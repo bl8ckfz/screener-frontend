@@ -10,6 +10,7 @@ import {
   type HistogramData,
   type SeriesMarker,
   type Time,
+  type IPriceLine,
 } from 'lightweight-charts'
 import { type Candlestick } from '@/services/chartData'
 import type { AlertHistoryEntry } from '@/types/alertHistory'
@@ -17,6 +18,7 @@ import { debug } from '@/utils/debug'
 import { useStore } from '@/hooks/useStore'
 import type { AlertColorConfig } from '@/types/alertColors'
 import { resolveAlertColor, isBullishAlertType } from '@/types/alertColors'
+import { formatDojoPrice, type DojoSetup } from '@/types/dojo'
 
 // Format epoch seconds to local time string for axis/crosshair consistency with timeline
 const formatLocalTimeLabel = (time: Time): string => {
@@ -35,6 +37,15 @@ export interface TradingChartProps {
   showVolume?: boolean
   showAlerts?: boolean
   alerts?: AlertHistoryEntry[]
+  /**
+   * A Dojo confluence zone to draw as horizontal levels.
+   *
+   * These are plan levels, not events: the zone edges, the resting-limit
+   * entry at fib 0.705, the stop, and the three targets. They are plain
+   * prices, so they render correctly on any interval — a weekly zone is
+   * still meaningful drawn over a daily chart.
+   */
+  dojoSetup?: DojoSetup | null
   className?: string
 }
 
@@ -85,12 +96,15 @@ export function TradingChart({
   showVolume = true,
   showAlerts = false,
   alerts = [],
+  dojoSetup = null,
   className = '',
 }: TradingChartProps) {
   const alertColors = useStore((state) => state.alertColors)
   const chartContainerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const mainSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
+  // Price lines for the Dojo zone, tracked so they can be removed on change.
+  const dojoLinesRef = useRef<IPriceLine[]>([])
   const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null)
   const markersRef = useRef<SeriesMarker<Time>[]>([]) // Store markers to re-apply on zoom
   const [isLoading, setIsLoading] = useState(true)
@@ -376,6 +390,64 @@ export function TradingChart({
       return currentDiff < closestDiff ? candle : closest
     }, null as Candlestick | null)
   }
+
+  // Draw the Dojo zone as horizontal price levels.
+  //
+  // A Dojo setup is a PLAN, not an event: a zone price has not reached yet,
+  // with a resting limit entry, a stop and three targets. Markers are wrong
+  // for that — there is no bar to attach them to — so these are price lines
+  // spanning the chart. They are plain prices, so a weekly zone renders
+  // correctly over a daily chart.
+  useEffect(() => {
+    const mainSeries = mainSeriesRef.current
+    if (!mainSeries) return
+
+    // Always clear first: switching setups must not leave the old zone behind.
+    dojoLinesRef.current.forEach((line) => {
+      try {
+        mainSeries.removePriceLine(line)
+      } catch {
+        // The series may already be gone during teardown.
+      }
+    })
+    dojoLinesRef.current = []
+
+    if (!dojoSetup) return
+
+    const isLong = dojoSetup.direction === 'long'
+    const zoneColor = isLong ? '#089981' : '#f23645' // the Dojo Pine palette
+
+    const levels: Array<{
+      price: number
+      color: string
+      style: LineStyle
+      title: string
+      width: 1 | 2
+    }> = [
+      // The zone edges bracket the area price has to enter.
+      { price: dojoSetup.otz_high, color: zoneColor, style: LineStyle.Dotted, title: 'OTZ 0.62', width: 1 },
+      { price: dojoSetup.otz_low, color: zoneColor, style: LineStyle.Dotted, title: 'OTZ 0.79', width: 1 },
+      // Entry is the one level that matters most — solid and thicker.
+      { price: dojoSetup.entry, color: '#f5a623', style: LineStyle.Solid, title: `Entry ${formatDojoPrice(dojoSetup.entry)}`, width: 2 },
+      { price: dojoSetup.stop_loss, color: '#f23645', style: LineStyle.Dashed, title: 'Stop', width: 1 },
+      { price: dojoSetup.tp1, color: '#089981', style: LineStyle.Dashed, title: 'TP1', width: 1 },
+      { price: dojoSetup.tp2, color: '#089981', style: LineStyle.Dotted, title: 'TP2', width: 1 },
+      { price: dojoSetup.tp3, color: '#089981', style: LineStyle.Dotted, title: 'TP3', width: 1 },
+    ]
+
+    dojoLinesRef.current = levels
+      .filter((l) => Number.isFinite(l.price) && l.price > 0)
+      .map((l) =>
+        mainSeries.createPriceLine({
+          price: l.price,
+          color: l.color,
+          lineWidth: l.width,
+          lineStyle: l.style,
+          axisLabelVisible: true,
+          title: l.title,
+        })
+      )
+  }, [dojoSetup, data.length])
 
   // Update alert markers when alerts change or toggle
   useEffect(() => {

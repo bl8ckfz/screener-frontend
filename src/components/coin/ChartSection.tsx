@@ -15,9 +15,12 @@ import type { AlertHistoryEntry } from '@/types/alertHistory'
 import type { AlertHistoryItem, CombinedAlertType, Alert } from '@/types/alert'
 import { ChartSkeleton, ErrorState, EmptyState, VerticalSplitter } from '@/components/ui'
 import { debug } from '@/utils/debug'
+import type { DojoSetup } from '@/types/dojo'
 
 export interface ChartSectionProps {
   selectedCoin: Coin | null
+  /** Dojo zone to overlay, when the user arrived here from the Dojo tab. */
+  dojoSetup?: DojoSetup | null
   onClose?: () => void
   className?: string
 }
@@ -38,8 +41,17 @@ function clampTradingH(h: number) {
   return Math.min(Math.max(h, MIN_CHART_HEIGHT), MAX_CHART_HEIGHT)
 }
 
-export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSectionProps) {
+export function ChartSection({ selectedCoin, dojoSetup = null, onClose, className = '' }: ChartSectionProps) {
   const [interval, setInterval] = useState<KlineInterval>('5m')
+
+  // A Dojo zone is a high-timeframe plan, and its levels routinely sit tens
+  // of percent away from spot — the 1000FLOKI weekly short is 45% above it.
+  // The default 5m view covers 48 hours, so those lines would land far
+  // outside the visible price range and the zone would simply not appear.
+  // Daily pulls 200 bars, which is wide enough to contain the whole leg.
+  useEffect(() => {
+    if (dojoSetup) setInterval('1d')
+  }, [dojoSetup?.id])
   const [showAlerts, setShowAlerts] = useState(true)
 
   // TradingChart height — persisted to localStorage; timeline grows freely below
@@ -403,6 +415,7 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
               showVolume={true}
               showAlerts={showAlerts}
               alerts={chartAlerts}
+              dojoSetup={dojoSetup}
             />
           </div>
         </div>

@@ -25,6 +25,7 @@ import { AlertHistoryTable } from '@/components/alerts'
 import { SettingsModal } from '@/components/settings'
 import { FEATURE_FLAGS } from '@/config'
 import { DojoSetupsTable } from '@/components/dojo/DojoSetupsTable'
+import type { DojoSetup } from '@/types/dojo'
 
 export function ScreenerApp() {
   // Backend data polling (every 5 seconds)
@@ -81,6 +82,7 @@ export function ScreenerApp() {
   const [showShortcutHelp, setShowShortcutHelp] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'coins' | 'alerts' | 'dojo'>('coins')
+  const [selectedDojoSetup, setSelectedDojoSetup] = useState<DojoSetup | null>(null)
   const [isMobile, setIsMobile] = useState(false)
   
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -187,6 +189,7 @@ export function ScreenerApp() {
   
   // Handle alert click
   const handleAlertClick = (symbol: string) => {
+    setSelectedDojoSetup(null)
     const coin = coins?.find((c) => c.symbol === symbol)
     if (coin) {
       const alertStat = alertStats.find((stat) => stat.symbol === symbol)
@@ -194,8 +197,24 @@ export function ScreenerApp() {
     }
   }
 
+  // Handle a Dojo zone being selected.
+  //
+  // dojo_setups stores the full perp symbol (1000FLOKIUSDT) while coins are
+  // keyed on the base (1000FLOKI), which is the same mismatch the alert tab
+  // has — so it reuses the same normalisation rather than inventing another.
+  const handleDojoSetupSelect = (setup: DojoSetup) => {
+    setSelectedDojoSetup(setup)
+    const base = setup.symbol.replace(/(USDT|FDUSD|TRY)$/, '')
+    const coin = coins?.find((c) => c.symbol === base || c.fullSymbol === setup.symbol)
+    if (coin) {
+      const alertStat = alertStats.find((stat) => stat.symbol === coin.symbol)
+      setSelectedAlert({ coin, alertStat })
+    }
+  }
+
   // Handle coin table row click
   const handleCoinClick = (coin: any) => {
+    setSelectedDojoSetup(null)
     const alertStat = alertStats.find((stat) => stat.symbol === coin.symbol)
     setSelectedAlert({ coin, alertStat })
   }
@@ -322,7 +341,12 @@ export function ScreenerApp() {
                     onAlertClick={handleAlertClick}
                   />
                 )}
-                {activeTab === 'dojo' && <DojoSetupsTable />}
+                {activeTab === 'dojo' && (
+                  <DojoSetupsTable
+                    onSetupSelect={handleDojoSetupSelect}
+                    selectedId={selectedDojoSetup?.id ?? null}
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -331,6 +355,7 @@ export function ScreenerApp() {
           <div className={`lg:col-span-7 ${mobileSheetEnabled ? 'hidden md:block' : ''}`}>
             <ChartSection 
               selectedCoin={liveCoin}
+              dojoSetup={selectedDojoSetup}
               onClose={() => setSelectedAlert(null)}
             />
           </div>
@@ -341,6 +366,7 @@ export function ScreenerApp() {
           <MobileCoinDrawer
             open={!!liveCoin}
             selectedCoin={liveCoin}
+            dojoSetup={selectedDojoSetup}
             onClose={() => setSelectedAlert(null)}
           />
         )}

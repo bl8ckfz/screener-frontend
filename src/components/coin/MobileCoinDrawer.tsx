@@ -1,15 +1,18 @@
 import { useEffect } from 'react'
 import type { Coin } from '@/types/coin'
 import { ChartSection } from './ChartSection'
+import type { DojoSetup } from '@/types/dojo'
 
 interface MobileCoinDrawerProps {
   open: boolean
   selectedCoin: Coin | null
+  /** Dojo zone to overlay, when opened from the Dojo tab. */
+  dojoSetup?: DojoSetup | null
   onClose: () => void
 }
 
 // Mobile-only bottom sheet that presents the chart and alert timeline
-export function MobileCoinDrawer({ open, selectedCoin, onClose }: MobileCoinDrawerProps) {
+export function MobileCoinDrawer({ open, selectedCoin, dojoSetup = null, onClose }: MobileCoinDrawerProps) {
   useEffect(() => {
     if (!open) return
     
@@ -57,7 +60,7 @@ export function MobileCoinDrawer({ open, selectedCoin, onClose }: MobileCoinDraw
         
         {/* Scrollable content */}
         <div className="mobile-drawer-scroll h-[calc(100vh-40px)] overflow-y-auto overscroll-contain w-full" style={{ maxWidth: '100vw', boxSizing: 'border-box' }}>
-          <ChartSection selectedCoin={selectedCoin} className="pb-safe" />
+          <ChartSection selectedCoin={selectedCoin} dojoSetup={dojoSetup} className="pb-safe" />
         </div>
       </div>
     </div>

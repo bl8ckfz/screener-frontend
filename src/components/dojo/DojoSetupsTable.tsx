@@ -89,7 +89,14 @@ function TradePlan({ setup }: { setup: DojoSetup }) {
   )
 }
 
-export function DojoSetupsTable() {
+export interface DojoSetupsTableProps {
+  /** Called when a row is opened, so the chart can show the zone. */
+  onSetupSelect?: (setup: DojoSetup) => void
+  /** id of the setup currently drawn on the chart. */
+  selectedId?: string | null
+}
+
+export function DojoSetupsTable({ onSetupSelect, selectedId }: DojoSetupsTableProps = {}) {
   const [filters, setFilters] = useState<DojoSetupFilters>({})
   const [expanded, setExpanded] = useState<string | null>(null)
   const { setups, summary, isLoading, isError, isAuthenticated } = useDojoSetups(filters)
@@ -202,8 +209,15 @@ export function DojoSetupsTable() {
                 return (
                   <Fragment key={s.id}>
                     <tr
-                      onClick={() => setExpanded(isOpen ? null : s.id)}
-                      className="border-b border-gray-700/50 hover:bg-gray-700/30 cursor-pointer"
+                      onClick={() => {
+                        setExpanded(isOpen ? null : s.id)
+                        // Always push the selection, even when collapsing —
+                        // clicking a row is how you ask to see it charted.
+                        onSetupSelect?.(s)
+                      }}
+                      className={`border-b border-gray-700/50 hover:bg-gray-700/30 cursor-pointer ${
+                        selectedId === s.id ? 'bg-gray-700/40' : ''
+                      }`}
                     >
                       <td className="px-4 py-2 font-medium text-white">{s.symbol}</td>
                       <td className="px-2 py-2 uppercase text-gray-300">{s.timeframe}</td>
