@@ -226,14 +226,19 @@ export const backendApi = {
 
   /**
    * Get all alert rules with user's enabled/disabled overrides
-   * Returns rules categorized as original/optimized/whale
+   * Returns rules categorized as original/optimized/whale/v4/dojo.
+   *
+   * A category the frontend does not know about is dropped by the grouping in
+   * useAlertRules, which hides those rules from the settings UI entirely —
+   * and a rule nobody can see is a rule nobody can switch off. Keep this
+   * union in step with categorizeRule() in the api-gateway.
    */
   async getAlertRules(): Promise<{
     rules: Array<{
       rule_type: string
       description: string
       enabled: boolean
-      category: 'original' | 'optimized' | 'whale'
+      category: 'original' | 'optimized' | 'whale' | 'v4' | 'dojo'
     }>
     count: number
   }> {

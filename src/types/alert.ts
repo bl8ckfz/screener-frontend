@@ -29,6 +29,17 @@ export type FuturesAlertType =
   // Catcher family (research holdout-validated capitulation longs)
   | 'futures_knife_catcher' // Knife Catcher (deep capitulation flush after failed bounce, long-bias 1d)
   | 'futures_capitulation_catcher' // Capitulation Catcher complement (deep-drawdown capitulation, no bounce, long-bias 1d)
+  // Dojo confluence zones (SMC: FVG-validated Optimal Trade Zone on high timeframes).
+  // These alert on a ZONE BECOMING ARMED, not on price entering it — the entry
+  // is a resting limit at fib 0.705, so the actionable moment is when the zone
+  // forms. Price tapping the zone is left to a TradingView alert on the
+  // published Pine indicator.
+  | 'futures_dojo_otz_long_1d' // Dojo OTZ Long 1D
+  | 'futures_dojo_otz_short_1d' // Dojo OTZ Short 1D
+  | 'futures_dojo_otz_long_5d' // Dojo OTZ Long 5D
+  | 'futures_dojo_otz_short_5d' // Dojo OTZ Short 5D
+  | 'futures_dojo_otz_long_1w' // Dojo OTZ Long 1W
+  | 'futures_dojo_otz_short_1w' // Dojo OTZ Short 1W
 
 /**
  * Legacy alert types (DEPRECATED - kept for backwards compatibility only)
@@ -567,6 +578,55 @@ export const FUTURES_ALERT_PRESETS: FuturesAlertPreset[] = [
     severity: 'critical',
     marketMode: 'bull',
   },
+  // ── Dojo confluence zones ────────────────────────────────────────
+  // Unlike every rule above, these do NOT fire on a price move. They fire
+  // once a day when a zone becomes ARMED: an FVG-validated fib 0.62–0.79
+  // band with higher-timeframe fibonacci confluence and agreeing market
+  // structure, which price has not yet traded into. The entry is a resting
+  // limit at fib 0.705. To be told the moment price taps the zone, set a
+  // TradingView alert on the Dojo Fib Confluence indicator.
+  {
+    type: 'futures_dojo_otz_long_1w',
+    name: 'Dojo OTZ Long 1W',
+    description: 'Weekly discount zone (fib 0.62–0.79) validated by a live fair value gap, with monthly fibonacci confluence and bullish structure. Rarest of the set. Entry rests at fib 0.705; alert fires when the zone forms, not when price arrives.',
+    severity: 'critical',
+    marketMode: 'bull',
+  },
+  {
+    type: 'futures_dojo_otz_short_1w',
+    name: 'Dojo OTZ Short 1W',
+    description: 'Weekly premium zone (fib 0.62–0.79) validated by a live fair value gap, with monthly fibonacci confluence and bearish structure. Rarest of the set. Entry rests at fib 0.705; alert fires when the zone forms, not when price arrives.',
+    severity: 'critical',
+    marketMode: 'bear',
+  },
+  {
+    type: 'futures_dojo_otz_long_5d',
+    name: 'Dojo OTZ Long 5D',
+    description: '5-day discount zone validated by a live fair value gap, with weekly/monthly fibonacci confluence and bullish structure. Note: 5D bars use a fixed epoch anchor and will not line up with a TradingView 5D chart.',
+    severity: 'high',
+    marketMode: 'bull',
+  },
+  {
+    type: 'futures_dojo_otz_short_5d',
+    name: 'Dojo OTZ Short 5D',
+    description: '5-day premium zone validated by a live fair value gap, with weekly/monthly fibonacci confluence and bearish structure. Note: 5D bars use a fixed epoch anchor and will not line up with a TradingView 5D chart.',
+    severity: 'high',
+    marketMode: 'bear',
+  },
+  {
+    type: 'futures_dojo_otz_long_1d',
+    name: 'Dojo OTZ Long 1D',
+    description: 'Daily discount zone validated by a live fair value gap, with weekly/monthly fibonacci confluence and bullish structure. Most frequent of the set. Entry rests at fib 0.705.',
+    severity: 'high',
+    marketMode: 'bull',
+  },
+  {
+    type: 'futures_dojo_otz_short_1d',
+    name: 'Dojo OTZ Short 1D',
+    description: 'Daily premium zone validated by a live fair value gap, with weekly/monthly fibonacci confluence and bearish structure. Most frequent of the set. Entry rests at fib 0.705.',
+    severity: 'high',
+    marketMode: 'bear',
+  },
 ]
 
 /**
@@ -597,6 +657,13 @@ export const FUTURES_ALERT_LABELS: Record<FuturesAlertType, string> = {
   // Catcher family
   futures_knife_catcher: '🔪 Knife Catcher',
   futures_capitulation_catcher: '🩸 Capitulation Catcher',
+  // Dojo confluence zones
+  futures_dojo_otz_long_1d: '🥋🟢 Dojo OTZ Long 1D',
+  futures_dojo_otz_short_1d: '🥋🔴 Dojo OTZ Short 1D',
+  futures_dojo_otz_long_5d: '🥋🟢 Dojo OTZ Long 5D',
+  futures_dojo_otz_short_5d: '🥋🔴 Dojo OTZ Short 5D',
+  futures_dojo_otz_long_1w: '🥋🟢 Dojo OTZ Long 1W',
+  futures_dojo_otz_short_1w: '🥋🔴 Dojo OTZ Short 1W',
 }
 
 /**
@@ -629,6 +696,16 @@ export const DEFAULT_FUTURES_ALERT_CONFIG: FuturesAlertConfig = {
     // Catcher family — disabled by default; opt in via toggle
     futures_knife_catcher: { enabled: false, severity: 'critical' },
     futures_capitulation_catcher: { enabled: false, severity: 'critical' },
+    // Dojo confluence zones. Only the 1W pair is enabled by default, matching
+    // migration 019 — they are the rarest, since on a weekly chart the sole
+    // higher-timeframe slot is 1M and a score of 2 demands a monthly fib AND
+    // a live FVG on the same price.
+    futures_dojo_otz_long_1w: { enabled: true, severity: 'critical' },
+    futures_dojo_otz_short_1w: { enabled: true, severity: 'critical' },
+    futures_dojo_otz_long_5d: { enabled: false, severity: 'high' },
+    futures_dojo_otz_short_5d: { enabled: false, severity: 'high' },
+    futures_dojo_otz_long_1d: { enabled: false, severity: 'high' },
+    futures_dojo_otz_short_1d: { enabled: false, severity: 'high' },
   },
   globalThresholds: {
     priceChange_15m: 1.0, // 1%
