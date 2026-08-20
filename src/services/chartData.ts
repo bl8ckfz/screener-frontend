@@ -73,8 +73,16 @@ export async function fetchKlines(
     const response = await fetch(url, { headers })
 
     if (!response.ok) {
-      if (response.status === 418 || response.status === 429) {
-        throw new RateLimitError()
+      // 503 is our own gateway saying it is currently banned upstream; 418
+      // and 429 come straight from the exchange. All three mean "stop asking
+      // for a while", and all three may carry Retry-After — honouring it
+      // beats guessing, since guessing short resumes into an active ban.
+      if (response.status === 418 || response.status === 429 || response.status === 503) {
+        const header = response.headers.get('Retry-After')
+        const seconds = header ? parseInt(header, 10) : NaN
+        throw new RateLimitError(
+          Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : undefined
+        )
       }
       const apiSource = USE_BACKEND_API && BACKEND_API_BASE ? 'Backend' : 'Binance'
       throw new Error(`${apiSource} API error: ${response.status} ${response.statusText}`)

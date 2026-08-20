@@ -188,8 +188,18 @@ export function ChartSection({ selectedCoin, onClose, className = '' }: ChartSec
   const loadChartData = useCallback(
     async (options?: { limit?: number; isScheduled?: boolean }) => {
       if (!selectedCoin) return
-      // Skip scheduled fetches while rate-limited
-      if (options?.isScheduled && Date.now() < rateLimitedUntilRef.current) return
+
+      // Honour the backoff for EVERY fetch, not just scheduled ones.
+      //
+      // This guard used to apply only when options.isScheduled was set, but
+      // the initial-load effect calls loadChartData() with no options — so a
+      // rate-limited chart bypassed the backoff entirely. Because the catch
+      // below calls setError, and loadChartData is rebuilt whenever
+      // selectedCoin changes identity, the effect could refire on every
+      // render and hammer the endpoint. Binance lengthens a ban while
+      // requests keep arriving during it, so the retries were extending the
+      // very block they were reacting to.
+      if (Date.now() < rateLimitedUntilRef.current) return
 
       setIsLoading(true)
       setError(null)
