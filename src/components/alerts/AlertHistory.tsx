@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/Badge'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { formatNumber } from '@/utils/format'
 import { useStore } from '@/hooks/useStore'
-import { resolveAlertColor } from '@/types/alertColors'
+import { resolveAlertColor, isBullishAlertType } from '@/types/alertColors'
 
 type TimeFilter = '1h' | '24h' | '7d' | '30d' | 'all'
 type SortField = 'timestamp' | 'symbol' | 'type' | 'severity'
@@ -214,7 +214,7 @@ export function AlertHistory() {
   const getAlertBadge = (type: CombinedAlertType): { text: string; color: string; bgColor: string } => {
     const cleanType = type.replace(/^futures_/, '').replace(/^5m_/, '5_').replace(/^15m_/, '15_')
     // surge_42 and the Catcher family fire on bear-shaped predicates but are long signals
-    const isBullish = cleanType.includes('bull') || cleanType === 'bottom_hunter' || cleanType === 'whale_accumulation'
+    const isBullish = isBullishAlertType(cleanType)
       || cleanType === 'surge_42' || cleanType === 'knife_catcher' || cleanType === 'capitulation_catcher'
     
     // Normalize type for color lookup (ensure futures_ prefix)
@@ -544,7 +544,7 @@ export function AlertHistory() {
         <div className="space-y-2">
           {filteredHistory.map((alert) => {
             const badge = getAlertBadge(alert.type)
-            const isBullish = alert.type.includes('bull') || alert.type.includes('bottom_hunter')
+            const isBullish = isBullishAlertType(alert.type)
             
             // Determine text color based on background brightness
             // Light backgrounds (Scout bull/bear) need dark text
