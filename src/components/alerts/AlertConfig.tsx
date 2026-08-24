@@ -65,69 +65,41 @@ const DOJO_TYPES = new Set<FuturesAlertType>([
 
 interface PresetGroup {
   label: string
-  badge: string
-  badgeClass: string
-  description: string
   presets: FuturesAlertPreset[]
 }
 
-// ── Preset Card ────────────────────────────────────────────────────
-function PresetCard({
+// ── Preset Row ────────────────────────────────────────
+function PresetRow({
   preset,
   enabled,
   onToggle,
   isToggling,
-  isV2,
-  isWhale,
 }: {
   preset: FuturesAlertPreset
   enabled: boolean
   onToggle: (type: FuturesAlertType, enabled: boolean) => void
   isToggling: boolean
-  isV2: boolean
-  isWhale: boolean
 }) {
   return (
-    <div
-      className={`rounded-lg border p-3 transition-colors ${
+    <label
+      className={`flex cursor-pointer items-center justify-between gap-3 rounded-md border px-3 py-2 transition-colors ${
         enabled
           ? 'border-green-500/50 bg-green-900/10'
-          : 'border-gray-700 bg-gray-800/30'
+          : 'border-gray-700 bg-gray-800/30 hover:bg-gray-800/60'
       }`}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-medium text-white">{preset.name}</span>
-            <Badge className={`text-xs ${
-              preset.severity === 'critical' ? 'bg-red-500/20 text-red-400' :
-              preset.severity === 'high' ? 'bg-orange-500/20 text-orange-400' :
-              preset.severity === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-              'bg-blue-500/20 text-blue-400'
-            }`}>
-              {preset.severity}
-            </Badge>
-            {isV2 && (
-              <Badge className="text-xs bg-purple-500/20 text-purple-400">V2</Badge>
-            )}
-            {isWhale && (
-              <Badge className="text-xs bg-cyan-500/20 text-cyan-400">🐋</Badge>
-            )}
-          </div>
-          <p className="mt-1 text-xs text-gray-400">{preset.description}</p>
-        </div>
-        <label className="relative inline-flex cursor-pointer items-center ml-3 shrink-0">
-          <input
-            type="checkbox"
-            checked={enabled}
-            onChange={(e) => onToggle(preset.type, e.target.checked)}
-            disabled={isToggling}
-            className="peer sr-only"
-          />
-          <div className="peer h-5 w-9 rounded-full bg-gray-700 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-gray-600 after:bg-white after:transition-all after:content-[''] peer-checked:bg-green-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-green-800"></div>
-        </label>
-      </div>
-    </div>
+      <span className="truncate text-sm font-medium text-white">{preset.name}</span>
+      <span className="relative inline-flex shrink-0 items-center">
+        <input
+          type="checkbox"
+          checked={enabled}
+          onChange={(e) => onToggle(preset.type, e.target.checked)}
+          disabled={isToggling}
+          className="peer sr-only"
+        />
+        <span className="peer block h-5 w-9 rounded-full bg-gray-700 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-gray-600 after:bg-white after:transition-all after:content-[''] peer-checked:bg-green-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-green-800"></span>
+      </span>
+    </label>
   )
 }
 
@@ -136,7 +108,7 @@ function PresetCard({
  * 
  * Features:
  * - Display active alert rules with enable/disable toggles
- * - Grouped presets: Original / Optimized V2 / Whale Detection
+ * - Grouped presets (name + toggle only): Original / V2 / V4 / Whale / Dojo
  * - Backend sync for per-user rule toggles (when authenticated)
  * - Local Zustand fallback when anonymous
  * - Create custom rules with condition editor
@@ -162,41 +134,27 @@ export function AlertConfig({
   } = useAlertRules()
 
   // ── Grouped presets ──────────────────────────────────────────────
+  // Ordered by lineage: base rules → their optimized successors → newer
+  // generations → specialised detectors → higher-timeframe zones.
   const presetGroups: PresetGroup[] = useMemo(() => [
     {
       label: 'Original Rules',
-      badge: 'Core',
-      badgeClass: 'bg-green-500/20 text-green-400',
-      description: 'Multi-timeframe analysis with progressive validation.',
       presets: FUTURES_ALERT_PRESETS.filter(p => ORIGINAL_TYPES.has(p.type)),
     },
     {
       label: 'Optimized V2 Rules',
-      badge: 'Improved',
-      badgeClass: 'bg-purple-500/20 text-purple-400',
-      description: 'Enhanced versions with volume floors, RSI confirmation, and BTC-relative checks.',
       presets: FUTURES_ALERT_PRESETS.filter(p => V2_TYPES.has(p.type)),
     },
     {
-      label: 'Whale Detection',
-      badge: 'New',
-      badgeClass: 'bg-cyan-500/20 text-cyan-400',
-      description: 'Detects large volume anomalies with minimal price impact — potential accumulation or distribution.',
-      presets: FUTURES_ALERT_PRESETS.filter(p => WHALE_TYPES.has(p.type)),
-    },
-    {
       label: 'V4 Long-Bias Contrarian',
-      badge: 'V4',
-      badgeClass: 'bg-emerald-500/20 text-emerald-400',
-      description: 'Walk-forward validated long signal at 1-day horizon. Fires on capitulation drops following a recent failed bounce. Disabled by default — opt in to enable.',
       presets: FUTURES_ALERT_PRESETS.filter(p => V4_TYPES.has(p.type)),
     },
     {
+      label: 'Whale Detection',
+      presets: FUTURES_ALERT_PRESETS.filter(p => WHALE_TYPES.has(p.type)),
+    },
+    {
       label: 'Dojo Confluence Zones',
-      badge: 'Zones',
-      badgeClass: 'bg-amber-500/20 text-amber-400',
-      description:
-        'Smart-money zones on high timeframes. Unlike every rule above, these do not fire on a price move — they fire once a day when a zone becomes armed: an FVG-validated fib 0.62–0.79 band with higher-timeframe fibonacci confluence and agreeing structure, which price has not yet traded into. The entry is a resting limit at fib 0.705. For the moment price taps the zone, set a TradingView alert on the Dojo Fib Confluence indicator.',
       presets: FUTURES_ALERT_PRESETS.filter(p => DOJO_TYPES.has(p.type)),
     },
   ], [])
@@ -349,59 +307,32 @@ export function AlertConfig({
         />
       )}
 
-      {/* Futures Alert Presets — Two-column layout: Old | New */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Left column: Original rules */}
-        <div className="space-y-2">
-          {presetGroups.slice(0, 1).map((group) => (
-            <div key={group.label}>
-              <div className="flex items-center gap-2 mb-2">
+      {/* Signal presets — name + toggle only, grouped */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {presetGroups.map((group) => {
+          const activeCount = group.presets.filter(p => isPresetEnabled(p.type)).length
+          return (
+            <div key={group.label} className="space-y-2">
+              <div className="flex items-baseline justify-between gap-2">
                 <h4 className="text-sm font-semibold text-white">{group.label}</h4>
-                <Badge className={`text-xs ${group.badgeClass}`}>{group.badge}</Badge>
+                <span className="text-xs tabular-nums text-gray-500">
+                  {activeCount}/{group.presets.length}
+                </span>
               </div>
-              <p className="text-xs text-gray-400 mb-3">{group.description}</p>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {group.presets.map((preset) => (
-                  <PresetCard
+                  <PresetRow
                     key={preset.type}
                     preset={preset}
                     enabled={isPresetEnabled(preset.type)}
                     onToggle={handlePresetToggle}
                     isToggling={isToggling}
-                    isV2={V2_TYPES.has(preset.type)}
-                    isWhale={WHALE_TYPES.has(preset.type)}
                   />
                 ))}
               </div>
             </div>
-          ))}
-        </div>
-
-        {/* Right column: V2 + Whale rules */}
-        <div className="space-y-4">
-          {presetGroups.slice(1).map((group) => (
-            <div key={group.label}>
-              <div className="flex items-center gap-2 mb-2">
-                <h4 className="text-sm font-semibold text-white">{group.label}</h4>
-                <Badge className={`text-xs ${group.badgeClass}`}>{group.badge}</Badge>
-              </div>
-              <p className="text-xs text-gray-400 mb-3">{group.description}</p>
-              <div className="space-y-2">
-                {group.presets.map((preset) => (
-                  <PresetCard
-                    key={preset.type}
-                    preset={preset}
-                    enabled={isPresetEnabled(preset.type)}
-                    onToggle={handlePresetToggle}
-                    isToggling={isToggling}
-                    isV2={V2_TYPES.has(preset.type)}
-                    isWhale={WHALE_TYPES.has(preset.type)}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+          )
+        })}
       </div>
 
       {/* Custom Rules List */}
