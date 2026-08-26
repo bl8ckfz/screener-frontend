@@ -17,6 +17,17 @@ import { ChartSkeleton, ErrorState, EmptyState, VerticalSplitter } from '@/compo
 import { debug } from '@/utils/debug'
 import type { DojoSetup } from '@/types/dojo'
 
+/**
+ * How far to spread candle-close refetches across clients, in milliseconds.
+ *
+ * Every client on a given interval would otherwise fire on exactly the same
+ * second, since the schedule is derived from the candle boundary rather than
+ * from when the client happened to load. Randomising within a few seconds of
+ * that boundary is invisible to the user and is what lets one upstream fetch
+ * serve everybody.
+ */
+const CANDLE_FETCH_JITTER_MS = 3000
+
 export interface ChartSectionProps {
   selectedCoin: Coin | null
   /** Dojo zone to overlay, when the user arrived here from the Dojo tab. */
@@ -265,7 +276,15 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, classNam
       const nowSec = Math.floor(Date.now() / 1000)
       // Calculate next candle boundary (aligned to interval)
       const nextClose = Math.ceil(nowSec / intervalSeconds) * intervalSeconds
-      const delayMs = Math.max(500, (nextClose - nowSec + 1) * 1000)
+      // Aligned to the candle boundary, then JITTERED.
+      //
+      // Without the jitter every client watching this interval fires on the
+      // same second, which is the one moment a shared cache cannot help: it
+      // is only populated once the first response lands, so a simultaneous
+      // arrival is a miss for everyone and each one costs a separate upstream
+      // request. Spreading over a few seconds turns that into one fetch and
+      // a run of cache hits. Nobody can see a chart redraw 2s late.
+      const delayMs = Math.max(500, (nextClose - nowSec + 1) * 1000) + Math.random() * CANDLE_FETCH_JITTER_MS
 
       timeoutId = setTimeout(() => {
         loadChartData({ limit: getLimitForInterval(interval), isScheduled: true })
