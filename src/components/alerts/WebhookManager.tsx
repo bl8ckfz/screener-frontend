@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { useStore } from '@/hooks/useStore'
-import { webhookService } from '@/services/webhookService'
+import { webhookService, DEFAULT_WEBHOOK_LIMIT } from '@/services/webhookService'
 import type { Webhook, WebhookType, WebhookScope, CreateWebhookRequest, UpdateWebhookRequest } from '@/services/webhookService'
 import { authService } from '@/services/authService'
 
@@ -63,6 +63,11 @@ export function WebhookManager() {
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
   const [error, setError] = useState<string>('')
   const [isLoading, setIsLoading] = useState(false)
+  // Taken from the list response rather than hardcoded. The trigger
+  // check_webhook_limit() is what actually enforces this, and the UI used to
+  // claim 10 while the database allowed 2 — so the "Add" button stayed enabled
+  // right up until the save was rejected.
+  const [limit, setLimit] = useState(DEFAULT_WEBHOOK_LIMIT)
 
   // Load webhooks on mount if authenticated
   useEffect(() => {
@@ -74,8 +79,9 @@ export function WebhookManager() {
   const loadWebhooks = async () => {
     try {
       setIsLoading(true)
-      const webhooksData = await webhookService.getWebhooks()
+      const { webhooks: webhooksData, limit: serverLimit } = await webhookService.getWebhooksWithLimit()
       setWebhooks(webhooksData)
+      setLimit(serverLimit)
     } catch (err) {
       console.error('Failed to load webhooks:', err)
       setError('Failed to load webhooks')
@@ -226,14 +232,14 @@ export function WebhookManager() {
           <h4 className="text-sm font-medium text-white">Webhook Configurations</h4>
           <p className="text-xs text-gray-400">
             {webhooks.filter((w) => w.is_enabled).length} of {webhooks.length} webhooks active
-            {webhooks.length >= 10 && ' (max 10 reached)'}
+            {webhooks.length >= limit && ` (max ${limit} reached)`}
           </p>
         </div>
         <Button
           onClick={handleAdd}
           variant="secondary"
           size="sm"
-          disabled={isLoading || webhooks.length >= 10}
+          disabled={isLoading || webhooks.length >= limit}
         >
           + Add Webhook
         </Button>

@@ -53,11 +53,22 @@ export interface WebhooksResponse {
 /**
  * Webhook service for managing user's webhooks
  */
+/**
+ * Fallback ceiling, used only when the API has not answered yet.
+ *
+ * The real limit is enforced by the check_webhook_limit() database trigger and
+ * reported in the list response. Do not branch on this constant once the
+ * response is in hand: the UI hardcoded 10 while the trigger enforced 2, so it
+ * advertised room the database refused to give, and the user found out by
+ * having a save rejected.
+ */
+export const DEFAULT_WEBHOOK_LIMIT = 5
+
 export const webhookService = {
   /**
-   * Get all webhooks for the current user
+   * Get all webhooks for the current user, with the server's current limit.
    */
-  async getWebhooks(): Promise<Webhook[]> {
+  async getWebhooksWithLimit(): Promise<{ webhooks: Webhook[]; limit: number }> {
     const token = authService.getToken()
     if (!token) {
       throw new Error('Not authenticated')
@@ -70,13 +81,24 @@ export const webhookService = {
         },
       })
 
-      return response.data.webhooks || []
+      return {
+        webhooks: response.data.webhooks || [],
+        limit: response.data.limit ?? DEFAULT_WEBHOOK_LIMIT,
+      }
     } catch (error: any) {
       if (error.response?.status === 401) {
         authService.logout()
       }
       throw new Error(error.response?.data?.error || 'Failed to get webhooks')
     }
+  },
+
+  /**
+   * Get all webhooks for the current user
+   */
+  async getWebhooks(): Promise<Webhook[]> {
+    const { webhooks } = await this.getWebhooksWithLimit()
+    return webhooks
   },
 
   /**
