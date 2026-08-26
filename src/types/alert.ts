@@ -40,6 +40,11 @@ export type FuturesAlertType =
   | 'futures_dojo_otz_short_5d' // Dojo OTZ Short 5D
   | 'futures_dojo_otz_long_1w' // Dojo OTZ Long 1W
   | 'futures_dojo_otz_short_1w' // Dojo OTZ Short 1W
+  // The complement of the six above: price has ARRIVED at a zone one of them
+  // armed. No timeframe in the type — an arrival is the same event whichever
+  // timeframe armed the zone, so it travels in the alert metadata instead.
+  | 'futures_dojo_near_long' // Dojo Zone Entered (Long)
+  | 'futures_dojo_near_short' // Dojo Zone Entered (Short)
 
 /**
  * Legacy alert types (DEPRECATED - kept for backwards compatibility only)
@@ -627,6 +632,25 @@ export const FUTURES_ALERT_PRESETS: FuturesAlertPreset[] = [
     severity: 'high',
     marketMode: 'bear',
   },
+  // ── Dojo zone entered ────────────────────────────────────────────
+  // The follow-up to the six rules above. Those say a zone is worth an order;
+  // these say price has reached it. Checked continuously against the live
+  // price rather than once a day, and capped at one alert per zone per 12
+  // hours — price can sit inside a band for a long time.
+  {
+    type: 'futures_dojo_near_long',
+    name: 'Dojo Zone Entered (Long)',
+    description: 'Price has traded into a previously armed Dojo discount zone, so the resting limit at fib 0.705 is now in play. The alert names the timeframe that armed the zone. At most one per zone every 12 hours.',
+    severity: 'critical',
+    marketMode: 'bull',
+  },
+  {
+    type: 'futures_dojo_near_short',
+    name: 'Dojo Zone Entered (Short)',
+    description: 'Price has traded into a previously armed Dojo premium zone, so the resting limit at fib 0.705 is now in play. The alert names the timeframe that armed the zone. At most one per zone every 12 hours.',
+    severity: 'critical',
+    marketMode: 'bear',
+  },
 ]
 
 /**
@@ -664,6 +688,8 @@ export const FUTURES_ALERT_LABELS: Record<FuturesAlertType, string> = {
   futures_dojo_otz_short_5d: '🥋🔴 Dojo OTZ Short 5D',
   futures_dojo_otz_long_1w: '🥋🟢 Dojo OTZ Long 1W',
   futures_dojo_otz_short_1w: '🥋🔴 Dojo OTZ Short 1W',
+  futures_dojo_near_long: '🎯🟢 Dojo Zone Entered (Long)',
+  futures_dojo_near_short: '🎯🔴 Dojo Zone Entered (Short)',
 }
 
 /**
@@ -706,6 +732,8 @@ export const DEFAULT_FUTURES_ALERT_CONFIG: FuturesAlertConfig = {
     futures_dojo_otz_short_5d: { enabled: false, severity: 'high' },
     futures_dojo_otz_long_1d: { enabled: false, severity: 'high' },
     futures_dojo_otz_short_1d: { enabled: false, severity: 'high' },
+    futures_dojo_near_long: { enabled: true, severity: 'critical' },
+    futures_dojo_near_short: { enabled: true, severity: 'critical' },
   },
   globalThresholds: {
     priceChange_15m: 1.0, // 1%

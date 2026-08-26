@@ -67,6 +67,11 @@ export function AlertBadges({ alertTypes, maxVisible = 3, latestAlertType }: Ale
       text = '🔪'
     } else if (cleanType === 'capitulation_catcher') {
       text = '🩸'
+    } else if (cleanType.startsWith('dojo_near_')) {
+      // Price has arrived at an armed zone. There is no timeframe to show —
+      // an arrival is the same event whichever timeframe armed the zone — so
+      // the badge marks the event itself, matching the 🎯 used in Discord.
+      text = '🎯'
     } else if (cleanType.startsWith('dojo_otz_')) {
       // Show the timeframe: the direction is already carried by the colour,
       // and which timeframe a zone sits on is what distinguishes them.

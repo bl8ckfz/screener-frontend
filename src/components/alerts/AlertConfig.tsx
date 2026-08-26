@@ -57,10 +57,16 @@ const V4_TYPES = new Set<FuturesAlertType>([
 // Dojo confluence zones. Ordered rarest first: on a weekly chart the only
 // higher-timeframe slot is monthly, so a confluence score of 2 demands a
 // monthly fibonacci level AND a live fair value gap on the same price.
+//
+// The zone-entered pair goes last, and is a different kind of alert from the
+// six above it: those say a zone has formed and is worth an order, this one
+// says price has arrived at one. Subscribing to it without any of the armed
+// rules is perfectly reasonable — the arrival is the moment you act.
 const DOJO_TYPES = new Set<FuturesAlertType>([
   'futures_dojo_otz_long_1w', 'futures_dojo_otz_short_1w',
   'futures_dojo_otz_long_5d', 'futures_dojo_otz_short_5d',
   'futures_dojo_otz_long_1d', 'futures_dojo_otz_short_1d',
+  'futures_dojo_near_long', 'futures_dojo_near_short',
 ])
 
 interface PresetGroup {

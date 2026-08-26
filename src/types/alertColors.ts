@@ -150,8 +150,11 @@ export function resolveAlertColor(
  *
  *  - surge_42 and the Catcher family fire on bear-SHAPED predicates
  *    (capitulation drops) but are long signals at a 1-day horizon.
- *  - Dojo confluence zones say "long"/"short" rather than "bull"/"bear", so a
- *    naive match paints every Dojo long red.
+ *  - Dojo alerts say "long"/"short" rather than "bull"/"bear", so a naive
+ *    match paints every Dojo long red. There are two Dojo families now — the
+ *    armed zones (dojo_otz_long_1d and friends) and the zone-entered alerts
+ *    (dojo_near_long), which carry no timeframe suffix — so this matches the
+ *    direction word rather than any one prefix.
  *  - bottom_hunter is a reversal long despite containing neither word.
  *
  * This lived in four copies across AlertBadges, AlertHistory (twice) and
@@ -166,7 +169,7 @@ export function isBullishAlertType(type: string): boolean {
   return (
     clean.includes('bull') ||
     clean.includes('bottom_hunter') ||
-    clean.startsWith('dojo_otz_long') ||
+    (clean.startsWith('dojo_') && clean.includes('_long')) ||
     clean === 'whale_accumulation' ||
     clean === 'surge_42' ||
     clean === 'knife_catcher' ||

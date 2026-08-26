@@ -15,6 +15,27 @@ import { authService } from '@/services/authService'
  * 
  * Phase 5: Frontend Webhook Integration
  */
+// Alert categories a webhook can be dedicated to.
+//
+// The two kinds of alert are genuinely different products: Dojo alerts are a
+// handful a week, each a complete trade plan worth reading in full, while
+// momentum alerts are a steady stream where the symbol is the whole message.
+// Mixing them in one Discord channel makes both worse.
+//
+// An empty selection means ALL categories, which is what every existing
+// webhook has — so a channel nobody edits keeps behaving exactly as it does
+// now, and opting in is a per-channel decision. Kept in step with
+// pkg/webhook/category.go on the backend, which does the actual filtering.
+const WEBHOOK_CATEGORIES = [
+  { id: 'momentum', label: 'Momentum', hint: 'Surge, Scout, Raid, Whale, Catcher' },
+  { id: 'dojo', label: 'Dojo', hint: 'Confluence zones and zone-entered alerts' },
+] as const
+
+function categoriesOf(config?: Record<string, any>): string[] {
+  const raw = config?.categories
+  return Array.isArray(raw) ? raw.filter((c): c is string => typeof c === 'string') : []
+}
+
 export function WebhookManager() {
   const webhooks = useStore((state) => state.webhooks)
   const setWebhooks = useStore((state) => state.setWebhooks)
@@ -287,6 +308,51 @@ export function WebhookManager() {
             </label>
           </div>
 
+          <div>
+            <label className="block text-xs text-gray-400 mb-1.5">
+              Alert categories
+            </label>
+            <div className="flex flex-wrap gap-3">
+              {WEBHOOK_CATEGORIES.map((cat) => {
+                const selected = categoriesOf(formData.config)
+                const checked = selected.includes(cat.id)
+                return (
+                  <label
+                    key={cat.id}
+                    className="flex items-center gap-1.5 cursor-pointer"
+                    title={cat.hint}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(e) => {
+                        const next = e.target.checked
+                          ? [...selected, cat.id]
+                          : selected.filter((c) => c !== cat.id)
+                        // An empty selection is stored as no `categories` key
+                        // at all rather than an empty array, so the config of
+                        // an "everything" webhook stays identical to one that
+                        // was never edited.
+                        const config = { ...formData.config }
+                        if (next.length > 0) config.categories = next
+                        else delete config.categories
+                        setFormData({ ...formData, config })
+                      }}
+                      className="rounded bg-gray-700 border-gray-600 text-blue-600 focus:ring-blue-500"
+                      disabled={isLoading}
+                    />
+                    <span className="text-xs text-gray-400">{cat.label}</span>
+                  </label>
+                )
+              })}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              {categoriesOf(formData.config).length === 0
+                ? 'Nothing selected — this webhook receives every alert.'
+                : 'Only the selected categories are delivered here.'}
+            </p>
+          </div>
+
           {error && <p className="text-xs text-red-400">{error}</p>}
 
           <div className="flex gap-2">
@@ -346,6 +412,14 @@ export function WebhookManager() {
                           Watchlist Only
                         </span>
                       )}
+                      {categoriesOf(webhook.config).map((cat) => (
+                        <span
+                          key={cat}
+                          className="text-xs px-2 py-0.5 rounded bg-purple-900/50 text-purple-300 capitalize"
+                        >
+                          {cat}
+                        </span>
+                      ))}
                     </div>
                     <div className="text-xs text-gray-400 mt-0.5 truncate">
                       {webhook.webhook_url}
