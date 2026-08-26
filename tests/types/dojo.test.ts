@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { formatDojoPrice, distanceToEntry, DOJO_OUTCOME_META, type DojoSetup } from '@/types/dojo'
+import {
+  formatDojoPrice,
+  distanceToEntry,
+  DOJO_OUTCOME_META,
+  VOLUME_NODE_META,
+  type DojoSetup,
+} from '@/types/dojo'
 
 function setup(over: Partial<DojoSetup> = {}): DojoSetup {
   return {
@@ -67,5 +73,25 @@ describe('DOJO_OUTCOME_META', () => {
     const meta = DOJO_OUTCOME_META.unfilled
     expect(meta.label.toLowerCase()).not.toContain('loss')
     expect(meta.className).not.toContain('red')
+  })
+})
+
+describe('VOLUME_NODE_META', () => {
+  it('covers every node kind', () => {
+    for (const n of ['hvn', 'lvn', 'neutral'] as const) {
+      expect(VOLUME_NODE_META[n]?.label).toBeTruthy()
+      expect(VOLUME_NODE_META[n]?.short).toBeTruthy()
+      expect(VOLUME_NODE_META[n]?.hint).toBeTruthy()
+    }
+  })
+
+  it('does not colour a low volume node as an outright failure', () => {
+    // An LVN is a warning about how price behaves there, not a rejected
+    // setup — the zone still passed every gate. Red would read as invalid.
+    expect(VOLUME_NODE_META.lvn.className).not.toContain('red')
+  })
+
+  it('distinguishes acceptance from thinness visually', () => {
+    expect(VOLUME_NODE_META.hvn.className).not.toBe(VOLUME_NODE_META.lvn.className)
   })
 })

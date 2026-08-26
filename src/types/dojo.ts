@@ -23,6 +23,34 @@
  */
 export type DojoOutcome = 'unfilled' | 'open' | 'target' | 'stopped'
 
+/** Volume-profile classification of the zone. */
+export type VolumeNode = 'hvn' | 'lvn' | 'neutral'
+
+/** Display metadata per volume node. */
+export const VOLUME_NODE_META: Record<
+  VolumeNode,
+  { label: string; short: string; className: string; hint: string }
+> = {
+  hvn: {
+    label: 'High volume node',
+    short: 'HVN',
+    className: 'bg-emerald-500/20 text-emerald-300',
+    hint: 'Acceptance — buyers and sellers agreed value here before, so the zone has transacted history behind it and acts as a magnet',
+  },
+  lvn: {
+    label: 'Low volume node',
+    short: 'LVN',
+    className: 'bg-orange-500/20 text-orange-300',
+    hint: 'Thin — a highway. Little traded here before, so price can travel through the entry without pausing',
+  },
+  neutral: {
+    label: 'Ordinary volume',
+    short: 'MID',
+    className: 'bg-gray-500/20 text-gray-300',
+    hint: 'Neither a node nor a gap',
+  },
+}
+
 export interface DojoSetup {
   id: string
   /** Dedup identity: one setup per leg, per timeframe, per direction. */
@@ -63,6 +91,25 @@ export interface DojoSetup {
   atr14?: number
   /** 1 bullish, -1 bearish, 0 ranging. */
   structure_trend?: number
+
+  /**
+   * Where the zone sits in the traded volume distribution.
+   *
+   * From 11-auction-market-theory: a high volume node is an area of
+   * acceptance that "acts like a magnet", a low volume node is a "highway
+   * where price tends to move quickly due to the lack of prior
+   * transactions". Two zones with identical confluence and R:R are not
+   * equally good if one sits on transacted history and the other in a vacuum.
+   *
+   * Optional throughout: a symbol without usable volume data has no profile,
+   * and absent must not be read as "nobody traded there".
+   */
+  volume_node?: VolumeNode
+  volume_poc_ratio?: number
+  volume_percentile?: number
+  volume_share?: number
+  volume_poc?: number
+  volume_poc_distance?: number
 
   entry_hit_at?: string
   tp1_hit_at?: string

@@ -15,12 +15,28 @@ import { Fragment, useState } from 'react'
 import { useDojoSetups, type DojoSetupFilters } from '@/hooks/useDojoSetups'
 import {
   DOJO_OUTCOME_META,
+  VOLUME_NODE_META,
   formatDojoPrice,
   distanceToEntry,
   type DojoSetup,
 } from '@/types/dojo'
 
 const TIMEFRAMES = ['1d', '5d', '1w'] as const
+
+/** Volume standing of the zone, or nothing when there is no profile. */
+function VolumeBadge({ setup }: { setup: DojoSetup }) {
+  if (!setup.volume_node) return <span className="text-gray-600">—</span>
+  const meta = VOLUME_NODE_META[setup.volume_node]
+  if (!meta) return <span className="text-gray-600">—</span>
+  return (
+    <span
+      title={meta.hint}
+      className={`px-1.5 py-0.5 rounded text-xs font-semibold ${meta.className}`}
+    >
+      {meta.short}
+    </span>
+  )
+}
 
 function OutcomeBadge({ setup }: { setup: DojoSetup }) {
   const meta = DOJO_OUTCOME_META[setup.outcome]
@@ -47,6 +63,18 @@ function TradePlan({ setup }: { setup: DojoSetup }) {
     ['R:R to TP1', setup.rr.toFixed(2)],
     ['Leg', `${formatDojoPrice(setup.leg_low)} → ${formatDojoPrice(setup.leg_high)}`],
   ]
+
+  if (setup.volume_node) {
+    const meta = VOLUME_NODE_META[setup.volume_node]
+    const ratio =
+      setup.volume_poc_ratio !== undefined
+        ? ` · ${(setup.volume_poc_ratio * 100).toFixed(0)}% of POC`
+        : ''
+    rows.push(['Volume', `${meta?.label ?? setup.volume_node}${ratio}`, meta?.hint])
+  }
+  if (setup.volume_poc !== undefined) {
+    rows.push(['Point of control', formatDojoPrice(setup.volume_poc), 'The price with the most traded volume in the series'])
+  }
 
   return (
     <div className="bg-gray-900/60 px-4 py-3 border-t border-gray-700">
@@ -199,6 +227,9 @@ export function DojoSetupsTable({ onSetupSelect, selectedId }: DojoSetupsTablePr
                 <th className="text-center font-medium px-2 py-2" title="Independent confluences on the best in-band level">
                   Conf
                 </th>
+                <th className="text-center font-medium px-2 py-2" title="Whether the zone sits on transacted history (HVN) or in a thin patch price can travel through (LVN)">
+                  Vol
+                </th>
                 <th className="text-left font-medium px-2 py-2">Status</th>
               </tr>
             </thead>
@@ -236,13 +267,16 @@ export function DojoSetupsTable({ onSetupSelect, selectedId }: DojoSetupsTablePr
                         {s.rr.toFixed(2)}
                       </td>
                       <td className="px-2 py-2 text-center text-gray-100">{s.confluence_score}</td>
+                      <td className="px-2 py-2 text-center">
+                        <VolumeBadge setup={s} />
+                      </td>
                       <td className="px-2 py-2">
                         <OutcomeBadge setup={s} />
                       </td>
                     </tr>
                     {isOpen && (
                       <tr>
-                        <td colSpan={8} className="p-0">
+                        <td colSpan={9} className="p-0">
                           <TradePlan setup={s} />
                         </td>
                       </tr>
