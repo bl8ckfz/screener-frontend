@@ -159,8 +159,33 @@ export function formatDojoPrice(v: number | undefined | null): string {
   return v.toFixed(8)
 }
 
-/** How far price sits from the entry, as a signed percentage. */
-export function distanceToEntry(s: DojoSetup): number | null {
-  if (!s.trigger_price || !s.entry) return null
-  return ((s.entry - s.trigger_price) / s.trigger_price) * 100
+/**
+ * How far price must travel to reach the entry, as a signed percentage.
+ *
+ * Takes the CURRENT price, not the stored trigger_price. trigger_price is the
+ * last confirmed close at the moment the zone armed and is never updated, so
+ * computing from it answers "how far away was price when this zone formed" —
+ * a question nobody is asking. On a zone published a week ago that reads as a
+ * live distance while being nothing of the sort.
+ *
+ * Falls back to trigger_price when no live price is available, since a stale
+ * number beats an empty column; callers can tell the two apart via
+ * `distanceIsLive`.
+ */
+export function distanceToEntry(s: DojoSetup, livePrice?: number): number | null {
+  const from = livePrice && livePrice > 0 ? livePrice : s.trigger_price
+  if (!from || !s.entry) return null
+  return ((s.entry - from) / from) * 100
+}
+
+/** Whether a distance was computed against a live price or the stored one. */
+export function distanceIsLive(livePrice?: number): boolean {
+  return !!livePrice && livePrice > 0
+}
+
+/** Whole days since the zone was published. */
+export function daysSince(iso: string): number | null {
+  const t = Date.parse(iso)
+  if (Number.isNaN(t)) return null
+  return Math.floor((Date.now() - t) / 86_400_000)
 }

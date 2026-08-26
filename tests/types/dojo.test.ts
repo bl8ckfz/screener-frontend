@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest'
 import {
   formatDojoPrice,
   distanceToEntry,
+  distanceIsLive,
+  daysSince,
   DOJO_OUTCOME_META,
   VOLUME_NODE_META,
   type DojoSetup,
@@ -42,6 +44,27 @@ describe('formatDojoPrice', () => {
 })
 
 describe('distanceToEntry', () => {
+  it('measures from the CURRENT price, not the price when the zone armed', () => {
+    // The bug this fixes: trigger_price is the last confirmed close at
+    // publication and never updates, so a zone published a week ago showed a
+    // distance that had nothing to do with where price actually is.
+    const s = setup({ trigger_price: 0.02261, entry: 0.032893 })
+
+    const stale = distanceToEntry(s)!            // from trigger_price
+    const live = distanceToEntry(s, 0.030)!      // price has since rallied
+
+    expect(stale).toBeGreaterThan(44)
+    expect(live).toBeLessThan(11)
+    expect(live).not.toBeCloseTo(stale, 1)
+  })
+
+  it('falls back to the stored price when none is live', () => {
+    // A stale number beats an empty column, as long as callers can tell.
+    const s = setup()
+    expect(distanceToEntry(s, undefined)).toBeCloseTo(distanceToEntry(s)!, 6)
+    expect(distanceToEntry(s, 0)).toBeCloseTo(distanceToEntry(s)!, 6)
+  })
+
   it('is positive when price must rise to reach a short entry', () => {
     // The real 1000FLOKI zone: price 0.02261, entry 0.032893.
     const d = distanceToEntry(setup())
@@ -57,6 +80,26 @@ describe('distanceToEntry', () => {
 
   it('returns null when there is nothing to compare', () => {
     expect(distanceToEntry(setup({ trigger_price: 0 }))).toBeNull()
+  })
+})
+
+describe('distanceIsLive', () => {
+  it('reports whether the figure can be trusted as current', () => {
+    expect(distanceIsLive(1.23)).toBe(true)
+    expect(distanceIsLive(0)).toBe(false)
+    expect(distanceIsLive(undefined)).toBe(false)
+  })
+})
+
+describe('daysSince', () => {
+  it('counts whole days', () => {
+    const threeDaysAgo = new Date(Date.now() - 3 * 86_400_000).toISOString()
+    expect(daysSince(threeDaysAgo)).toBe(3)
+    expect(daysSince(new Date().toISOString())).toBe(0)
+  })
+
+  it('returns null for an unparseable timestamp', () => {
+    expect(daysSince('not a date')).toBeNull()
   })
 })
 

@@ -219,6 +219,17 @@ export function ScreenerApp() {
     setSelectedAlert({ coin, alertStat })
   }
 
+  // Live price per full symbol (BTCUSDT), which is how dojo_setups keys its
+  // rows. Without this the Dojo table's "To entry" column measures from the
+  // close when the zone armed and never moves again.
+  const livePrices = useMemo(() => {
+    const m: Record<string, number> = {}
+    for (const c of coins ?? []) {
+      if (c.fullSymbol && c.lastPrice > 0) m[c.fullSymbol] = c.lastPrice
+    }
+    return m
+  }, [coins])
+
   // Get live coin data for selected coin
   const liveCoin = useMemo(() => {
     if (!selectedAlert?.coin || !coins) return selectedAlert?.coin || null
@@ -345,6 +356,7 @@ export function ScreenerApp() {
                   <DojoSetupsTable
                     onSetupSelect={handleDojoSetupSelect}
                     selectedId={selectedDojoSetup?.id ?? null}
+                    livePrices={livePrices}
                   />
                 )}
               </div>
