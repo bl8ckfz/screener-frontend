@@ -8,6 +8,7 @@
 import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { authService } from '@/services/authService'
+import { planPrice, planPeriod, yearlySaving } from '@/config/plans'
 
 type CheckoutState = 'idle' | 'loading' | 'error'
 
@@ -23,18 +24,18 @@ interface PlanCard {
 }
 
 /**
- * IMPORTANT — Manual price sync required!
- * These prices must match the Whop dashboard.
- * Whop plan IDs are set via env vars: WHOP_PLAN_SCREENER_MONTHLY, etc.
- * If you change prices on Whop, update them here too.
- * Last verified: 2026-04-27
+ * Figures come from @/config/plans, which both this page and BillingPage read.
+ * They used to be written out here and again there, with a note saying to keep
+ * them in sync by hand — and they drifted: the TradingView add-on was
+ * advertised at $59/$599 here and $19.99/$219.99 there, while both buttons
+ * opened the same Whop plan.
  */
 const PLANS: PlanCard[] = [
   {
     slug: 'screener_monthly',  // env: WHOP_PLAN_SCREENER_MONTHLY
     name: 'Screener',
-    price: '$39.99',
-    period: '/mo',
+    price: planPrice('screener_monthly'),
+    period: planPeriod('screener_monthly'),
     description: 'Real-time crypto futures screener',
     features: [
       'Real-time alerts (Surge, Scout, Whale, Volume)',
@@ -47,9 +48,9 @@ const PLANS: PlanCard[] = [
   {
     slug: 'screener_yearly',  // env: WHOP_PLAN_SCREENER_YEARLY
     name: 'Screener',
-    price: '$439.99',
-    period: '/yr',
-    savings: 'Save $39.89',
+    price: planPrice('screener_yearly'),
+    period: planPeriod('screener_yearly'),
+    savings: `Save ${yearlySaving('screener_monthly', 'screener_yearly')}`,
     description: 'Real-time crypto futures screener',
     features: [
       'Everything in monthly',
@@ -60,8 +61,8 @@ const PLANS: PlanCard[] = [
   {
     slug: 'bundle_monthly',  // env: WHOP_PLAN_BUNDLE_MONTHLY
     name: 'Bundle',
-    price: '$54.99',
-    period: '/mo',
+    price: planPrice('bundle_monthly'),
+    period: planPeriod('bundle_monthly'),
     description: 'Screener + TradingView indicators',
     features: [
       'Everything in Screener',
@@ -73,9 +74,9 @@ const PLANS: PlanCard[] = [
   {
     slug: 'bundle_yearly',  // env: WHOP_PLAN_BUNDLE_YEARLY
     name: 'Bundle',
-    price: '$604.99',
-    period: '/yr',
-    savings: 'Save $54.89',
+    price: planPrice('bundle_yearly'),
+    period: planPeriod('bundle_yearly'),
+    savings: `Save ${yearlySaving('bundle_monthly', 'bundle_yearly')}`,
     description: 'Screener + TradingView indicators',
     features: [
       'Everything in Bundle monthly',
@@ -209,10 +210,10 @@ export function ExpiredPage() {
                 <p className="text-gray-500 text-xs">8 premium Pine Script indicators</p>
               </div>
               <div className="text-right">
-                <span className="text-lg font-bold text-white">$59</span>
+                <span className="text-lg font-bold text-white">{planPrice('tv_monthly')}</span>
                 <span className="text-gray-400 text-sm">/mo</span>
                 <span className="text-gray-600 mx-1">·</span>
-                <span className="text-lg font-bold text-white">$599</span>
+                <span className="text-lg font-bold text-white">{planPrice('tv_yearly')}</span>
                 <span className="text-gray-400 text-sm">/yr</span>
               </div>
             </div>
@@ -229,7 +230,9 @@ export function ExpiredPage() {
                 disabled={checkoutState === 'loading'}
                 className="flex-1 py-2 rounded-lg text-sm font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-600 disabled:opacity-50"
               >
-                {loadingPlan === 'tv_yearly' ? 'Redirecting…' : 'Yearly (Save $109)'}
+                {loadingPlan === 'tv_yearly'
+                  ? 'Redirecting…'
+                  : `Yearly (Save ${yearlySaving('tv_monthly', 'tv_yearly')})`}
               </button>
             </div>
           </div>

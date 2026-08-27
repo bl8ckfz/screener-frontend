@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { authService, type BillingInfo } from '@/services/authService'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { planPriceWithPeriod, yearlySaving } from '@/config/plans'
 
 export function BillingPage() {
   const { user, logout, isCanceled, refreshToken } = useAuth()
@@ -227,14 +228,18 @@ export function BillingPage() {
                       disabled={!!checkoutLoading}
                       className="px-4 py-2 text-sm font-medium bg-gray-800 hover:bg-gray-700 text-white rounded-lg border border-gray-600 transition-colors disabled:opacity-50"
                     >
-                      {checkoutLoading === 'tv_monthly' ? 'Redirecting…' : '$19.99/mo'}
+                      {checkoutLoading === 'tv_monthly'
+                        ? 'Redirecting…'
+                        : planPriceWithPeriod('tv_monthly')}
                     </button>
                     <button
                       onClick={() => handleCheckout('tv_yearly')}
                       disabled={!!checkoutLoading}
                       className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
                     >
-                      {checkoutLoading === 'tv_yearly' ? 'Redirecting…' : '$219.99/yr (Save $19.89)'}
+                      {checkoutLoading === 'tv_yearly'
+                        ? 'Redirecting…'
+                        : `${planPriceWithPeriod('tv_yearly')} (Save ${yearlySaving('tv_monthly', 'tv_yearly')})`}
                     </button>
                   </div>
                 </div>
@@ -283,7 +288,9 @@ export function BillingPage() {
                     disabled={!!checkoutLoading}
                     className="px-6 py-2.5 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
                   >
-                    {checkoutLoading === 'bundle_monthly' ? 'Redirecting…' : 'Bundle — $54.99/mo'}
+                    {checkoutLoading === 'bundle_monthly'
+                      ? 'Redirecting…'
+                      : `Bundle — ${planPriceWithPeriod('bundle_monthly')}`}
                   </button>
                 </div>
               )}
