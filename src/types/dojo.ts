@@ -21,6 +21,8 @@
  * nor a loss, and folding it into either would distort any hit rate computed
  * from these rows.
  */
+import type { Coin } from '@/types/coin'
+
 export type DojoOutcome = 'unfilled' | 'open' | 'target' | 'stopped'
 
 /** Volume-profile classification of the zone. */
@@ -188,4 +190,79 @@ export function daysSince(iso: string): number | null {
   const t = Date.parse(iso)
   if (Number.isNaN(t)) return null
   return Math.floor((Date.now() - t) / 86_400_000)
+}
+
+/**
+ * Build a placeholder Coin for a zone whose symbol is not in the coin list.
+ *
+ * The coin list is the top ~200 by 24h volume, but a Dojo zone stays in
+ * dojo_setups until it fills or resolves — which can be weeks. A symbol that
+ * drops out of the top 200 in the meantime silently lost its chart: the click
+ * handler looked the coin up, found nothing, and returned without updating
+ * anything, so the panel kept showing the previously selected coin. Nothing
+ * said why.
+ *
+ * A placeholder fixes it because the chart only needs fullSymbol to work —
+ * /api/klines proxies any Binance symbol, not just the tracked ones. What is
+ * genuinely unavailable is the 24h ticker data, so those fields are zero
+ * rather than invented, and `isPlaceholder` lets the UI say so instead of
+ * rendering a confident 0.00%.
+ *
+ * livePrice is usually absent for exactly these symbols too: the Redis tickers
+ * hash is written for the tracked set, so the zone's own trigger_price — the
+ * close when it armed — is the honest fallback.
+ */
+export function coinFromDojoSetup(s: DojoSetup, livePrice?: number): Coin & { isPlaceholder: true } {
+  const pair = (['USDT', 'USDC', 'USD', 'FDUSD', 'TRY'] as const).find((p) =>
+    s.symbol.endsWith(p),
+  )
+  const base = pair ? s.symbol.slice(0, -pair.length) : s.symbol
+  const price = livePrice && livePrice > 0 ? livePrice : s.trigger_price
+
+  const zeroFib = {
+    resistance1: 0, resistance0618: 0, resistance0382: 0,
+    support0382: 0, support0618: 0, support1: 0, pivot: 0,
+  }
+
+  return {
+    isPlaceholder: true,
+    id: -1,
+    symbol: base,
+    fullSymbol: s.symbol,
+    pair: (pair ?? 'USDT') as Coin['pair'],
+
+    lastPrice: price,
+    openPrice: price,
+    highPrice: price,
+    lowPrice: price,
+    prevClosePrice: price,
+    weightedAvgPrice: price,
+    // Zero, not guessed. We have no 24h window for this symbol, and a
+    // fabricated change would render as a confident green or red number.
+    priceChange: 0,
+    priceChangePercent: 0,
+
+    volume: 0,
+    quoteVolume: 0,
+    bidPrice: 0,
+    bidQty: 0,
+    askPrice: 0,
+    askQty: 0,
+    count: 0,
+
+    openTime: 0,
+    closeTime: 0,
+
+    indicators: {
+      vcp: 0,
+      priceToWeightedAvg: 0, priceToHigh: 0, lowToPrice: 0, highToLow: 0,
+      askToVolume: 0, priceToVolume: 0, quoteToCount: 0, tradesPerVolume: 0,
+      fibonacci: zeroFib,
+      pivotToWeightedAvg: 0, pivotToPrice: 0,
+      priceChangeFromWeightedAvg: 0, priceChangeFromPrevClose: 0,
+      ethDominance: 0, btcDominance: 0, paxgDominance: 0,
+    },
+
+    lastUpdated: Date.parse(s.fired_at) || 0,
+  }
 }

@@ -25,6 +25,7 @@ import { AlertHistoryTable } from '@/components/alerts'
 import { SettingsModal } from '@/components/settings'
 import { FEATURE_FLAGS } from '@/config'
 import { DojoSetupsTable } from '@/components/dojo/DojoSetupsTable'
+import { coinFromDojoSetup } from '@/types/dojo'
 import type { DojoSetup } from '@/types/dojo'
 
 export function ScreenerApp() {
@@ -205,11 +206,18 @@ export function ScreenerApp() {
   const handleDojoSetupSelect = (setup: DojoSetup) => {
     setSelectedDojoSetup(setup)
     const base = setup.symbol.replace(/(USDT|FDUSD|TRY)$/, '')
-    const coin = coins?.find((c) => c.symbol === base || c.fullSymbol === setup.symbol)
-    if (coin) {
-      const alertStat = alertStats.find((stat) => stat.symbol === coin.symbol)
-      setSelectedAlert({ coin, alertStat })
-    }
+    // A zone outlives the coin list. dojo_setups holds a symbol until it fills
+    // or resolves, which can be weeks, while coins is the top ~200 by 24h
+    // volume — so a symbol that drops out loses nothing but its row here.
+    // Falling back to a placeholder keeps the chart working, because
+    // /api/klines proxies any Binance symbol rather than only tracked ones.
+    // Previously this branch simply did nothing and the panel kept showing
+    // whichever coin was selected before, with no indication why.
+    const coin =
+      coins?.find((c) => c.symbol === base || c.fullSymbol === setup.symbol) ??
+      coinFromDojoSetup(setup, livePrices[setup.symbol])
+    const alertStat = alertStats.find((stat) => stat.symbol === coin.symbol)
+    setSelectedAlert({ coin, alertStat })
   }
 
   // Handle coin table row click

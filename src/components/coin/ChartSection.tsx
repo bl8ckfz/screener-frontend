@@ -362,16 +362,28 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, classNam
             {selectedCoin.symbol}
             <span className="text-gray-400 text-sm ml-2">/ {selectedCoin.pair}</span>
           </h3>
-          <div className={`text-sm font-mono ${
-            selectedCoin.priceChangePercent > 0
-              ? 'text-bullish'
-              : selectedCoin.priceChangePercent < 0
-                ? 'text-bearish'
-                : 'text-neutral'
-          }`}>
-            {selectedCoin.priceChangePercent > 0 ? '+' : ''}
-            {selectedCoin.priceChangePercent.toFixed(2)}%
-          </div>
+          {selectedCoin.isPlaceholder ? (
+            // No 24h ticker for this symbol — it is outside the tracked set.
+            // Rendering the zeroed change as "0.00%" would read as a real
+            // figure, and a flat day is not what happened.
+            <span
+              className="text-xs text-gray-500 italic"
+              title="This symbol is outside the tracked top ~200 by volume, so 24h stats are unavailable. The chart itself is live."
+            >
+              24h stats unavailable
+            </span>
+          ) : (
+            <div className={`text-sm font-mono ${
+              selectedCoin.priceChangePercent > 0
+                ? 'text-bullish'
+                : selectedCoin.priceChangePercent < 0
+                  ? 'text-bearish'
+                  : 'text-neutral'
+            }`}>
+              {selectedCoin.priceChangePercent > 0 ? '+' : ''}
+              {selectedCoin.priceChangePercent.toFixed(2)}%
+            </div>
+          )}
         </div>
         
         {onClose && (

@@ -139,6 +139,15 @@ export interface Coin {
 
   // Metadata
   lastUpdated: number
+
+  /**
+   * True when this coin was synthesised rather than fetched — currently for a
+   * Dojo zone whose symbol has dropped out of the tracked top ~200 by volume.
+   * The chart still works (klines proxy any Binance symbol), but there is no
+   * 24h ticker behind it, so consumers should say so rather than render the
+   * zeroed fields as real figures.
+   */
+  isPlaceholder?: boolean
 }
 
 /**
