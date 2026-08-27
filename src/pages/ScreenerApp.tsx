@@ -281,7 +281,9 @@ export function ScreenerApp() {
                 placeholder={
                   activeTab === 'alerts'
                     ? 'Search alerts by symbol or type...'
-                    : 'Search coins...'
+                    : activeTab === 'dojo'
+                      ? 'Search zones by symbol...'
+                      : 'Search coins...'
                 }
               />
             </div>
@@ -357,6 +359,7 @@ export function ScreenerApp() {
                     onSetupSelect={handleDojoSetupSelect}
                     selectedId={selectedDojoSetup?.id ?? null}
                     livePrices={livePrices}
+                    searchQuery={searchQuery}
                   />
                 )}
               </div>

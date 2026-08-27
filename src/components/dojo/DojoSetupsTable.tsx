@@ -11,7 +11,7 @@
  * price still has to travel to reach the entry, and whether it ever did.
  */
 
-import { Fragment, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { useDojoSetups, type DojoSetupFilters } from '@/hooks/useDojoSetups'
 import {
   DOJO_OUTCOME_META,
@@ -24,6 +24,54 @@ import {
 } from '@/types/dojo'
 
 const TIMEFRAMES = ['1d', '5d', '1w'] as const
+
+type SortField =
+  | 'symbol' | 'timeframe' | 'direction' | 'entry' | 'distance'
+  | 'rr' | 'confluence' | 'volume' | 'age' | 'status'
+type SortDirection = 'asc' | 'desc'
+
+/**
+ * Columns, in render order, with the sort key each one carries.
+ *
+ * Kept as data rather than repeated markup so a header and its sort key
+ * cannot drift apart — the failure mode being a column that sorts by
+ * something other than what it displays.
+ */
+const COLUMNS: Array<{
+  field: SortField
+  label: string
+  align: 'left' | 'right' | 'center'
+  title?: string
+  className?: string
+}> = [
+  { field: 'symbol', label: 'Symbol', align: 'left', className: 'px-4' },
+  { field: 'timeframe', label: 'TF', align: 'left' },
+  { field: 'direction', label: 'Side', align: 'left' },
+  { field: 'entry', label: 'Entry', align: 'right' },
+  {
+    field: 'distance', label: 'To entry', align: 'right',
+    title: 'How far price must travel from where it is now to reach the entry. Unsigned — the direction is already given by Side.',
+  },
+  { field: 'rr', label: 'R:R', align: 'right' },
+  { field: 'confluence', label: 'Conf', align: 'center', title: 'Independent confluences on the best in-band level' },
+  {
+    field: 'volume', label: 'Vol', align: 'center',
+    title: 'Whether the zone sits on transacted history (HVN) or in a thin patch price can travel through (LVN)',
+  },
+  {
+    field: 'age', label: 'Age', align: 'right',
+    title: 'Days since the zone was published. Outcomes are settled once a day from confirmed bars, so a fill can take until the next daily pass to show.',
+  },
+  { field: 'status', label: 'Status', align: 'left' },
+]
+
+/** Rank for the Status column, so sorting follows the trade's lifecycle. */
+const OUTCOME_ORDER: Record<string, number> = {
+  unfilled: 0, open: 1, target: 2, stopped: 3,
+}
+
+/** Rank for the Vol column: acceptance, ordinary, thin, then unknown last. */
+const VOLUME_ORDER: Record<string, number> = { hvn: 0, neutral: 1, lvn: 2 }
 
 /** Volume standing of the zone, or nothing when there is no profile. */
 function VolumeBadge({ setup }: { setup: DojoSetup }) {
@@ -121,6 +169,76 @@ function TradePlan({ setup, livePrice }: { setup: DojoSetup; livePrice?: number 
   )
 }
 
+/**
+ * Filter by symbol, then sort — pure, so the ordering rules can be tested
+ * without mounting the table.
+ */
+export function filterAndSortSetups(
+  setups: DojoSetup[],
+  opts: {
+    searchQuery?: string
+    sortField: SortField
+    sortDirection: SortDirection
+    livePrices?: Record<string, number>
+  },
+): DojoSetup[] {
+  const { searchQuery = '', sortField, sortDirection, livePrices } = opts
+
+  const q = searchQuery.trim().toLowerCase()
+  const rows = q ? setups.filter((s) => s.symbol.toLowerCase().includes(q)) : setups.slice()
+
+  // One sort key per column, or null when the row has no value for it.
+  //
+  // Distance is ABSOLUTE: the sign only restates the direction, which Side
+  // already gives, and sorting signed would interleave longs and shorts
+  // instead of answering "which is closest to filling".
+  const keyOf = (s: DojoSetup): number | string | null => {
+    switch (sortField) {
+      case 'symbol': return s.symbol
+      case 'timeframe': return s.timeframe
+      case 'direction': return s.direction
+      case 'entry': return s.entry
+      case 'distance': {
+        const d = distanceToEntry(s, livePrices?.[s.symbol])
+        return d === null ? null : Math.abs(d)
+      }
+      case 'rr': return s.rr
+      case 'confluence': return s.confluence_score
+      case 'volume': return s.volume_node ? VOLUME_ORDER[s.volume_node] ?? 98 : 99
+      case 'age': return Date.parse(s.fired_at) || 0
+      case 'status': return OUTCOME_ORDER[s.outcome] ?? 99
+    }
+  }
+
+  rows.sort((a, b) => {
+    const av = keyOf(a)
+    const bv = keyOf(b)
+
+    // Rows with no value sink to the bottom in BOTH directions, before the
+    // direction flip is applied. A sentinel like +Infinity cannot do this —
+    // it sorts last ascending and first descending, so reversing the sort
+    // would promote "unknown" to the top, which no reading of the column
+    // supports.
+    if (av === null || bv === null) {
+      if (av === bv) return 0
+      return av === null ? 1 : -1
+    }
+
+    let cmp: number
+    if (typeof av === 'string' || typeof bv === 'string') {
+      cmp = String(av).localeCompare(String(bv))
+    } else {
+      cmp = av === bv ? 0 : av < bv ? -1 : 1
+    }
+    // Age is STORED as a timestamp but READ as an age, and the two run
+    // opposite ways: the newest row has the largest timestamp and the
+    // smallest age. Flip so "ascending" means what the column says.
+    if (sortField === 'age') cmp = -cmp
+    return sortDirection === 'asc' ? cmp : -cmp
+  })
+  return rows
+}
+
 export interface DojoSetupsTableProps {
   /** Called when a row is opened, so the chart can show the zone. */
   onSetupSelect?: (setup: DojoSetup) => void
@@ -131,12 +249,41 @@ export interface DojoSetupsTableProps {
    * is NOW rather than where it was when the zone armed.
    */
   livePrices?: Record<string, number>
+  /**
+   * The app-wide search box. Filtered here rather than server-side: the whole
+   * working set is already loaded (a few hundred rows at most), so a round
+   * trip per keystroke would buy nothing.
+   */
+  searchQuery?: string
 }
 
-export function DojoSetupsTable({ onSetupSelect, selectedId, livePrices }: DojoSetupsTableProps = {}) {
+export function DojoSetupsTable({
+  onSetupSelect,
+  selectedId,
+  livePrices,
+  searchQuery = '',
+}: DojoSetupsTableProps = {}) {
   const [filters, setFilters] = useState<DojoSetupFilters>({})
   const [expanded, setExpanded] = useState<string | null>(null)
+  // Age ascending by default: newest zone first, which is what the API
+  // already returns, so the initial view is unchanged and now explicit.
+  const [sortField, setSortField] = useState<SortField>('age')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const { setups, summary, isLoading, isError, isAuthenticated } = useDojoSetups(filters)
+
+  const toggleSort = (field: SortField) => {
+    if (field === sortField) {
+      setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'))
+      return
+    }
+    setSortField(field)
+    setSortDirection('asc')
+  }
+
+  const visible = useMemo(
+    () => filterAndSortSetups(setups, { searchQuery, sortField, sortDirection, livePrices }),
+    [setups, searchQuery, sortField, sortDirection, livePrices],
+  )
 
   if (!isAuthenticated) {
     return <p className="p-6 text-sm text-gray-400">Sign in to view Dojo zones.</p>
@@ -210,7 +357,15 @@ export function DojoSetupsTable({ onSetupSelect, selectedId, livePrices }: DojoS
         ))}
       </div>
 
-      {setups.length === 0 ? (
+      {visible.length === 0 && setups.length > 0 ? (
+        <div className="p-6 text-sm text-gray-400">
+          <p>No zones match “{searchQuery}”.</p>
+          <p className="mt-1 text-xs text-gray-500">
+            Zones are published only for symbols the scanner found a setup on,
+            so most tickers will have none.
+          </p>
+        </div>
+      ) : setups.length === 0 ? (
         <div className="p-6 text-sm text-gray-400">
           <p>No zones yet.</p>
           <p className="mt-1 text-xs text-gray-500">
@@ -225,28 +380,32 @@ export function DojoSetupsTable({ onSetupSelect, selectedId, livePrices }: DojoS
           <table className="w-full text-sm">
             <thead className="text-xs text-gray-400 border-b border-gray-700">
               <tr>
-                <th className="text-left font-medium px-4 py-2">Symbol</th>
-                <th className="text-left font-medium px-2 py-2">TF</th>
-                <th className="text-left font-medium px-2 py-2">Side</th>
-                <th className="text-right font-medium px-2 py-2">Entry</th>
-                <th className="text-right font-medium px-2 py-2" title="How far price must travel from where it is now to reach the entry">
-                  To entry
-                </th>
-                <th className="text-right font-medium px-2 py-2">R:R</th>
-                <th className="text-center font-medium px-2 py-2" title="Independent confluences on the best in-band level">
-                  Conf
-                </th>
-                <th className="text-center font-medium px-2 py-2" title="Whether the zone sits on transacted history (HVN) or in a thin patch price can travel through (LVN)">
-                  Vol
-                </th>
-                <th className="text-right font-medium px-2 py-2" title="Days since the zone was published. Outcomes are settled once a day from confirmed bars, so a fill can take until the next daily pass to show.">
-                  Age
-                </th>
-                <th className="text-left font-medium px-2 py-2">Status</th>
+                {COLUMNS.map((c) => {
+                  const active = sortField === c.field
+                  return (
+                    <th
+                      key={c.field}
+                      onClick={() => toggleSort(c.field)}
+                      title={c.title}
+                      className={`font-medium py-2 cursor-pointer select-none hover:text-gray-200 ${
+                        c.className ?? 'px-2'
+                      } ${
+                        c.align === 'right' ? 'text-right' : c.align === 'center' ? 'text-center' : 'text-left'
+                      } ${active ? 'text-white' : ''}`}
+                    >
+                      {c.label}
+                      {/* A fixed-width marker so toggling direction does not
+                          shuffle the column widths under the cursor. */}
+                      <span className="inline-block w-3 text-center">
+                        {active ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
+                      </span>
+                    </th>
+                  )
+                })}
               </tr>
             </thead>
             <tbody>
-              {setups.map((s) => {
+              {visible.map((s) => {
                 const livePrice = livePrices?.[s.symbol]
                 const dist = distanceToEntry(s, livePrice)
                 const age = daysSince(s.fired_at)
@@ -284,7 +443,7 @@ export function DojoSetupsTable({ onSetupSelect, selectedId, livePrices }: DojoS
                             : 'No live price for this symbol — measured from the close when the zone armed'
                         }
                       >
-                        {dist === null ? '—' : `${dist > 0 ? '+' : ''}${dist.toFixed(1)}%`}
+                        {dist === null ? '—' : `${Math.abs(dist).toFixed(1)}%`}
                       </td>
                       <td className="px-2 py-2 text-right font-mono text-gray-100">
                         {s.rr.toFixed(2)}
@@ -302,7 +461,7 @@ export function DojoSetupsTable({ onSetupSelect, selectedId, livePrices }: DojoS
                     </tr>
                     {isOpen && (
                       <tr>
-                        <td colSpan={10} className="p-0">
+                        <td colSpan={COLUMNS.length} className="p-0">
                           <TradePlan setup={s} livePrice={livePrice} />
                         </td>
                       </tr>
