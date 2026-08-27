@@ -8,11 +8,15 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { authService } from '@/services/authService'
 
 export function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [needsVerification, setNeedsVerification] = useState(false)
+  const [resending, setResending] = useState(false)
+  const [resent, setResent] = useState(false)
   const [loading, setLoading] = useState(false)
   const { login, isAuthenticated, loading: authLoading } = useAuth()
   const navigate = useNavigate()
@@ -34,9 +38,19 @@ export function LoginPage() {
       navigate('/app', { replace: true })
     } catch (err: any) {
       setError(err.message || 'Login failed')
+      // The password was right; the address just is not confirmed. Offer the
+      // link rather than leaving them retyping a password that never failed.
+      setNeedsVerification(err?.code === 'email_not_verified')
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleResend = async () => {
+    setResending(true)
+    await authService.resendVerification(email)
+    setResent(true)
+    setResending(false)
   }
 
   if (authLoading) {
@@ -108,6 +122,24 @@ export function LoginPage() {
             {error && (
               <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3 text-red-400 text-sm">
                 {error}
+                {needsVerification && (
+                  <div className="mt-2 pt-2 border-t border-red-500/30">
+                    {resent ? (
+                      <span className="text-gray-300">
+                        A new link is on its way — check your inbox and spam folder.
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleResend}
+                        disabled={resending}
+                        className="text-blue-400 hover:text-blue-300 underline disabled:opacity-50"
+                      >
+                        {resending ? 'Sending…' : 'Send me a new confirmation link'}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 

@@ -65,20 +65,58 @@ export const authService = {
   /**
    * Register a new user account (invite code optional)
    */
-  async register(email: string, password: string, inviteCode?: string): Promise<AuthResponse> {
+  async register(
+    email: string,
+    password: string,
+    inviteCode?: string,
+  ): Promise<{ verificationRequired: true }> {
     try {
       const body: Record<string, string> = { email, password }
       if (inviteCode) body.invite_code = inviteCode
 
-      const response = await axios.post<AuthResponse>(`${API_URL}/auth/register`, body)
+      await axios.post(`${API_URL}/auth/register`, body)
 
-      // Store token and user
-      this.setToken(response.data.token)
-      this.setUser(response.data.user)
-
-      return response.data
+      // No token is issued: the account cannot sign in until the address is
+      // confirmed, so storing a session here would only create one the next
+      // request rejects.
+      return { verificationRequired: true }
     } catch (error: any) {
       throw new Error(error.response?.data?.error || 'Registration failed')
+    }
+  },
+
+  /**
+   * Confirm an email address using the token from the emailed link.
+   *
+   * Verifying signs the user in: they have just proven ownership of the
+   * address and arrived from their own inbox. It is also the moment a Whop
+   * subscription bought before registering is claimed, so the returned user
+   * may already be active.
+   */
+  async verifyEmail(token: string): Promise<AuthResponse> {
+    try {
+      const response = await axios.post<AuthResponse>(`${API_URL}/auth/verify-email`, { token })
+      this.setToken(response.data.token)
+      this.setUser(response.data.user)
+      return response.data
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Verification failed')
+    }
+  },
+
+  /**
+   * Ask for a fresh confirmation link.
+   *
+   * Always resolves, whatever the server says: the endpoint deliberately
+   * answers the same way for known and unknown addresses so it cannot be used
+   * to discover which are registered, and surfacing a difference here would
+   * undo that.
+   */
+  async resendVerification(email: string): Promise<void> {
+    try {
+      await axios.post(`${API_URL}/auth/resend-verification`, { email })
+    } catch {
+      /* intentionally silent — see above */
     }
   },
 
@@ -98,6 +136,17 @@ export const authService = {
 
       return response.data
     } catch (error: any) {
+      // An unconfirmed address is a distinct outcome, not a bad password —
+      // the credentials were already accepted. Tagged so the caller can offer
+      // to resend the link instead of leaving the user stuck retyping a
+      // password that was never wrong.
+      if (error.response?.status === 403 && error.response?.data?.error === 'email_not_verified') {
+        const e = new Error(
+          error.response?.data?.message ?? 'Confirm your email address before signing in.',
+        ) as Error & { code?: string }
+        e.code = 'email_not_verified'
+        throw e
+      }
       throw new Error(error.response?.data?.error || 'Login failed')
     }
   },

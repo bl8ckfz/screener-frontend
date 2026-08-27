@@ -15,6 +15,7 @@ export function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [sent, setSent] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const { register, isAuthenticated, loading: authLoading } = useAuth()
   const navigate = useNavigate()
@@ -39,7 +40,10 @@ export function SignupPage() {
 
     try {
       await register(email, password)
-      navigate('/app', { replace: true })
+      // No redirect to /app: registration does not sign anyone in any more.
+      // The account cannot be used until the address is confirmed, so sending
+      // them to the app would only bounce them straight back out.
+      setSent(true)
     } catch (err: any) {
       setError(err.message || 'Registration failed')
     } finally {
@@ -54,6 +58,31 @@ export function SignupPage() {
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
         </svg>
+      </div>
+    )
+  }
+
+  // Registration succeeded but the account is not usable yet. Say what has to
+  // happen next, and where — the most common support question here is "I
+  // signed up and nothing happened".
+  if (sent) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center px-4">
+        <div className="w-full max-w-md rounded-xl border border-gray-800 bg-gray-900/60 p-8 text-center">
+          <h1 className="text-xl font-semibold text-white mb-2">Check your email</h1>
+          <p className="text-sm text-gray-400 mb-6">
+            We sent a confirmation link to{' '}
+            <span className="text-gray-200 font-medium">{email}</span>. Click it
+            to finish setting up your account.
+          </p>
+          <p className="text-xs text-gray-500 mb-6">
+            The link expires in 24 hours. If it does not arrive, check your spam
+            folder — you can request another from the sign-in page.
+          </p>
+          <Link to="/login" className="text-blue-400 hover:text-blue-300 text-sm">
+            Go to sign in
+          </Link>
+        </div>
       </div>
     )
   }

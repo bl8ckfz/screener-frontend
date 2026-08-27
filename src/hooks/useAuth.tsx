@@ -26,6 +26,7 @@ interface AuthContextType {
   // Actions
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string, inviteCode?: string) => Promise<void>
+  verifyEmail: (token: string) => Promise<void>
   logout: () => void
   refreshToken: () => Promise<void>
   syncWatchlist: () => Promise<void>
@@ -159,10 +160,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await Promise.all([syncWatchlist(), syncWebhooks()])
   }
 
+  // Registration no longer signs anyone in: the account cannot be used until
+  // the address is confirmed, so there is no user to set here. The caller
+  // shows a "check your inbox" state instead.
   const register = async (email: string, password: string, inviteCode?: string) => {
-    const response = await authService.register(email, password, inviteCode)
+    await authService.register(email, password, inviteCode)
+  }
+
+  // Confirming the address DOES sign in — ownership has just been proven, and
+  // any subscription bought before registering is claimed at the same moment.
+  const verifyEmail = async (token: string) => {
+    const response = await authService.verifyEmail(token)
     setUser(response.user)
     setForceExpired(false)
+    await Promise.all([syncWatchlist(), syncWebhooks()])
   }
 
   const logout = () => {
@@ -192,6 +203,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ...subscriptionState,
         login,
         register,
+        verifyEmail,
         logout,
         refreshToken,
         syncWebhooks,
