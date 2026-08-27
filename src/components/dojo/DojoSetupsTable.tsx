@@ -42,6 +42,17 @@ const COLUMNS: Array<{
   label: string
   align: 'left' | 'right' | 'center'
   title?: string
+  /**
+   * Tailwind visibility, for columns that drop out on a narrow panel.
+   *
+   * The table shares the viewport with the chart, so ten columns overflow
+   * long before the window is small. Hiding beats horizontal scrolling
+   * because NOTHING IS LOST: R:R and Volume both appear in the expanded trade
+   * plan, so the row is one click from the full picture either way. They are
+   * still sortable at any width — the sort control simply lives on a header
+   * you can only see when there is room for it.
+   */
+  hide?: string
 }> = [
   { field: 'symbol', label: 'Symbol', align: 'left' },
   { field: 'timeframe', label: 'TF', align: 'left' },
@@ -51,11 +62,23 @@ const COLUMNS: Array<{
     field: 'distance', label: 'To entry', align: 'right',
     title: 'How far price must travel from where it is now to reach the entry. Unsigned — the direction is already given by Side.',
   },
-  { field: 'rr', label: 'R:R', align: 'right' },
-  { field: 'confluence', label: 'Conf', align: 'center', title: 'Independent confluences on the best in-band level' },
+  // First to go: R:R is ~3.0 by construction for every zone (0.705 entry,
+  // leg-origin stop, -0.27 target), so it rarely distinguishes one row from
+  // another. Conf goes next — it is 2 on almost everything, since 2 is the
+  // minimum that publishes at all.
+  {
+    field: 'rr', label: 'R:R', align: 'right',
+    hide: 'hidden xl:table-cell',
+  },
+  {
+    field: 'confluence', label: 'Conf', align: 'center',
+    title: 'Independent confluences on the best in-band level',
+    hide: 'hidden lg:table-cell',
+  },
   {
     field: 'volume', label: 'Vol', align: 'center',
     title: 'Whether the zone sits on transacted history (HVN) or in a thin patch price can travel through (LVN)',
+    hide: 'hidden xl:table-cell',
   },
   {
     field: 'age', label: 'Age', align: 'right',
@@ -63,6 +86,15 @@ const COLUMNS: Array<{
   },
   { field: 'status', label: 'Status', align: 'left' },
 ]
+
+/**
+ * Visibility class per column, so a header and its cell cannot disagree about
+ * whether the column exists at the current width — which would misalign every
+ * row after it.
+ */
+const HIDE: Partial<Record<SortField, string>> = Object.fromEntries(
+  COLUMNS.filter((c) => c.hide).map((c) => [c.field, c.hide!]),
+)
 
 /** Rank for the Status column, so sorting follows the trade's lifecycle. */
 const OUTCOME_ORDER: Record<string, number> = {
@@ -389,9 +421,9 @@ export function DojoSetupsTable({
                       key={c.field}
                       onClick={() => toggleSort(c.field)}
                       title={c.title}
-                      className={`px-3 py-3 text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none whitespace-nowrap bg-gray-900 ${
+                      className={`px-2 py-3 text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none whitespace-nowrap bg-gray-900 ${
                         c.align === 'right' ? 'text-right' : c.align === 'center' ? 'text-center' : 'text-left'
-                      }`}
+                      } ${c.hide ?? ''}`}
                     >
                       <div
                         className={`flex items-center gap-1 ${
@@ -427,18 +459,18 @@ export function DojoSetupsTable({
                         selectedId === s.id ? 'bg-gray-700/40' : ''
                       }`}
                     >
-                      <td className="px-3 py-2 font-medium text-white">{s.symbol}</td>
-                      <td className="px-3 py-2 uppercase text-gray-300">{s.timeframe}</td>
-                      <td className={`px-3 py-2 capitalize font-medium ${
+                      <td className="px-2 py-2 font-medium text-white whitespace-nowrap">{s.symbol}</td>
+                      <td className="px-2 py-2 uppercase text-gray-300">{s.timeframe}</td>
+                      <td className={`px-2 py-2 capitalize font-medium ${
                         s.direction === 'long' ? 'text-green-400' : 'text-red-400'
                       }`}>
                         {s.direction}
                       </td>
-                      <td className="px-3 py-2 text-right font-mono text-gray-100">
+                      <td className="px-2 py-2 text-right font-mono text-gray-100">
                         {formatDojoPrice(s.entry)}
                       </td>
                       <td
-                        className={`px-3 py-2 text-right font-mono ${
+                        className={`px-2 py-2 text-right font-mono ${
                           distanceIsLive(livePrice) ? 'text-gray-300' : 'text-gray-500 italic'
                         }`}
                         title={
@@ -449,17 +481,17 @@ export function DojoSetupsTable({
                       >
                         {dist === null ? '—' : `${Math.abs(dist).toFixed(1)}%`}
                       </td>
-                      <td className="px-3 py-2 text-right font-mono text-gray-100">
+                      <td className={`px-2 py-2 text-right font-mono text-gray-100 ${HIDE.rr ?? ''}`}>
                         {s.rr.toFixed(2)}
                       </td>
-                      <td className="px-3 py-2 text-center text-gray-100">{s.confluence_score}</td>
-                      <td className="px-3 py-2 text-center">
+                      <td className={`px-2 py-2 text-center text-gray-100 ${HIDE.confluence ?? ''}`}>{s.confluence_score}</td>
+                      <td className={`px-2 py-2 text-center ${HIDE.volume ?? ''}`}>
                         <VolumeBadge setup={s} />
                       </td>
-                      <td className="px-3 py-2 text-right font-mono text-gray-500">
+                      <td className="px-2 py-2 text-right font-mono text-gray-500">
                         {age === null ? '—' : age === 0 ? 'today' : `${age}d`}
                       </td>
-                      <td className="px-3 py-2">
+                      <td className="px-2 py-2">
                         <OutcomeBadge setup={s} />
                       </td>
                     </tr>
