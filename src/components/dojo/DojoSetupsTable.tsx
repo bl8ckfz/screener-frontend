@@ -42,9 +42,8 @@ const COLUMNS: Array<{
   label: string
   align: 'left' | 'right' | 'center'
   title?: string
-  className?: string
 }> = [
-  { field: 'symbol', label: 'Symbol', align: 'left', className: 'px-4' },
+  { field: 'symbol', label: 'Symbol', align: 'left' },
   { field: 'timeframe', label: 'TF', align: 'left' },
   { field: 'direction', label: 'Side', align: 'left' },
   { field: 'entry', label: 'Entry', align: 'right' },
@@ -378,8 +377,11 @@ export function DojoSetupsTable({
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="text-xs text-gray-400 border-b border-gray-700">
-              <tr>
+            {/* Styled to match CoinTable and AlertHistoryTable: sticky, and
+                bg-gray-900 repeated on each th because a sticky thead does not
+                paint its own background over the scrolling rows. */}
+            <thead className="bg-gray-900 sticky top-0 z-10">
+              <tr className="border-b border-gray-700">
                 {COLUMNS.map((c) => {
                   const active = sortField === c.field
                   return (
@@ -387,18 +389,20 @@ export function DojoSetupsTable({
                       key={c.field}
                       onClick={() => toggleSort(c.field)}
                       title={c.title}
-                      className={`font-medium py-2 cursor-pointer select-none hover:text-gray-200 ${
-                        c.className ?? 'px-2'
-                      } ${
+                      className={`px-3 py-3 text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none whitespace-nowrap bg-gray-900 ${
                         c.align === 'right' ? 'text-right' : c.align === 'center' ? 'text-center' : 'text-left'
-                      } ${active ? 'text-white' : ''}`}
+                      }`}
                     >
-                      {c.label}
-                      {/* A fixed-width marker so toggling direction does not
-                          shuffle the column widths under the cursor. */}
-                      <span className="inline-block w-3 text-center">
-                        {active ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
-                      </span>
+                      <div
+                        className={`flex items-center gap-1 ${
+                          c.align === 'right' ? 'justify-end' : c.align === 'center' ? 'justify-center' : ''
+                        }`}
+                      >
+                        {c.label}
+                        {active && (
+                          <span className="text-accent">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
                     </th>
                   )
                 })}
@@ -423,18 +427,18 @@ export function DojoSetupsTable({
                         selectedId === s.id ? 'bg-gray-700/40' : ''
                       }`}
                     >
-                      <td className="px-4 py-2 font-medium text-white">{s.symbol}</td>
-                      <td className="px-2 py-2 uppercase text-gray-300">{s.timeframe}</td>
-                      <td className={`px-2 py-2 capitalize font-medium ${
+                      <td className="px-3 py-2 font-medium text-white">{s.symbol}</td>
+                      <td className="px-3 py-2 uppercase text-gray-300">{s.timeframe}</td>
+                      <td className={`px-3 py-2 capitalize font-medium ${
                         s.direction === 'long' ? 'text-green-400' : 'text-red-400'
                       }`}>
                         {s.direction}
                       </td>
-                      <td className="px-2 py-2 text-right font-mono text-gray-100">
+                      <td className="px-3 py-2 text-right font-mono text-gray-100">
                         {formatDojoPrice(s.entry)}
                       </td>
                       <td
-                        className={`px-2 py-2 text-right font-mono ${
+                        className={`px-3 py-2 text-right font-mono ${
                           distanceIsLive(livePrice) ? 'text-gray-300' : 'text-gray-500 italic'
                         }`}
                         title={
@@ -445,17 +449,17 @@ export function DojoSetupsTable({
                       >
                         {dist === null ? '—' : `${Math.abs(dist).toFixed(1)}%`}
                       </td>
-                      <td className="px-2 py-2 text-right font-mono text-gray-100">
+                      <td className="px-3 py-2 text-right font-mono text-gray-100">
                         {s.rr.toFixed(2)}
                       </td>
-                      <td className="px-2 py-2 text-center text-gray-100">{s.confluence_score}</td>
-                      <td className="px-2 py-2 text-center">
+                      <td className="px-3 py-2 text-center text-gray-100">{s.confluence_score}</td>
+                      <td className="px-3 py-2 text-center">
                         <VolumeBadge setup={s} />
                       </td>
-                      <td className="px-2 py-2 text-right font-mono text-gray-500">
+                      <td className="px-3 py-2 text-right font-mono text-gray-500">
                         {age === null ? '—' : age === 0 ? 'today' : `${age}d`}
                       </td>
-                      <td className="px-2 py-2">
+                      <td className="px-3 py-2">
                         <OutcomeBadge setup={s} />
                       </td>
                     </tr>
