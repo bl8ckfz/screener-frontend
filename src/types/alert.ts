@@ -45,6 +45,10 @@ export type FuturesAlertType =
   // timeframe armed the zone, so it travels in the alert metadata instead.
   | 'futures_dojo_near_long' // Dojo Zone Entered (Long)
   | 'futures_dojo_near_short' // Dojo Zone Entered (Short)
+  // Price reached the resting limit at fib 0.705. The entry sits inside the
+  // zone, so this supersedes the near_* alert rather than adding to it.
+  | 'futures_dojo_filled_long' // Dojo Entry Filled (Long)
+  | 'futures_dojo_filled_short' // Dojo Entry Filled (Short)
 
 /**
  * Legacy alert types (DEPRECATED - kept for backwards compatibility only)
@@ -651,6 +655,24 @@ export const FUTURES_ALERT_PRESETS: FuturesAlertPreset[] = [
     severity: 'critical',
     marketMode: 'bear',
   },
+  // ── Dojo entry filled ────────────────────────────────────────────
+  // The strongest of the three: price reached the limit itself. Fires once per
+  // zone — deduplicated by the fill being recorded, not by a cooldown — and
+  // suppresses the zone-entered alert for the same event.
+  {
+    type: 'futures_dojo_filled_long',
+    name: 'Dojo Entry Filled (Long)',
+    description: 'Price reached the resting limit at fib 0.705 of a Dojo discount zone. An order placed when the zone armed would now be filled; work from the stop and targets in the alert. Fires once per zone.',
+    severity: 'critical',
+    marketMode: 'bull',
+  },
+  {
+    type: 'futures_dojo_filled_short',
+    name: 'Dojo Entry Filled (Short)',
+    description: 'Price reached the resting limit at fib 0.705 of a Dojo premium zone. An order placed when the zone armed would now be filled; work from the stop and targets in the alert. Fires once per zone.',
+    severity: 'critical',
+    marketMode: 'bear',
+  },
 ]
 
 /**
@@ -690,6 +712,8 @@ export const FUTURES_ALERT_LABELS: Record<FuturesAlertType, string> = {
   futures_dojo_otz_short_1w: '🥋🔴 Dojo OTZ Short 1W',
   futures_dojo_near_long: '🎯🟢 Dojo Zone Entered (Long)',
   futures_dojo_near_short: '🎯🔴 Dojo Zone Entered (Short)',
+  futures_dojo_filled_long: '✅🟢 Dojo Entry Filled (Long)',
+  futures_dojo_filled_short: '✅🔴 Dojo Entry Filled (Short)',
 }
 
 /**
@@ -734,6 +758,8 @@ export const DEFAULT_FUTURES_ALERT_CONFIG: FuturesAlertConfig = {
     futures_dojo_otz_short_1d: { enabled: false, severity: 'high' },
     futures_dojo_near_long: { enabled: true, severity: 'critical' },
     futures_dojo_near_short: { enabled: true, severity: 'critical' },
+    futures_dojo_filled_long: { enabled: true, severity: 'critical' },
+    futures_dojo_filled_short: { enabled: true, severity: 'critical' },
   },
   globalThresholds: {
     priceChange_15m: 1.0, // 1%

@@ -67,6 +67,7 @@ const DOJO_TYPES = new Set<FuturesAlertType>([
   'futures_dojo_otz_long_5d', 'futures_dojo_otz_short_5d',
   'futures_dojo_otz_long_1d', 'futures_dojo_otz_short_1d',
   'futures_dojo_near_long', 'futures_dojo_near_short',
+  'futures_dojo_filled_long', 'futures_dojo_filled_short',
 ])
 
 interface PresetGroup {

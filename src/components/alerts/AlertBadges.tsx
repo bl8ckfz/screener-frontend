@@ -67,6 +67,10 @@ export function AlertBadges({ alertTypes, maxVisible = 3, latestAlertType }: Ale
       text = '🔪'
     } else if (cleanType === 'capitulation_catcher') {
       text = '🩸'
+    } else if (cleanType.startsWith('dojo_filled_')) {
+      // The resting limit was reached. Strongest of the three Dojo events, and
+      // the badge matches the ✅ used in Discord.
+      text = '✅'
     } else if (cleanType.startsWith('dojo_near_')) {
       // Price has arrived at an armed zone. There is no timeframe to show —
       // an arrival is the same event whichever timeframe armed the zone — so

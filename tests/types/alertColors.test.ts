@@ -35,6 +35,11 @@ describe('isBullishAlertType', () => {
     expect(isBullishAlertType('futures_dojo_near_short')).toBe(false)
   })
 
+  it('handles Dojo entry-filled alerts', () => {
+    expect(isBullishAlertType('futures_dojo_filled_long')).toBe(true)
+    expect(isBullishAlertType('futures_dojo_filled_short')).toBe(false)
+  })
+
   it('accepts a type already stripped of the futures_ prefix', () => {
     expect(isBullishAlertType('dojo_near_long')).toBe(true)
     expect(isBullishAlertType('dojo_near_short')).toBe(false)
