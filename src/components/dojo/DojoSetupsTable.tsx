@@ -19,6 +19,7 @@ import {
   isLiveOutcome,
   VOLUME_NODE_META,
   formatDojoPrice,
+  stopRiskPct,
   distanceToEntry,
   distanceIsLive,
   daysSince,
@@ -166,7 +167,11 @@ function TradePlan({ setup, livePrice }: { setup: DojoSetup; livePrice?: number 
   const rows: Array<[string, string, string?]> = [
     ['Zone (fib 0.62–0.79)', `${formatDojoPrice(setup.otz_low)} – ${formatDojoPrice(setup.otz_high)}`],
     ['Entry (fib 0.705)', formatDojoPrice(setup.entry), 'Resting limit — set it and wait'],
-    ['Stop', formatDojoPrice(setup.stop_loss), 'Leg origin, 0.5% beyond'],
+    [
+      'Stop',
+      `${formatDojoPrice(setup.stop_loss)} (${stopRiskPct(setup).toFixed(1)}% risk)`,
+      'Leg origin, 0.5% beyond. The percentage is the distance from the entry — the risk per unit that position sizing is computed from.',
+    ],
     ['Targets', `${formatDojoPrice(setup.tp1)} / ${formatDojoPrice(setup.tp2)} / ${formatDojoPrice(setup.tp3)}`, 'fib −0.27 / −0.62 / −1.0'],
     ['R:R to TP1', setup.rr.toFixed(2)],
     ['Price when armed', formatDojoPrice(setup.trigger_price), 'The last confirmed close at the moment this zone was published — not a live price'],

@@ -231,6 +231,21 @@ export function distanceToEntry(s: DojoSetup, livePrice?: number): number | null
   return ((s.entry - from) / from) * 100
 }
 
+/**
+ * How far the stop sits from the entry, as a percentage.
+ *
+ * This is the risk per unit, and it is what position sizing is actually
+ * computed from — a bare stop price makes the reader do the arithmetic, and on
+ * a token priced at 0.00002341 they will not do it accurately in their head.
+ *
+ * Unsigned, for the same reason the "To entry" column is: the direction is
+ * already given by the side, and a signed figure would only restate it.
+ */
+export function stopRiskPct(s: DojoSetup): number {
+  if (!s.entry || !s.stop_loss) return 0
+  return Math.abs((s.entry - s.stop_loss) / s.entry) * 100
+}
+
 /** Whether a distance was computed against a live price or the stored one. */
 export function distanceIsLive(livePrice?: number): boolean {
   return !!livePrice && livePrice > 0
