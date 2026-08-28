@@ -50,7 +50,10 @@ export function useDojoSetups(filters: DojoSetupFilters = {}) {
 
   const summary = {
     total: setups.length,
+    // 'unfilled' now excludes zones whose thesis died, so "waiting" only
+    // counts what is still worth waiting for.
     armed: setups.filter((s) => s.outcome === 'unfilled').length,
+    invalidated: setups.filter((s) => s.outcome === 'invalidated').length,
     open: setups.filter((s) => s.outcome === 'open').length,
     resolved: resolved.length,
     wins,

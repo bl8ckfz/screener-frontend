@@ -23,7 +23,29 @@
  */
 import type { Coin } from '@/types/coin'
 
-export type DojoOutcome = 'unfilled' | 'open' | 'target' | 'stopped'
+export type DojoOutcome = 'unfilled' | 'open' | 'target' | 'stopped' | 'invalidated'
+
+/** Why a zone was retired without ever filling. */
+export type DojoInvalidationReason =
+  | 'leg_reanchored'
+  | 'fvg_mitigated'
+  | 'structure_flipped'
+  | 'no_current_leg'
+  | 'expired'
+
+/** Plain-language explanation per reason, for the row tooltip. */
+export const DOJO_INVALIDATION_HINT: Record<DojoInvalidationReason, string> = {
+  leg_reanchored:
+    'A new swing confirmed, so the fibonacci levels here were measured from bars that no longer define the leg',
+  fvg_mitigated:
+    'The fair value gap that validated this zone has been filled — FVG validation was required to publish it',
+  structure_flipped:
+    'Market structure now disagrees with the direction, which is what the arming gate exists to refuse',
+  no_current_leg:
+    'This symbol no longer produces a usable leg in this direction',
+  expired:
+    'Structurally intact but old enough that nobody is realistically still waiting on it',
+}
 
 /** Volume-profile classification of the zone. */
 export type VolumeNode = 'hvn' | 'lvn' | 'neutral'
@@ -117,6 +139,8 @@ export interface DojoSetup {
   tp1_hit_at?: string
   sl_hit_at?: string
   outcome: DojoOutcome
+  invalidated_at?: string
+  invalidation_reason?: DojoInvalidationReason
 }
 
 /** Display metadata per outcome, so the table and any summary agree. */
@@ -143,6 +167,15 @@ export const DOJO_OUTCOME_META: Record<
     label: 'Stopped',
     className: 'bg-red-500/20 text-red-300',
     hint: 'Stop reached. A bar touching both levels counts as stopped, since a daily bar carries no intrabar ordering',
+  },
+  // Never filled, and the thesis died first. Like 'unfilled' it is neither a
+  // win nor a loss and is excluded from the hit rate — but unlike 'unfilled'
+  // it will never become one, so it is styled to recede rather than invite
+  // action.
+  invalidated: {
+    label: 'Invalidated',
+    className: 'bg-gray-700/40 text-gray-500',
+    hint: 'The setup stopped being tradeable before price ever reached the entry — no trade was taken',
   },
 }
 

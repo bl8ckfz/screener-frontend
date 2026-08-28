@@ -15,6 +15,7 @@ import { Fragment, useMemo, useState } from 'react'
 import { useDojoSetups, type DojoSetupFilters } from '@/hooks/useDojoSetups'
 import {
   DOJO_OUTCOME_META,
+  DOJO_INVALIDATION_HINT,
   VOLUME_NODE_META,
   formatDojoPrice,
   distanceToEntry,
@@ -98,7 +99,7 @@ const HIDE: Partial<Record<SortField, string>> = Object.fromEntries(
 
 /** Rank for the Status column, so sorting follows the trade's lifecycle. */
 const OUTCOME_ORDER: Record<string, number> = {
-  unfilled: 0, open: 1, target: 2, stopped: 3,
+  unfilled: 0, open: 1, target: 2, stopped: 3, invalidated: 4,
 }
 
 /** Rank for the Vol column: acceptance, ordinary, thin, then unknown last. */
@@ -121,9 +122,15 @@ function VolumeBadge({ setup }: { setup: DojoSetup }) {
 
 function OutcomeBadge({ setup }: { setup: DojoSetup }) {
   const meta = DOJO_OUTCOME_META[setup.outcome]
+  // An invalidated zone says WHY on hover. "Invalidated" alone invites the
+  // question, and the answer is already stored.
+  const reasonHint =
+    setup.outcome === 'invalidated' && setup.invalidation_reason
+      ? `${meta.hint} — ${DOJO_INVALIDATION_HINT[setup.invalidation_reason]}`
+      : meta.hint
   return (
     <span
-      title={meta.hint}
+      title={reasonHint}
       className={`px-2 py-0.5 rounded text-xs font-semibold whitespace-nowrap ${meta.className}`}
     >
       {meta.label}
@@ -335,6 +342,14 @@ export function DojoSetupsTable({
         </span>
         <span className="text-gray-400">{summary.armed} waiting</span>
         <span className="text-gray-400">{summary.open} open</span>
+        {summary.invalidated > 0 && (
+          <span
+            className="text-gray-600"
+            title="Zones retired before price ever reached the entry — the leg re-anchored, the validating gap was mitigated, or structure flipped. Excluded from the hit rate, since no trade was taken."
+          >
+            {summary.invalidated} invalidated
+          </span>
+        )}
         {summary.hitRate !== null ? (
           <span className="text-gray-400" title="Resolved trades only — zones price never reached are excluded, since there was no trade to win or lose">
             {summary.wins}/{summary.resolved} hit target ({summary.hitRate.toFixed(0)}%)
