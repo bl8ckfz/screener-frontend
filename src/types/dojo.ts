@@ -143,6 +143,20 @@ export interface DojoSetup {
   invalidation_reason?: DojoInvalidationReason
 }
 
+/**
+ * Which outcomes are still worth attention.
+ *
+ * 'unfilled' and 'open' are the two live states: one is waiting for price, the
+ * other is a running trade. Everything else is history — it can only be read,
+ * not acted on — and history accumulates without bound while the live set does
+ * not, so the table defaults to showing only these.
+ */
+export const LIVE_OUTCOMES: readonly DojoOutcome[] = ['unfilled', 'open']
+
+export function isLiveOutcome(o: DojoOutcome): boolean {
+  return LIVE_OUTCOMES.includes(o)
+}
+
 /** Display metadata per outcome, so the table and any summary agree. */
 export const DOJO_OUTCOME_META: Record<
   DojoOutcome,
@@ -173,7 +187,11 @@ export const DOJO_OUTCOME_META: Record<
   // it will never become one, so it is styled to recede rather than invite
   // action.
   invalidated: {
-    label: 'Invalidated',
+    // "Invalid", not "Invalidated": at 11 characters it was the widest label
+    // in the Status column and set the width of the whole table, which put the
+    // Dojo tab back into horizontal scrolling. Seven characters matches
+    // Waiting and Stopped exactly, and the full meaning is in the tooltip.
+    label: 'Invalid',
     className: 'bg-gray-700/40 text-gray-500',
     hint: 'The setup stopped being tradeable before price ever reached the entry — no trade was taken',
   },

@@ -26,6 +26,50 @@ function setup(over: Partial<DojoSetup>): DojoSetup {
 
 const base = { sortField: 'age' as const, sortDirection: 'asc' as const }
 
+describe('live / closed view', () => {
+  // Closed zones accumulate forever — dojo_setups has no retention — while the
+  // live set stays small, because invalidation retires dead ones and fills
+  // resolve. Showing everything meant the actionable rows became a shrinking
+  // fraction of the list.
+  const rows = [
+    setup({ symbol: 'WAITING', outcome: 'unfilled' }),
+    setup({ symbol: 'RUNNING', outcome: 'open' }),
+    setup({ symbol: 'WON', outcome: 'target' }),
+    setup({ symbol: 'LOST', outcome: 'stopped' }),
+    setup({ symbol: 'DEAD', outcome: 'invalidated' }),
+  ]
+
+  it('shows only what can still be acted on by default', () => {
+    const got = filterAndSortSetups(rows, { ...base, view: 'live' }).map((s) => s.symbol)
+    expect(got.sort()).toEqual(['RUNNING', 'WAITING'])
+  })
+
+  it('puts everything read-only under closed', () => {
+    const got = filterAndSortSetups(rows, { ...base, view: 'closed' }).map((s) => s.symbol)
+    expect(got.sort()).toEqual(['DEAD', 'LOST', 'WON'])
+  })
+
+  it('leaves nothing out between the two views', () => {
+    const live = filterAndSortSetups(rows, { ...base, view: 'live' })
+    const closed = filterAndSortSetups(rows, { ...base, view: 'closed' })
+    const all = filterAndSortSetups(rows, { ...base, view: 'all' })
+    expect(live.length + closed.length).toBe(all.length)
+    expect(all.length).toBe(rows.length)
+  })
+
+  // A filled trade is LIVE even though its zone may since have been
+  // invalidated — the position is real and still running.
+  it('counts a running trade as live', () => {
+    const got = filterAndSortSetups([setup({ symbol: 'X', outcome: 'open' })], { ...base, view: 'live' })
+    expect(got).toHaveLength(1)
+  })
+
+  it('composes with search rather than replacing it', () => {
+    const got = filterAndSortSetups(rows, { ...base, view: 'live', searchQuery: 'wait' })
+    expect(got.map((s) => s.symbol)).toEqual(['WAITING'])
+  })
+})
+
 describe('search', () => {
   const rows = [setup({ symbol: 'BTCUSDT' }), setup({ symbol: 'SUIUSDT' }), setup({ symbol: 'ETHUSDT' })]
 

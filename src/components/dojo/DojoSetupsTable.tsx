@@ -16,6 +16,7 @@ import { useDojoSetups, type DojoSetupFilters } from '@/hooks/useDojoSetups'
 import {
   DOJO_OUTCOME_META,
   DOJO_INVALIDATION_HINT,
+  isLiveOutcome,
   VOLUME_NODE_META,
   formatDojoPrice,
   distanceToEntry,
@@ -25,6 +26,25 @@ import {
 } from '@/types/dojo'
 
 const TIMEFRAMES = ['1d', '5d', '1w'] as const
+
+/**
+ * Which slice of history the table shows.
+ *
+ * dojo_setups has no retention, so closed zones accumulate forever while the
+ * live set stays small — invalidation retires dead ones and fills resolve.
+ * Showing everything therefore meant the useful rows were a shrinking fraction
+ * of the list, and the closed ones can only be read, never acted on.
+ *
+ * 'live' is the default because it answers the question the page exists for:
+ * what should I be doing right now.
+ */
+type ViewFilter = 'live' | 'closed' | 'all'
+
+const VIEWS: Array<{ id: ViewFilter; label: string; title: string }> = [
+  { id: 'live', label: 'Live', title: 'Waiting for price, or filled and running' },
+  { id: 'closed', label: 'Closed', title: 'Hit target, stopped out, or invalidated before ever filling' },
+  { id: 'all', label: 'All', title: 'Every zone ever published' },
+]
 
 type SortField =
   | 'symbol' | 'timeframe' | 'direction' | 'entry' | 'distance'
@@ -218,12 +238,19 @@ export function filterAndSortSetups(
     sortField: SortField
     sortDirection: SortDirection
     livePrices?: Record<string, number>
+    view?: ViewFilter
   },
 ): DojoSetup[] {
-  const { searchQuery = '', sortField, sortDirection, livePrices } = opts
+  const { searchQuery = '', sortField, sortDirection, livePrices, view = 'all' } = opts
 
   const q = searchQuery.trim().toLowerCase()
-  const rows = q ? setups.filter((s) => s.symbol.toLowerCase().includes(q)) : setups.slice()
+  let rows = q ? setups.filter((s) => s.symbol.toLowerCase().includes(q)) : setups.slice()
+
+  if (view === 'live') {
+    rows = rows.filter((s) => isLiveOutcome(s.outcome))
+  } else if (view === 'closed') {
+    rows = rows.filter((s) => !isLiveOutcome(s.outcome))
+  }
 
   // One sort key per column, or null when the row has no value for it.
   //
@@ -302,6 +329,7 @@ export function DojoSetupsTable({
   searchQuery = '',
 }: DojoSetupsTableProps = {}) {
   const [filters, setFilters] = useState<DojoSetupFilters>({})
+  const [view, setView] = useState<ViewFilter>('live')
   const [expanded, setExpanded] = useState<string | null>(null)
   // Age ascending by default: newest zone first, which is what the API
   // already returns, so the initial view is unchanged and now explicit.
@@ -318,9 +346,16 @@ export function DojoSetupsTable({
     setSortDirection('asc')
   }
 
+  // Counted over everything fetched, not the current view — the badge should
+  // say how many live zones exist, including while looking at Closed.
+  const liveCount = useMemo(
+    () => setups.filter((s) => isLiveOutcome(s.outcome)).length,
+    [setups],
+  )
+
   const visible = useMemo(
-    () => filterAndSortSetups(setups, { searchQuery, sortField, sortDirection, livePrices }),
-    [setups, searchQuery, sortField, sortDirection, livePrices],
+    () => filterAndSortSetups(setups, { searchQuery, sortField, sortDirection, livePrices, view }),
+    [setups, searchQuery, sortField, sortDirection, livePrices, view],
   )
 
   if (!isAuthenticated) {
@@ -362,7 +397,28 @@ export function DojoSetupsTable({
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-2 px-4 py-2 border-b border-gray-700">
+      <div className="flex flex-wrap items-center gap-2 px-4 py-2 border-b border-gray-700">
+        {/* Live / Closed / All — first, because it decides what the rest of
+            the row is filtering within. */}
+        <div className="flex rounded overflow-hidden border border-gray-600 mr-1">
+          {VIEWS.map((v) => (
+            <button
+              key={v.id}
+              onClick={() => setView(v.id)}
+              title={v.title}
+              className={`px-2.5 py-1 text-xs ${
+                view === v.id
+                  ? 'bg-gray-600 text-white'
+                  : 'bg-gray-800/50 text-gray-400 hover:text-gray-200'
+              }`}
+            >
+              {v.label}
+              {v.id === 'live' && liveCount > 0 && (
+                <span className="ml-1 text-gray-400">{liveCount}</span>
+              )}
+            </button>
+          ))}
+        </div>
         <button
           onClick={() => setFilters({})}
           className={`px-2.5 py-1 rounded text-xs ${
@@ -403,7 +459,16 @@ export function DojoSetupsTable({
         ))}
       </div>
 
-      {visible.length === 0 && setups.length > 0 ? (
+      {visible.length === 0 && setups.length > 0 && !searchQuery.trim() ? (
+        <div className="p-6 text-sm text-gray-400">
+          <p>No {view === 'live' ? 'live' : view === 'closed' ? 'closed' : ''} zones.</p>
+          <p className="mt-1 text-xs text-gray-500">
+            {view === 'live'
+              ? 'Nothing is waiting for price or currently running. Closed zones are under the Closed tab.'
+              : 'Nothing has resolved or been invalidated yet.'}
+          </p>
+        </div>
+      ) : visible.length === 0 && setups.length > 0 ? (
         <div className="p-6 text-sm text-gray-400">
           <p>No zones match “{searchQuery}”.</p>
           <p className="mt-1 text-xs text-gray-500">
