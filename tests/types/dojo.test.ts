@@ -15,12 +15,10 @@ function setup(over: Partial<DojoSetup> = {}): DojoSetup {
     symbol: '1000FLOKIUSDT', timeframe: '1w', direction: 'short',
     rule_type: 'futures_dojo_otz_short_1w',
     trigger_price: 0.02261,
-    leg_high: 0.038330, leg_low: 0.019901,
-    leg_high_time: '2026-01-01T00:00:00Z', leg_low_time: '2026-06-01T00:00:00Z',
     otz_low: 0.031327, otz_high: 0.034460,
     entry: 0.032893, stop_loss: 0.038522,
     tp1: 0.014925, tp2: 0.008, tp3: 0.002, rr: 3.19,
-    confluence_score: 2, backings: ['1M 0.5', 'FVG'],
+    confluence_band: 'MEDIUM', backings: ['1M 0.5', 'FVG'],
     outcome: 'unfilled',
     ...over,
   }

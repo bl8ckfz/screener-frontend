@@ -2,10 +2,10 @@
  * DojoSetupsTable — browse Dojo confluence zones.
  *
  * These are not price-move alerts. A row means a ZONE became armed: an
- * FVG-validated fib 0.62–0.79 band with higher-timeframe fibonacci
- * confluence and agreeing structure, which price has not yet traded into.
- * The entry is a resting limit at fib 0.705, so the row is actionable the
- * moment it appears rather than when price arrives.
+ * FVG-validated demand (or supply) area with higher-timeframe confluence and
+ * agreeing structure, which price has not yet traded into. The entry is a
+ * resting limit inside it, so the row is actionable the moment it appears
+ * rather than when price arrives.
  *
  * Because of that, the most useful column is not the price — it is how far
  * price still has to travel to reach the entry, and whether it ever did.
@@ -23,7 +23,9 @@ import {
   distanceToEntry,
   distanceIsLive,
   daysSince,
+  CONFLUENCE_RANK,
   type DojoSetup,
+  type ConfluenceBand,
 } from '@/types/dojo'
 
 const TIMEFRAMES = ['1d', '5d', '1w'] as const
@@ -84,17 +86,16 @@ const COLUMNS: Array<{
     field: 'distance', label: 'To entry', align: 'right',
     title: 'How far price must travel from where it is now to reach the entry. Unsigned — the direction is already given by Side.',
   },
-  // First to go: R:R is ~3.0 by construction for every zone (0.705 entry,
-  // leg-origin stop, -0.27 target), so it rarely distinguishes one row from
-  // another. Conf goes next — it is 2 on almost everything, since 2 is the
-  // minimum that publishes at all.
+  // First to go: R:R is ~3.0 by construction for every zone, so it rarely
+  // distinguishes one row from another. Conf goes next — it reads HIGH or
+  // MEDIUM on almost everything, since anything weaker never publishes.
   {
     field: 'rr', label: 'R:R', align: 'right',
     hide: 'hidden xl:table-cell',
   },
   {
     field: 'confluence', label: 'Conf', align: 'center',
-    title: 'Independent confluences on the best in-band level',
+    title: 'How much independent agreement backs this zone, relative to the most its timeframe can carry',
     hide: 'hidden lg:table-cell',
   },
   {
@@ -141,6 +142,32 @@ function VolumeBadge({ setup }: { setup: DojoSetup }) {
   )
 }
 
+const CONFLUENCE_META: Record<ConfluenceBand, { className: string; hint: string }> = {
+  HIGH: {
+    className: 'bg-emerald-500/15 text-emerald-300',
+    hint: 'As much agreement as this timeframe can carry',
+  },
+  MEDIUM: {
+    className: 'bg-amber-500/15 text-amber-300',
+    hint: 'One short of the most this timeframe can carry',
+  },
+  LOW: {
+    className: 'bg-gray-500/15 text-gray-300',
+    hint: 'Thin agreement behind this zone',
+  },
+}
+
+/** Confluence as a band. Nothing renders for a row that predates the column. */
+function ConfluenceBadge({ band }: { band: ConfluenceBand }) {
+  const meta = CONFLUENCE_META[band]
+  if (!meta) return <span className="text-gray-600">—</span>
+  return (
+    <span title={meta.hint} className={`px-1.5 py-0.5 rounded text-xs font-semibold ${meta.className}`}>
+      {band}
+    </span>
+  )
+}
+
 function OutcomeBadge({ setup }: { setup: DojoSetup }) {
   const meta = DOJO_OUTCOME_META[setup.outcome]
   // An invalidated zone says WHY on hover. "Invalidated" alone invites the
@@ -165,17 +192,20 @@ function TradePlan({ setup, livePrice }: { setup: DojoSetup; livePrice?: number 
   const isLong = setup.direction === 'long'
 
   const rows: Array<[string, string, string?]> = [
-    ['Zone (fib 0.62–0.79)', `${formatDojoPrice(setup.otz_low)} – ${formatDojoPrice(setup.otz_high)}`],
-    ['Entry (fib 0.705)', formatDojoPrice(setup.entry), 'Resting limit — set it and wait'],
+    [
+      'Zone (whole demand)',
+      `${formatDojoPrice(setup.otz_low)} – ${formatDojoPrice(setup.otz_high)}`,
+      'The whole area price has to trade back into for this setup to be live',
+    ],
+    ['Entry (precise sniper)', formatDojoPrice(setup.entry), 'The precise point inside the zone. A resting limit — set it and wait'],
     [
       'Stop',
       `${formatDojoPrice(setup.stop_loss)} (${stopRiskPct(setup).toFixed(1)}% risk)`,
-      'Leg origin, 0.5% beyond. The percentage is the distance from the entry — the risk per unit that position sizing is computed from.',
+      'Where the setup is wrong. The percentage is the distance from the entry — the risk per unit that position sizing is computed from.',
     ],
-    ['Targets', `${formatDojoPrice(setup.tp1)} / ${formatDojoPrice(setup.tp2)} / ${formatDojoPrice(setup.tp3)}`, 'fib −0.27 / −0.62 / −1.0'],
+    ['Targets', `${formatDojoPrice(setup.tp1)} / ${formatDojoPrice(setup.tp2)} / ${formatDojoPrice(setup.tp3)}`, 'Scale out across the three, or take the first and move the stop'],
     ['R:R to TP1', setup.rr.toFixed(2)],
     ['Price when armed', formatDojoPrice(setup.trigger_price), 'The last confirmed close at the moment this zone was published — not a live price'],
-    ['Leg', `${formatDojoPrice(setup.leg_low)} → ${formatDojoPrice(setup.leg_high)}`],
   ]
 
   if (setup.volume_node) {
@@ -273,7 +303,7 @@ export function filterAndSortSetups(
         return d === null ? null : Math.abs(d)
       }
       case 'rr': return s.rr
-      case 'confluence': return s.confluence_score
+      case 'confluence': return CONFLUENCE_RANK[s.confluence_band] ?? 0
       case 'volume': return s.volume_node ? VOLUME_ORDER[s.volume_node] ?? 98 : 99
       case 'age': return Date.parse(s.fired_at) || 0
       case 'status': return OUTCOME_ORDER[s.outcome] ?? 99
@@ -569,7 +599,9 @@ export function DojoSetupsTable({
                       <td className={`px-2 py-2 text-right font-mono text-gray-100 ${HIDE.rr ?? ''}`}>
                         {s.rr.toFixed(2)}
                       </td>
-                      <td className={`px-2 py-2 text-center text-gray-100 ${HIDE.confluence ?? ''}`}>{s.confluence_score}</td>
+                      <td className={`px-2 py-2 text-center ${HIDE.confluence ?? ''}`}>
+                        <ConfluenceBadge band={s.confluence_band} />
+                      </td>
                       <td className={`px-2 py-2 text-center ${HIDE.volume ?? ''}`}>
                         <VolumeBadge setup={s} />
                       </td>

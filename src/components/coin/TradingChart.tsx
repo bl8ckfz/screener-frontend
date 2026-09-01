@@ -41,7 +41,7 @@ export interface TradingChartProps {
    * A Dojo confluence zone to draw as horizontal levels.
    *
    * These are plan levels, not events: the zone edges, the resting-limit
-   * entry at fib 0.705, the stop, and the three targets. They are plain
+   * entry, the stop, and the three targets. They are plain
    * prices, so they render correctly on any interval — a weekly zone is
    * still meaningful drawn over a daily chart.
    */
@@ -261,8 +261,8 @@ export function TradingChart({
       width: 1 | 2
     }> = [
       // The zone edges bracket the area price has to enter.
-      { price: setup.otz_high, color: zoneColor, style: LineStyle.Dotted, title: 'OTZ 0.62', width: 1 },
-      { price: setup.otz_low, color: zoneColor, style: LineStyle.Dotted, title: 'OTZ 0.79', width: 1 },
+      { price: setup.otz_high, color: zoneColor, style: LineStyle.Dotted, title: 'Zone top', width: 1 },
+      { price: setup.otz_low, color: zoneColor, style: LineStyle.Dotted, title: 'Zone bottom', width: 1 },
       // Entry is the one level that matters most — solid and thicker.
       { price: setup.entry, color: '#f5a623', style: LineStyle.Solid, title: `Entry ${formatDojoPrice(setup.entry)}`, width: 2 },
       { price: setup.stop_loss, color: '#f23645', style: LineStyle.Dashed, title: 'Stop', width: 1 },

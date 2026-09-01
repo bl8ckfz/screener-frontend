@@ -31,7 +31,7 @@ export type FuturesAlertType =
   | 'futures_capitulation_catcher' // Capitulation Catcher complement (deep-drawdown capitulation, no bounce, long-bias 1d)
   // Dojo confluence zones (SMC: FVG-validated Optimal Trade Zone on high timeframes).
   // These alert on a ZONE BECOMING ARMED, not on price entering it — the entry
-  // is a resting limit at fib 0.705, so the actionable moment is when the zone
+  // is a resting limit inside it, so the actionable moment is when the zone
   // forms. Price tapping the zone is left to a TradingView alert on the
   // published Pine indicator.
   | 'futures_dojo_otz_long_1d' // Dojo OTZ Long 1D
@@ -45,7 +45,7 @@ export type FuturesAlertType =
   // timeframe armed the zone, so it travels in the alert metadata instead.
   | 'futures_dojo_near_long' // Dojo Zone Entered (Long)
   | 'futures_dojo_near_short' // Dojo Zone Entered (Short)
-  // Price reached the resting limit at fib 0.705. The entry sits inside the
+  // Price reached the resting limit. The entry sits inside the
   // zone, so this supersedes the near_* alert rather than adding to it.
   | 'futures_dojo_filled_long' // Dojo Entry Filled (Long)
   | 'futures_dojo_filled_short' // Dojo Entry Filled (Short)
@@ -589,50 +589,50 @@ export const FUTURES_ALERT_PRESETS: FuturesAlertPreset[] = [
   },
   // ── Dojo confluence zones ────────────────────────────────────────
   // Unlike every rule above, these do NOT fire on a price move. They fire
-  // once a day when a zone becomes ARMED: an FVG-validated fib 0.62–0.79
-  // band with higher-timeframe fibonacci confluence and agreeing market
+  // once a day when a zone becomes ARMED: an FVG-validated demand or supply
+  // area with higher-timeframe confluence and agreeing market
   // structure, which price has not yet traded into. The entry is a resting
-  // limit at fib 0.705. To be told the moment price taps the zone, set a
+  // limit inside that area. To be told the moment price taps the zone, set a
   // TradingView alert on the Dojo Fib Confluence indicator.
   {
     type: 'futures_dojo_otz_long_1w',
     name: 'Dojo OTZ Long 1W',
-    description: 'Weekly discount zone (fib 0.62–0.79) validated by a live fair value gap, with monthly fibonacci confluence and bullish structure. Rarest of the set. Entry rests at fib 0.705; alert fires when the zone forms, not when price arrives.',
+    description: 'Weekly demand area validated by a live fair value gap, with monthly confluence and bullish structure. Rarest of the set. The entry is a precise resting limit inside the zone; the alert fires when the zone forms, not when price arrives.',
     severity: 'critical',
     marketMode: 'bull',
   },
   {
     type: 'futures_dojo_otz_short_1w',
     name: 'Dojo OTZ Short 1W',
-    description: 'Weekly premium zone (fib 0.62–0.79) validated by a live fair value gap, with monthly fibonacci confluence and bearish structure. Rarest of the set. Entry rests at fib 0.705; alert fires when the zone forms, not when price arrives.',
+    description: 'Weekly supply area validated by a live fair value gap, with monthly confluence and bearish structure. Rarest of the set. The entry is a precise resting limit inside the zone; the alert fires when the zone forms, not when price arrives.',
     severity: 'critical',
     marketMode: 'bear',
   },
   {
     type: 'futures_dojo_otz_long_5d',
     name: 'Dojo OTZ Long 5D',
-    description: '5-day discount zone validated by a live fair value gap, with weekly/monthly fibonacci confluence and bullish structure. Note: 5D bars use a fixed epoch anchor and will not line up with a TradingView 5D chart.',
+    description: '5-day demand area validated by a live fair value gap, with weekly and monthly confluence and bullish structure. Note: 5D bars use a fixed epoch anchor and will not line up with a TradingView 5D chart.',
     severity: 'high',
     marketMode: 'bull',
   },
   {
     type: 'futures_dojo_otz_short_5d',
     name: 'Dojo OTZ Short 5D',
-    description: '5-day premium zone validated by a live fair value gap, with weekly/monthly fibonacci confluence and bearish structure. Note: 5D bars use a fixed epoch anchor and will not line up with a TradingView 5D chart.',
+    description: '5-day supply area validated by a live fair value gap, with weekly and monthly confluence and bearish structure. Note: 5D bars use a fixed epoch anchor and will not line up with a TradingView 5D chart.',
     severity: 'high',
     marketMode: 'bear',
   },
   {
     type: 'futures_dojo_otz_long_1d',
     name: 'Dojo OTZ Long 1D',
-    description: 'Daily discount zone validated by a live fair value gap, with weekly/monthly fibonacci confluence and bullish structure. Most frequent of the set. Entry rests at fib 0.705.',
+    description: 'Daily demand area validated by a live fair value gap, with weekly and monthly confluence and bullish structure. Most frequent of the set. The entry is a precise resting limit inside the zone.',
     severity: 'high',
     marketMode: 'bull',
   },
   {
     type: 'futures_dojo_otz_short_1d',
     name: 'Dojo OTZ Short 1D',
-    description: 'Daily premium zone validated by a live fair value gap, with weekly/monthly fibonacci confluence and bearish structure. Most frequent of the set. Entry rests at fib 0.705.',
+    description: 'Daily supply area validated by a live fair value gap, with weekly and monthly confluence and bearish structure. Most frequent of the set. The entry is a precise resting limit inside the zone.',
     severity: 'high',
     marketMode: 'bear',
   },
@@ -644,14 +644,14 @@ export const FUTURES_ALERT_PRESETS: FuturesAlertPreset[] = [
   {
     type: 'futures_dojo_near_long',
     name: 'Dojo Zone Entered (Long)',
-    description: 'Price has traded into a previously armed Dojo discount zone, so the resting limit at fib 0.705 is now in play. The alert names the timeframe that armed the zone. At most one per zone every 12 hours.',
+    description: 'Price has traded into a previously armed Dojo demand area, so the resting limit inside it is now in play. The alert names the timeframe that armed the zone. At most one per zone every 12 hours.',
     severity: 'critical',
     marketMode: 'bull',
   },
   {
     type: 'futures_dojo_near_short',
     name: 'Dojo Zone Entered (Short)',
-    description: 'Price has traded into a previously armed Dojo premium zone, so the resting limit at fib 0.705 is now in play. The alert names the timeframe that armed the zone. At most one per zone every 12 hours.',
+    description: 'Price has traded into a previously armed Dojo supply area, so the resting limit inside it is now in play. The alert names the timeframe that armed the zone. At most one per zone every 12 hours.',
     severity: 'critical',
     marketMode: 'bear',
   },
@@ -662,14 +662,14 @@ export const FUTURES_ALERT_PRESETS: FuturesAlertPreset[] = [
   {
     type: 'futures_dojo_filled_long',
     name: 'Dojo Entry Filled (Long)',
-    description: 'Price reached the resting limit at fib 0.705 of a Dojo discount zone. An order placed when the zone armed would now be filled; work from the stop and targets in the alert. Fires once per zone.',
+    description: 'Price reached the resting limit inside a Dojo demand area. An order placed when the zone armed would now be filled; work from the stop and targets in the alert. Fires once per zone.',
     severity: 'critical',
     marketMode: 'bull',
   },
   {
     type: 'futures_dojo_filled_short',
     name: 'Dojo Entry Filled (Short)',
-    description: 'Price reached the resting limit at fib 0.705 of a Dojo premium zone. An order placed when the zone armed would now be filled; work from the stop and targets in the alert. Fires once per zone.',
+    description: 'Price reached the resting limit inside a Dojo supply area. An order placed when the zone armed would now be filled; work from the stop and targets in the alert. Fires once per zone.',
     severity: 'critical',
     marketMode: 'bear',
   },
@@ -748,7 +748,7 @@ export const DEFAULT_FUTURES_ALERT_CONFIG: FuturesAlertConfig = {
     futures_capitulation_catcher: { enabled: false, severity: 'critical' },
     // Dojo confluence zones. Only the 1W pair is enabled by default, matching
     // migration 019 — they are the rarest, since on a weekly chart the sole
-    // higher-timeframe slot is 1M and a score of 2 demands a monthly fib AND
+    // higher-timeframe slot is 1M and the top band demands a monthly level AND
     // a live FVG on the same price.
     futures_dojo_otz_long_1w: { enabled: true, severity: 'critical' },
     futures_dojo_otz_short_1w: { enabled: true, severity: 'critical' },

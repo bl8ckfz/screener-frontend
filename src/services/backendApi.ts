@@ -220,7 +220,7 @@ export const backendApi = {
    * may sit unfilled for months waiting for price to arrive.
    *
    * status filters on the derived outcome:
-   *   unfilled  price never reached the resting limit at fib 0.705
+   *   unfilled  price never reached the resting limit
    *   open      filled, still running
    *   target    TP1 reached
    *   stopped   stop reached (and it wins an ambiguous bar)

@@ -2,15 +2,26 @@
  * Dojo confluence setups.
  *
  * A "setup" here is a ZONE BECOMING ARMED, not a price move. The scanner runs
- * once a day and publishes symbols whose Optimal Trade Zone — the fib
- * 0.62–0.79 band of the current leg — is validated by a live fair value gap,
- * carries higher-timeframe fibonacci confluence, agrees with market
- * structure, and has not yet been traded into.
+ * once a day and publishes symbols whose demand (or supply) area is validated
+ * by a live fair value gap, carries higher-timeframe confluence, agrees with
+ * market structure, and has not yet been traded into.
  *
- * The entry is a resting limit at fib 0.705, so the actionable moment is when
- * the zone forms, not when price arrives. Being told the instant price taps
- * the zone is left to a TradingView alert on the Dojo Fib Confluence
- * indicator.
+ * The entry is a resting limit inside that area, so the actionable moment is
+ * when the zone forms, not when price arrives.
+ *
+ * WHAT THE API DOES NOT SEND, AND WHY
+ *
+ * The leg the levels were measured from, and every fibonacci ratio. They are
+ * not independent of each other: the plan is built as
+ *
+ *   stop  = legOrigin × (1 ∓ buffer)
+ *   entry = legOrigin + entryFib × legRange
+ *
+ * so entry and stop ALONE recover the leg for anyone holding the two
+ * constants, and the leg then yields the whole ladder. Publishing the levels
+ * is the product; publishing the ratios that generate them is publishing the
+ * method. Do not reintroduce either — see internal/dojo/emitter.go for the
+ * server-side contract and its test.
  */
 
 /**
@@ -75,6 +86,24 @@ export const VOLUME_NODE_META: Record<
   },
 }
 
+/**
+ * Confluence, as published.
+ *
+ * The server sends a band rather than the raw count, because the integer
+ * disclosed how the score is assembled — how many higher timeframes are
+ * consulted, and that the validating gap is worth a point. The band is
+ * relative to the ceiling that timeframe can reach, so HIGH on a weekly zone
+ * and HIGH on a daily one both mean "as good as this timeframe gets".
+ */
+export type ConfluenceBand = 'HIGH' | 'MEDIUM' | 'LOW'
+
+/** Sort order for the bands. Unknown values rank 0 and sort last. */
+export const CONFLUENCE_RANK: Record<string, number> = {
+  HIGH: 3,
+  MEDIUM: 2,
+  LOW: 1,
+}
+
 export interface DojoSetup {
   id: string
   /** Dedup identity: one setup per leg, per timeframe, per direction. */
@@ -89,13 +118,7 @@ export interface DojoSetup {
   /** The last confirmed close when the zone armed — context, not a fill. */
   trigger_price: number
 
-  /** The swing the fibonacci ladder was drawn over. */
-  leg_high: number
-  leg_low: number
-  leg_high_time: string
-  leg_low_time: string
-
-  /** The Optimal Trade Zone: fib 0.62–0.79 of the leg. */
+  /** The demand (or supply) area price must trade back into. */
   otz_low: number
   otz_high: number
 
@@ -108,9 +131,9 @@ export interface DojoSetup {
   rr: number
 
   /** Why it qualified. */
-  confluence_score: number
+  confluence_band: ConfluenceBand
+  /** The strongest level in the band, as a price. Its ratio is not sent. */
   best_level?: number
-  best_level_fib?: number
   backings: string[]
   atr14?: number
   /** 1 bullish, -1 bearish, 0 ranging. */
