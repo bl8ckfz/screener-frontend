@@ -15,7 +15,7 @@ const API_URL = import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:8080'
 export interface User {
   id: string
   email: string
-  role: 'user' | 'admin'
+  role: 'user' | 'pro' | 'admin'
   status: 'trial' | 'active' | 'expired' | 'canceled'
   trial_ends_at: string | null
   plan: 'monthly' | 'yearly' | null
@@ -297,6 +297,12 @@ export const authService = {
     axios.interceptors.response.use(
       response => response,
       error => {
+        // Matches 'subscription_expired' ONLY, deliberately. The other 403 codes
+        // are feature gates, not billing states: 'webhooks_not_enabled' means the
+        // account lacks the pro add-on while its subscription is perfectly valid,
+        // and 'active_plan_required' is raised per-feature. Treating either as
+        // expiry would throw the whole app behind the expired wall over one
+        // locked panel.
         if (
           error.response?.status === 403 &&
           error.response?.data?.error === 'subscription_expired'
@@ -428,4 +434,28 @@ export const authService = {
       throw new Error(error.response?.data?.error || 'Failed to change password')
     }
   },
+}
+
+
+/**
+ * Does this account have the webhooks add-on?
+ *
+ * Mirrors webhookAccessMiddleware in the backend (cmd/api-gateway/middleware.go)
+ * and the delivery join in pkg/webhook/service.go. Webhooks are an extra, not
+ * part of the base plan: an account needs the 'pro' role AND live paid time, or
+ * it needs to be an admin. Keep all three in sync — if the UI is more generous
+ * than the gate the user gets a form that 403s on save; if it is stingier they
+ * cannot reach a feature they are paying for.
+ */
+export function hasWebhookAccess(user: User | null): boolean {
+  if (!user) return false
+  if (user.role === 'admin') return true
+  if (user.role !== 'pro') return false
+
+  if (user.status === 'active') return true
+  // 'canceled' keeps access until the period it was paid for actually ends.
+  if (user.status === 'canceled') {
+    return user.plan_expires_at ? new Date(user.plan_expires_at) > new Date() : false
+  }
+  return false
 }

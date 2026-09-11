@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo, createContext, useContext, ReactNode } from 'react'
-import { authService, type User } from '@/services/authService'
+import { authService, hasWebhookAccess, type User } from '@/services/authService'
 import { watchlistService } from '@/services/watchlistService'
 import { webhookService } from '@/services/webhookService'
 import { useStore } from '@/hooks/useStore'
@@ -21,6 +21,7 @@ interface AuthContextType {
   isCanceled: boolean
   isAdmin: boolean
   hasTvAddon: boolean
+  hasWebhooks: boolean
   currentPlan: string | null
   trialDaysRemaining: number | null
   // Actions
@@ -134,6 +135,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { isExpired: true, isTrial: false, isActive: false, isCanceled: false, isAdmin: false, hasTvAddon: false, currentPlan: null, trialDaysRemaining: null }
   }, [user, forceExpired])
 
+  // Kept out of subscriptionState on purpose: that memo returns a fresh object
+  // literal in nine branches, and an entitlement added to eight of them reads as
+  // `undefined` in the ninth. One expression, one source of truth.
+  const hasWebhooks = useMemo(() => {
+    if (forceExpired && user?.role !== 'admin') return false
+    return hasWebhookAccess(user)
+  }, [user, forceExpired])
+
   const syncWatchlist = async () => {
     try {
       const symbols = await watchlistService.getWatchlist()
@@ -143,7 +152,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const syncWebhooks = async () => {
+  // forUser is passed explicitly by login/verifyEmail: `user` state has not been
+  // committed yet at that point, so the closed-over value would still be the
+  // previous (usually null) one and every sign-in would skip the sync.
+  const syncWebhooks = async (forUser: User | null = user) => {
+    // Without the add-on this call is a guaranteed 403. Skip it so a normal
+    // account does not log a failed request on every sign-in.
+    if (!hasWebhookAccess(forUser)) {
+      useStore.getState().setWebhooks([])
+      return
+    }
+
     try {
       const webhooks = await webhookService.getWebhooks()
       useStore.getState().setWebhooks(webhooks)
@@ -157,7 +176,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(response.user)
     setForceExpired(false)
     // Sync watchlist and webhooks after login
-    await Promise.all([syncWatchlist(), syncWebhooks()])
+    await Promise.all([syncWatchlist(), syncWebhooks(response.user)])
   }
 
   // Registration no longer signs anyone in: the account cannot be used until
@@ -173,7 +192,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const response = await authService.verifyEmail(token)
     setUser(response.user)
     setForceExpired(false)
-    await Promise.all([syncWatchlist(), syncWebhooks()])
+    await Promise.all([syncWatchlist(), syncWebhooks(response.user)])
   }
 
   const logout = () => {
@@ -201,6 +220,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         isAuthenticated: !!user,
         ...subscriptionState,
+        hasWebhooks,
         login,
         register,
         verifyEmail,

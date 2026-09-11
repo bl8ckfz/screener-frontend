@@ -61,8 +61,30 @@ export interface WebhooksResponse {
  * response is in hand: the UI hardcoded 10 while the trigger enforced 2, so it
  * advertised room the database refused to give, and the user found out by
  * having a save rejected.
+ *
+ * Deliberately the SMALLEST cap any role gets (pro = 1, admin = 5), not the
+ * largest. The cap became per-role in migration 030, so no single number is
+ * right for everyone here — and erring low only greys out "Add Webhook" for the
+ * moment before the response lands, where erring high re-creates the exact bug
+ * described above.
  */
-export const DEFAULT_WEBHOOK_LIMIT = 5
+export const DEFAULT_WEBHOOK_LIMIT = 1
+
+/**
+ * Turn an axios failure into a message worth showing.
+ *
+ * The gate returns 403 with a machine code in `error` ('webhooks_not_enabled',
+ * 'active_plan_required') and the human sentence in `message` — so the old
+ * `data.error` fallback would have printed the raw code at the user. Prefer
+ * `message` when the server bothered to write one.
+ */
+function webhookError(error: any, fallback: string): Error {
+  if (error.response?.status === 401) {
+    authService.logout()
+  }
+  const data = error.response?.data
+  return new Error(data?.message || data?.error || fallback)
+}
 
 export const webhookService = {
   /**
@@ -86,10 +108,7 @@ export const webhookService = {
         limit: response.data.limit ?? DEFAULT_WEBHOOK_LIMIT,
       }
     } catch (error: any) {
-      if (error.response?.status === 401) {
-        authService.logout()
-      }
-      throw new Error(error.response?.data?.error || 'Failed to get webhooks')
+      throw webhookError(error, 'Failed to get webhooks')
     }
   },
 
@@ -119,10 +138,7 @@ export const webhookService = {
 
       return response.data
     } catch (error: any) {
-      if (error.response?.status === 401) {
-        authService.logout()
-      }
-      throw new Error(error.response?.data?.error || 'Failed to get webhook')
+      throw webhookError(error, 'Failed to get webhook')
     }
   },
 
@@ -152,10 +168,7 @@ export const webhookService = {
 
       return response.data
     } catch (error: any) {
-      if (error.response?.status === 401) {
-        authService.logout()
-      }
-      throw new Error(error.response?.data?.error || 'Failed to create webhook')
+      throw webhookError(error, 'Failed to create webhook')
     }
   },
 
@@ -181,10 +194,7 @@ export const webhookService = {
 
       return response.data
     } catch (error: any) {
-      if (error.response?.status === 401) {
-        authService.logout()
-      }
-      throw new Error(error.response?.data?.error || 'Failed to update webhook')
+      throw webhookError(error, 'Failed to update webhook')
     }
   },
 
@@ -204,10 +214,7 @@ export const webhookService = {
         },
       })
     } catch (error: any) {
-      if (error.response?.status === 401) {
-        authService.logout()
-      }
-      throw new Error(error.response?.data?.error || 'Failed to delete webhook')
+      throw webhookError(error, 'Failed to delete webhook')
     }
   },
 
@@ -231,10 +238,7 @@ export const webhookService = {
         }
       )
     } catch (error: any) {
-      if (error.response?.status === 401) {
-        authService.logout()
-      }
-      throw new Error(error.response?.data?.error || 'Failed to toggle webhook')
+      throw webhookError(error, 'Failed to toggle webhook')
     }
   },
 
@@ -258,10 +262,7 @@ export const webhookService = {
         }
       )
     } catch (error: any) {
-      if (error.response?.status === 401) {
-        authService.logout()
-      }
-      throw new Error(error.response?.data?.error || 'Failed to test webhook')
+      throw webhookError(error, 'Failed to test webhook')
     }
   },
 }

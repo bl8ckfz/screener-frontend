@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { AlertConfig } from '@/components/alerts/AlertConfig'
 import { WebhookManager } from '@/components/alerts/WebhookManager'
+import { WebhooksLocked } from '@/components/alerts/WebhooksLocked'
 import { GeneralSettings } from './GeneralSettings'
 import { AlertColorSettings } from './AlertColorSettings'
 import { useStore } from '@/hooks/useStore'
 import { Button } from '@/components/ui'
+import { useAuth } from '@/hooks/useAuth'
 
 export interface SettingsModalProps {
   isOpen: boolean
@@ -24,6 +26,7 @@ type SettingsTab = 'alerts' | 'webhooks' | 'colors' | 'general'
  */
 export function SettingsModal({ isOpen, onClose, initialTab = 'alerts' }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab)
+  const { hasWebhooks } = useAuth()
   
   const alertRules = useStore((state) => state.alertRules)
   const toggleAlertRule = useStore((state) => state.toggleAlertRule)
@@ -57,9 +60,12 @@ export function SettingsModal({ isOpen, onClose, initialTab = 'alerts' }: Settin
 
   if (!isOpen) return null
 
+  // The Webhooks tab stays in the list without the add-on — it just wears a lock
+  // and renders the upsell. Hiding it would leave anyone who had webhooks before
+  // the split hunting for where their configuration went.
   const tabs: { id: SettingsTab; label: string; icon: string }[] = [
     { id: 'alerts', label: 'Alert Rules', icon: '🔔' },
-    { id: 'webhooks', label: 'Webhooks', icon: '🔗' },
+    { id: 'webhooks', label: 'Webhooks', icon: hasWebhooks ? '🔗' : '🔒' },
     { id: 'colors', label: 'Colors', icon: '🎨' },
     { id: 'general', label: 'General', icon: '⚙️' },
   ]
@@ -130,7 +136,7 @@ export function SettingsModal({ isOpen, onClose, initialTab = 'alerts' }: Settin
               />
             )}
 
-            {activeTab === 'webhooks' && <WebhookManager />}
+            {activeTab === 'webhooks' && (hasWebhooks ? <WebhookManager /> : <WebhooksLocked />)}
 
             {activeTab === 'colors' && <AlertColorSettings />}
 
