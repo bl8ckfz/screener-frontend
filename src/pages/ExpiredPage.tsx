@@ -41,8 +41,8 @@ const PLANS: PlanCard[] = [
       'Real-time alerts (Surge, Scout, Whale, Volume)',
       '200+ Binance Futures pairs',
       'Multi-timeframe analysis',
-      'Custom watchlist & webhooks',
-      'Discord/Telegram notifications',
+      'Custom watchlist',
+      'Live alert feed & history',
     ],
   },
   {
@@ -54,32 +54,6 @@ const PLANS: PlanCard[] = [
     description: 'Real-time crypto futures screener',
     features: [
       'Everything in monthly',
-      '1 month free',
-    ],
-    highlight: true,
-  },
-  {
-    slug: 'bundle_monthly',  // env: WHOP_PLAN_BUNDLE_MONTHLY
-    name: 'Bundle',
-    price: planPrice('bundle_monthly'),
-    period: planPeriod('bundle_monthly'),
-    description: 'Screener + TradingView indicators',
-    features: [
-      'Everything in Screener',
-      '8 premium TradingView indicators',
-      'Raids, structure, momentum tools',
-      'Priority support',
-    ],
-  },
-  {
-    slug: 'bundle_yearly',  // env: WHOP_PLAN_BUNDLE_YEARLY
-    name: 'Bundle',
-    price: planPrice('bundle_yearly'),
-    period: planPeriod('bundle_yearly'),
-    savings: `Save ${yearlySaving('bundle_monthly', 'bundle_yearly')}`,
-    description: 'Screener + TradingView indicators',
-    features: [
-      'Everything in Bundle monthly',
       '1 month free',
     ],
     highlight: true,

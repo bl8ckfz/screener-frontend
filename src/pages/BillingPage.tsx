@@ -10,7 +10,6 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { authService, type BillingInfo } from '@/services/authService'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { planPriceWithPeriod, yearlySaving } from '@/config/plans'
 
 export function BillingPage() {
   const { user, logout, isCanceled, refreshToken } = useAuth()
@@ -215,36 +214,6 @@ export function BillingPage() {
                 </div>
               </div>
 
-              {/* TV Add-on Card */}
-              {!billing.tv_addon_active && (
-                <div className="bg-gray-900 border border-gray-700 rounded-xl p-6">
-                  <h2 className="text-lg font-semibold text-white mb-2">TradingView Indicators</h2>
-                  <p className="text-gray-400 text-sm mb-4">
-                    Get access to 8 premium Pine Script indicators including Raids, structure analysis, and momentum tools.
-                  </p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleCheckout('tv_monthly')}
-                      disabled={!!checkoutLoading}
-                      className="px-4 py-2 text-sm font-medium bg-gray-800 hover:bg-gray-700 text-white rounded-lg border border-gray-600 transition-colors disabled:opacity-50"
-                    >
-                      {checkoutLoading === 'tv_monthly'
-                        ? 'Redirecting…'
-                        : planPriceWithPeriod('tv_monthly')}
-                    </button>
-                    <button
-                      onClick={() => handleCheckout('tv_yearly')}
-                      disabled={!!checkoutLoading}
-                      className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
-                    >
-                      {checkoutLoading === 'tv_yearly'
-                        ? 'Redirecting…'
-                        : `${planPriceWithPeriod('tv_yearly')} (Save ${yearlySaving('tv_monthly', 'tv_yearly')})`}
-                    </button>
-                  </div>
-                </div>
-              )}
-
               {/* TV Username Card */}
               {billing.tv_addon_active && (
                 <div className="bg-gray-900 border border-gray-700 rounded-xl p-6">
@@ -273,25 +242,6 @@ export function BillingPage() {
                       Username saved. Indicators will be shared within 24 hours.
                     </p>
                   )}
-                </div>
-              )}
-
-              {/* Upgrade to Bundle */}
-              {billing.plan && !billing.tv_addon_active && (
-                <div className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 border border-blue-500/30 rounded-xl p-6">
-                  <h2 className="text-lg font-semibold text-white mb-2">Upgrade to Bundle</h2>
-                  <p className="text-gray-400 text-sm mb-4">
-                    Get both the Screener and TradingView indicators for a discounted price.
-                  </p>
-                  <button
-                    onClick={() => handleCheckout('bundle_monthly')}
-                    disabled={!!checkoutLoading}
-                    className="px-6 py-2.5 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
-                  >
-                    {checkoutLoading === 'bundle_monthly'
-                      ? 'Redirecting…'
-                      : `Bundle — ${planPriceWithPeriod('bundle_monthly')}`}
-                  </button>
                 </div>
               )}
 

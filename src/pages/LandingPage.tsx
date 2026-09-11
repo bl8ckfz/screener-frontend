@@ -108,7 +108,7 @@ export function LandingPage() {
             <FeatureCard
               icon="🔔"
               title="Discord & Telegram"
-              description="Configure webhooks for instant notifications on your preferred platform."
+              description="Pro: push alerts straight to Discord, Telegram, Slack or your own endpoint as they fire."
             />
             <FeatureCard
               icon="📊"
