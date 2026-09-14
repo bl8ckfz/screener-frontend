@@ -123,7 +123,7 @@ export function ExpiredPage() {
           </p>
 
           {/* Pricing Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 max-w-3xl mx-auto">
             {PLANS.map((plan) => (
               <div
                 key={plan.slug}
@@ -174,41 +174,6 @@ export function ExpiredPage() {
                 </button>
               </div>
             ))}
-          </div>
-
-          {/* TV Add-on standalone */}
-          <div className="max-w-md mx-auto bg-gray-900/50 border border-gray-700 rounded-xl p-5 mb-8">
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <h4 className="text-white font-medium">TradingView Add-on Only</h4>
-                <p className="text-gray-500 text-xs">8 premium Pine Script indicators</p>
-              </div>
-              <div className="text-right">
-                <span className="text-lg font-bold text-white">{planPrice('tv_monthly')}</span>
-                <span className="text-gray-400 text-sm">/mo</span>
-                <span className="text-gray-600 mx-1">·</span>
-                <span className="text-lg font-bold text-white">{planPrice('tv_yearly')}</span>
-                <span className="text-gray-400 text-sm">/yr</span>
-              </div>
-            </div>
-            <div className="flex gap-2 mt-3">
-              <button
-                onClick={() => handleCheckout('tv_monthly')}
-                disabled={checkoutState === 'loading'}
-                className="flex-1 py-2 rounded-lg text-sm font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-600 disabled:opacity-50"
-              >
-                {loadingPlan === 'tv_monthly' ? 'Redirecting…' : 'Monthly'}
-              </button>
-              <button
-                onClick={() => handleCheckout('tv_yearly')}
-                disabled={checkoutState === 'loading'}
-                className="flex-1 py-2 rounded-lg text-sm font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-600 disabled:opacity-50"
-              >
-                {loadingPlan === 'tv_yearly'
-                  ? 'Redirecting…'
-                  : `Yearly (Save ${yearlySaving('tv_monthly', 'tv_yearly')})`}
-              </button>
-            </div>
           </div>
 
           {/* Error message */}

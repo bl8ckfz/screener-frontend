@@ -2,7 +2,7 @@
  * Billing Page
  * 
  * Shows current subscription plan, status, and management options.
- * Allows upgrading to TV add-on and setting TradingView username.
+ * Shows plan status and lets existing TradingView add-on holders set their username.
  * Links to Whop dashboard for subscription management.
  */
 
@@ -181,12 +181,12 @@ export function BillingPage() {
                     </div>
                   )}
 
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">TradingView Add-on</span>
-                    <span className={billing.tv_addon_active ? 'text-green-400' : 'text-gray-500'}>
-                      {billing.tv_addon_active ? 'Active' : 'Not subscribed'}
-                    </span>
-                  </div>
+                  {billing.tv_addon_active && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">TradingView Add-on</span>
+                      <span className="text-green-400">Active</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Actions */}
