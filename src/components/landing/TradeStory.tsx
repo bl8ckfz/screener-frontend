@@ -12,7 +12,7 @@
  */
 import { usePublicDemo } from '@/hooks/usePublicDemo'
 import { featuredZone } from '@/types/publicDemo'
-import { formatDojoPrice, daysSince } from '@/types/dojo'
+import { formatDojoPrice } from '@/types/dojo'
 
 function formatDay(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, {
@@ -31,9 +31,62 @@ export function TradeStory() {
   // discredits everything else on it.
   if (!zone) return null
 
-  const age = daysSince(zone.fired_at)
   const side = zone.direction === 'long' ? 'demand' : 'supply'
   const symbol = zone.symbol.replace(/USDT$/, '')
+
+  /**
+   * Whether price ever reached the resting limit.
+   *
+   * Read from entry_hit_at, never inferred from the outcome. An invalidated
+   * zone and a stopped one are both "closed", and guessing between them is how
+   * this section previously came to claim a zone had "filled, then stopped out"
+   * when price had not once traded into it.
+   */
+  const filled = !!zone.entry_hit_at
+
+  /** Days from publication to whatever ended the zone. */
+  const daysToResolve = (() => {
+    const end = zone.tp1_hit_at ?? zone.sl_hit_at ?? zone.invalidated_at
+    if (!end) return null
+    const days = Math.round(
+      (Date.parse(end) - Date.parse(zone.fired_at)) / 86_400_000,
+    )
+    return Number.isFinite(days) && days >= 0 ? days : null
+  })()
+
+  const waiting = filled
+    ? {
+        when: zone.entry_hit_at ? formatDay(zone.entry_hit_at) : 'Then, eventually',
+        title: 'Price came back and the limit filled',
+        body: 'Most of the work is waiting. The order sits there until price returns to the area, which can take days or weeks — and often never happens at all.',
+      }
+    : {
+        when: 'Then, nothing',
+        title: 'Price never came back',
+        body: 'The order sat unfilled. That is the ordinary case, not a failure: the entry is a limit inside the zone, and price is under no obligation to return to it.',
+      }
+
+  const ending = (() => {
+    if (zone.outcome === 'target') {
+      return {
+        when: zone.tp1_hit_at ? formatDay(zone.tp1_hit_at) : 'Later',
+        title: `Ran to the first target at ${formatDojoPrice(zone.tp1)}`,
+        body: `${zone.rr.toFixed(2)} times the amount risked, logged against the zone that called it.`,
+      }
+    }
+    if (zone.outcome === 'stopped') {
+      return {
+        when: zone.sl_hit_at ? formatDay(zone.sl_hit_at) : 'Later',
+        title: `Stopped out at ${formatDojoPrice(zone.stop_loss)}`,
+        body: 'One unit of risk, lost. It stays on the page exactly as a winner does — that is the only reason to believe the winners.',
+      }
+    }
+    return {
+      when: zone.invalidated_at ? formatDay(zone.invalidated_at) : 'Later',
+      title: 'Retired without ever being traded',
+      body: 'The reason it qualified stopped being true — the swing it was measured from re-anchored, the gap that validated it filled, or structure turned against it. Nothing was risked, so it is neither a win nor a loss, and it is counted as neither.',
+    }
+  })()
 
   const steps = [
     {
@@ -46,22 +99,8 @@ export function TradeStory() {
       title: `The plan came with it — entry ${formatDojoPrice(zone.entry)}, stop ${formatDojoPrice(zone.stop_loss)}`,
       body: `Not "watch this level". A resting limit inside the zone, an invalidation below it, and three targets, at ${zone.rr.toFixed(2)} reward for every unit risked. You place the order and stop watching.`,
     },
-    {
-      when: 'Then nothing, for a while',
-      title: 'Price had to come back',
-      body: 'The entry is a limit, so most of the work is waiting — and plenty of zones expire unfilled, which is neither a win nor a loss. That waiting is the part a signal feed cannot sell you.',
-    },
-    {
-      when: age === null ? 'Later' : `Within ${age} days`,
-      title:
-        zone.outcome === 'target'
-          ? `Filled, then ran to the first target at ${formatDojoPrice(zone.tp1)}`
-          : `Filled, then stopped out at ${formatDojoPrice(zone.stop_loss)}`,
-      body:
-        zone.outcome === 'target'
-          ? 'Logged against the zone that predicted it, so the record is auditable rather than remembered.'
-          : 'Logged exactly like a winner is. The losses stay on the page — that is the only reason to believe the wins.',
-    },
+    waiting,
+    ending,
   ]
 
   return (
@@ -70,7 +109,8 @@ export function TradeStory() {
         What you are looking at
       </h2>
       <p className="mt-3 max-w-prose text-gray-400">
-        The zone on the chart above, from the day it published to the day it resolved.
+        The zone drawn on the chart above, from the day it published to the day it closed
+        {daysToResolve !== null && ` — ${daysToResolve} days`}.
       </p>
 
       <ol className="mt-10 space-y-8">

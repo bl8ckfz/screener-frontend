@@ -69,6 +69,19 @@ export interface UnlockedZone extends PublicZoneBase {
   tp2: number
   tp3: number
   best_level?: number
+
+  /**
+   * When each thing happened. Dates, never levels.
+   *
+   * `entry_hit_at` is the load-bearing one: it is the only way to tell a zone
+   * that filled and then lost from one retired having never filled. Both read
+   * as "closed", and assuming a fill produced copy claiming a trade had been
+   * "filled, then stopped out" when price never reached the entry.
+   */
+  entry_hit_at?: string
+  tp1_hit_at?: string
+  sl_hit_at?: string
+  invalidated_at?: string
 }
 
 export type PublicZone = LockedZone | UnlockedZone
@@ -157,6 +170,10 @@ export function toDojoSetup(z: UnlockedZone): DojoSetup {
     volume_node: z.volume_node,
     outcome: z.outcome,
     invalidation_reason: z.invalidation_reason,
+    entry_hit_at: z.entry_hit_at,
+    tp1_hit_at: z.tp1_hit_at,
+    sl_hit_at: z.sl_hit_at,
+    invalidated_at: z.invalidated_at,
   }
 }
 
