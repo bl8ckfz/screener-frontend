@@ -52,11 +52,12 @@ export function LandingPage() {
 
       <section className="mx-auto max-w-6xl px-4 pb-6 pt-14 sm:px-6 sm:pt-20">
         <h1 className="max-w-3xl text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl">
-          200 pairs scanned every day. Usually it finds nothing.
+          200+ pairs scanned every day.
         </h1>
         <p className="mt-5 max-w-xl text-lg leading-relaxed text-gray-400">
-          When it does find something, you get the zone, the entry, the stop and three
-          targets — and then a record of what actually happened to it.
+          Usually it finds nothing. When it does find something, you get the zone, the
+          entry, the stop and three targets — and then a record of what actually happened
+          to it.
         </p>
 
         <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-3">
