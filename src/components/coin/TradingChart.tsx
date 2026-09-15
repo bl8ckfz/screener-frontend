@@ -4,6 +4,7 @@ import {
   ColorType,
   CrosshairMode,
   LineStyle,
+  TickMarkType,
   type IChartApi,
   type ISeriesApi,
   type CandlestickData,
@@ -28,6 +29,75 @@ const formatLocalTimeLabel = (time: Time): string => {
     minute: '2-digit',
     hour12: false,
   })
+}
+
+/**
+ * Axis tick labels.
+ *
+ * The axis previously rendered HH:MM for every tick, which is wrong on any
+ * series coarser than an hour: a daily chart labelled every bar 00:00, so a
+ * zone published "11 September" could not be located on the chart that was
+ * supposed to show it. It also meant day boundaries on an intraday chart read
+ * as another 00:00 rather than as a date.
+ *
+ * lightweight-charts already decides what KIND of tick each label is, so the
+ * fix is to honour that rather than to detect the interval ourselves.
+ */
+const formatAxisTick = (time: Time, tickMarkType: TickMarkType): string => {
+  if (typeof time !== 'number') return ''
+  const d = new Date(time * 1000)
+
+  switch (tickMarkType) {
+    case TickMarkType.Year:
+      return String(d.getFullYear())
+    case TickMarkType.Month:
+      return d.toLocaleDateString(undefined, { month: 'short' })
+    case TickMarkType.DayOfMonth:
+      return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+    default:
+      return formatLocalTimeLabel(time)
+  }
+}
+
+/**
+ * Crosshair label.
+ *
+ * Always carries the date, because the question it answers is "which bar am I
+ * looking at" — and on a daily series the time component is noise. The time is
+ * appended only when the series is intraday, where it is the only thing
+ * distinguishing one bar from the next.
+ */
+const formatCrosshairLabel = (time: Time, intraday: boolean): string => {
+  if (typeof time !== 'number') return ''
+  const d = new Date(time * 1000)
+  const date = d.toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+  return intraday ? `${date}, ${formatLocalTimeLabel(time)}` : date
+}
+
+/**
+ * Whether the series is finer than daily, judged from the bars themselves.
+ *
+ * Taken from the data rather than from a prop because the caller does not
+ * always know: ChartSection switches to 1d on its own whenever a Dojo zone is
+ * selected. The median gap is used rather than the first, so one missing bar
+ * or a listing gap cannot flip the whole axis.
+ */
+export const isIntradaySeries = (data: Candlestick[]): boolean => {
+  if (data.length < 3) return true
+  const gaps: number[] = []
+  for (let i = 1; i < data.length; i++) {
+    const gap = data[i].time - data[i - 1].time
+    if (gap > 0) gaps.push(gap)
+  }
+  if (gaps.length === 0) return true
+  gaps.sort((a, b) => a - b)
+  const median = gaps[Math.floor(gaps.length / 2)]
+  // 23h rather than 24h: daily bars shift by an hour across a DST boundary.
+  return median < 23 * 60 * 60
 }
 
 export interface TradingChartProps {
@@ -110,6 +180,10 @@ export function TradingChart({
   // with it, so the recreation path needs to know what to restore.
   const dojoSetupRef = useRef<DojoSetup | null>(dojoSetup)
   dojoSetupRef.current = dojoSetup
+  // Same reason as dojoSetupRef: the chart is built once, but the crosshair
+  // formatter needs the CURRENT series granularity every time it fires.
+  const intradayRef = useRef(true)
+  intradayRef.current = isIntradaySeries(data)
   const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null)
   const markersRef = useRef<SeriesMarker<Time>[]>([]) // Store markers to re-apply on zoom
   const [isLoading, setIsLoading] = useState(true)
@@ -156,7 +230,8 @@ export function TradingChart({
         borderColor: '#334155',
         timeVisible: true,
         secondsVisible: false,
-        tickMarkFormatter: (time: Time) => formatLocalTimeLabel(time),
+        tickMarkFormatter: (time: Time, tickMarkType: TickMarkType) =>
+          formatAxisTick(time, tickMarkType),
       },
       handleScroll: {
         mouseWheel: true,
@@ -170,7 +245,10 @@ export function TradingChart({
         pinch: true,
       },
       localization: {
-        timeFormatter: formatLocalTimeLabel,
+        // Reads the ref, not a captured value: the chart is created once on
+        // mount, but the series it shows can switch between intraday and daily
+        // afterwards.
+        timeFormatter: (time: Time) => formatCrosshairLabel(time, intradayRef.current),
       },
     })
 
