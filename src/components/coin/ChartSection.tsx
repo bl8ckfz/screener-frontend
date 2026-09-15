@@ -485,7 +485,20 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, classNam
             <TradingChart
               data={chartData}
               height={tradingH - 36}
-              livePrice={selectedCoin.lastPrice}
+              // Not passed for a placeholder coin.
+              //
+              // livePrice OVERWRITES the last candle's close and stretches its
+              // high/low to reach it, so it has to be a genuinely current
+              // price. A symbol outside the tracked set has no entry in the
+              // tickers hash, and coinFromDojoSetup falls back to the zone's
+              // trigger_price — the close from the day it armed. Feeding that
+              // in rewrote today's bar to a weeks-old price and drew a candle
+              // that never happened.
+              //
+              // Undefined is correct rather than merely safe: the series came
+              // from the klines proxy, which serves any symbol, so its last bar
+              // is already the real current price. There is nothing to add.
+              livePrice={selectedCoin.isPlaceholder ? undefined : selectedCoin.lastPrice}
               showVolume={true}
               showAlerts={showAlerts}
               alerts={chartAlerts}
