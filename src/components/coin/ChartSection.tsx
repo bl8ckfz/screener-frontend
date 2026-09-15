@@ -28,6 +28,19 @@ import type { DojoSetup } from '@/types/dojo'
  */
 const CANDLE_FETCH_JITTER_MS = 3000
 
+/**
+ * How often to resync regardless of the candle schedule.
+ *
+ * This is a safety net for setTimeout drift, not a delivery mechanism — the
+ * candle-close scheduler is what actually keeps the chart current. It used to
+ * run every 120s against a server cache that holds for 60s, so on any interval
+ * of an hour or slower, where the close scheduler fires once a day at most,
+ * EVERY drift fetch was a guaranteed cache miss and a guaranteed upstream call.
+ * That made the safety net the dominant source of load on exactly the charts
+ * that need refreshing least.
+ */
+const DRIFT_RESYNC_MS = 300000
+
 export interface ChartSectionProps {
   selectedCoin: Coin | null
   /** Dojo zone to overlay, when the user arrived here from the Dojo tab. */
@@ -83,6 +96,10 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, classNam
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const visibilityRef = useRef(!document.hidden)
+  // Set when a scheduled fetch was skipped because the tab was hidden, so
+  // returning to it refetches once instead of showing a stale chart until the
+  // next candle closes — which on a daily chart could be tomorrow.
+  const missedWhileHiddenRef = useRef(false)
   const driftTimerRef = useRef<number | null>(null)
   const rateLimitedUntilRef = useRef<number>(0)
 
@@ -256,14 +273,27 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, classNam
     loadChartData()
   }, [loadChartData, selectedCoin])
 
-  // Visibility tracking to pause live updates in background tabs
+  // Visibility tracking to pause live updates in background tabs.
+  //
+  // The ref was maintained here and never read, so a backgrounded tab kept
+  // fetching charts nobody was looking at — the same cost as a foreground one,
+  // for the whole time it stayed open.
   useEffect(() => {
     const handler = () => {
-      visibilityRef.current = !document.hidden
+      const visible = !document.hidden
+      visibilityRef.current = visible
+
+      // Catch up on return. Without this, pausing trades load for a visibly
+      // stale chart: the next scheduled fetch could be a whole candle away,
+      // which on a daily chart is tomorrow.
+      if (visible && missedWhileHiddenRef.current) {
+        missedWhileHiddenRef.current = false
+        loadChartData({ limit: getLimitForInterval(interval) })
+      }
     }
     document.addEventListener('visibilitychange', handler)
     return () => document.removeEventListener('visibilitychange', handler)
-  }, [])
+  }, [loadChartData, getLimitForInterval, interval])
 
   // Interval-close resync: fetch exactly when candle closes (no dependency loop)
   useEffect(() => {
@@ -287,7 +317,13 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, classNam
       const delayMs = Math.max(500, (nextClose - nowSec + 1) * 1000) + Math.random() * CANDLE_FETCH_JITTER_MS
 
       timeoutId = setTimeout(() => {
-        loadChartData({ limit: getLimitForInterval(interval), isScheduled: true })
+        if (visibilityRef.current) {
+          loadChartData({ limit: getLimitForInterval(interval), isScheduled: true })
+        } else {
+          // Skipped, not cancelled: the schedule keeps running so the chart
+          // resumes on its own boundary when the tab comes back.
+          missedWhileHiddenRef.current = true
+        }
         // Recursively schedule next fetch after this one
         scheduleNextFetch()
       }, delayMs)
@@ -304,8 +340,12 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, classNam
   useEffect(() => {
     if (!selectedCoin) return
     const intervalId = window.setInterval(() => {
+      if (!visibilityRef.current) {
+        missedWhileHiddenRef.current = true
+        return
+      }
       loadChartData({ limit: getLimitForInterval(interval), isScheduled: true })
-    }, 120000) // every 2 minutes
+    }, DRIFT_RESYNC_MS)
 
     driftTimerRef.current = intervalId
     return () => {
@@ -314,7 +354,10 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, classNam
         driftTimerRef.current = null
       }
     }
-  }, [loadChartData, selectedCoin])
+    // `interval` belongs here: without it the timer kept the limit captured for
+    // whichever interval was selected when it was created, so switching from 1d
+    // to 1m left the resync fetching 200 bars of a minute chart.
+  }, [loadChartData, selectedCoin, interval, getLimitForInterval])
 
   // Show empty state when no coin selected
   if (!selectedCoin) {
