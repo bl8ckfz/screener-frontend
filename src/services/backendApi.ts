@@ -42,6 +42,33 @@ export const USE_BACKEND_API = import.meta.env.VITE_USE_BACKEND_API === 'true'
 /**
  * HTTP request helper with error handling and JWT auth
  */
+/**
+ * An HTTP error that still knows its status code.
+ *
+ * Callers need that to decide whether retrying is sane. A 429 in particular
+ * must NOT be retried: the limiter is per IP, so retrying is three more
+ * requests into the bucket that just rejected you — and with several tabs open
+ * from one address, or behind a shared NAT, that is how a brief limit turns
+ * into a sustained one.
+ *
+ * The message is unchanged from what was thrown before, so anything matching on
+ * it keeps working.
+ */
+export class BackendHttpError extends Error {
+  constructor(
+    readonly status: number,
+    statusText: string,
+  ) {
+    super(`HTTP ${status}: ${statusText}`)
+    this.name = 'BackendHttpError'
+  }
+}
+
+/** Whether an error is the backend turning us away for rate reasons. */
+export function isRateLimited(error: unknown): boolean {
+  return error instanceof BackendHttpError && error.status === 429
+}
+
 async function fetchWithTimeout(
   url: string,
   options: RequestInit = {},
@@ -82,7 +109,7 @@ async function fetchWithTimeout(
       if (response.status === 401) {
         authService.logout()
       }
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      throw new BackendHttpError(response.status, response.statusText)
     }
 
     return response

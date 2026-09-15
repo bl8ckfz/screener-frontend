@@ -11,7 +11,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query'
-import { backendApi } from '@/services/backendApi'
+import { backendApi, isRateLimited } from '@/services/backendApi'
 import type { Coin } from '@/types/coin'
 
 /**
@@ -230,10 +230,21 @@ export function useBackendData() {
         return coins
       }
     },
-    refetchInterval: 2000, // 2 second polling for near-realtime price updates
-    retry: 3,
+    // Matched to the server's own ticker cache, which holds for 5s.
+    //
+    // Polling at 2s could not return fresh bytes — two of every five requests
+    // were guaranteed to be served the same cached body — while still costing a
+    // full slot in the caller's per-IP budget. That budget is 100 requests a
+    // minute and this endpoint was taking 30 of them per open tab, so two tabs
+    // from one address came close to self-limiting and three got there. The
+    // bucket is keyed by IP, so an office, a VPN or a mobile carrier NAT shares
+    // one across unrelated people.
+    refetchInterval: 5000,
+    // Never retry a 429. The limiter just said there is no room; three more
+    // requests is how a brief rejection becomes a sustained one.
+    retry: (failureCount, error) => !isRateLimited(error) && failureCount < 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
-    staleTime: 1000, // Consider data stale after 1 second
+    staleTime: 5000, // Aligned with the poll: anything sooner cannot be fresher.
     gcTime: 30000, // Keep in cache for 30 seconds (previously cacheTime)
   })
 }
