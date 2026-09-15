@@ -253,11 +253,6 @@ export function TradePlan({ setup, livePrice }: { setup: DojoSetup; livePrice?: 
           {!distanceIsLive(livePrice) && ' (measured from the close when the zone armed)'}
         </p>
       )}
-
-      <p className="mt-2 text-xs text-gray-500">
-        Set a TradingView alert on the Dojo Fib Confluence indicator to be told
-        the moment price taps this zone.
-      </p>
     </div>
   )
 }

@@ -32,8 +32,8 @@ export type FuturesAlertType =
   // Dojo confluence zones (SMC: FVG-validated Optimal Trade Zone on high timeframes).
   // These alert on a ZONE BECOMING ARMED, not on price entering it — the entry
   // is a resting limit inside it, so the actionable moment is when the zone
-  // forms. Price tapping the zone is left to a TradingView alert on the
-  // published Pine indicator.
+  // forms. Price arriving at the zone is its own alert: see
+  // futures_dojo_near_* below.
   | 'futures_dojo_otz_long_1d' // Dojo OTZ Long 1D
   | 'futures_dojo_otz_short_1d' // Dojo OTZ Short 1D
   | 'futures_dojo_otz_long_5d' // Dojo OTZ Long 5D
@@ -592,8 +592,8 @@ export const FUTURES_ALERT_PRESETS: FuturesAlertPreset[] = [
   // once a day when a zone becomes ARMED: an FVG-validated demand or supply
   // area with higher-timeframe confluence and agreeing market
   // structure, which price has not yet traded into. The entry is a resting
-  // limit inside that area. To be told the moment price taps the zone, set a
-  // TradingView alert on the Dojo Fib Confluence indicator.
+  // limit inside that area. To be told the moment price reaches it, enable the
+  // Dojo Zone Entered pair (futures_dojo_near_*) further down.
   {
     type: 'futures_dojo_otz_long_1w',
     name: 'Dojo OTZ Long 1W',
