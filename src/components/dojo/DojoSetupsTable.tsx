@@ -41,7 +41,7 @@ const TIMEFRAMES = ['1d', '5d', '1w'] as const
  * 'live' is the default because it answers the question the page exists for:
  * what should I be doing right now.
  */
-type ViewFilter = 'live' | 'closed' | 'all'
+export type ViewFilter = 'live' | 'closed' | 'all'
 
 const VIEWS: Array<{ id: ViewFilter; label: string; title: string }> = [
   { id: 'live', label: 'Live', title: 'Waiting for price, or filled and running' },
@@ -49,10 +49,10 @@ const VIEWS: Array<{ id: ViewFilter; label: string; title: string }> = [
   { id: 'all', label: 'All', title: 'Every zone ever published' },
 ]
 
-type SortField =
+export type SortField =
   | 'symbol' | 'timeframe' | 'direction' | 'entry' | 'distance'
   | 'rr' | 'confluence' | 'volume' | 'age' | 'status'
-type SortDirection = 'asc' | 'desc'
+export type SortDirection = 'asc' | 'desc'
 
 /**
  * Columns, in render order, with the sort key each one carries.
@@ -61,7 +61,7 @@ type SortDirection = 'asc' | 'desc'
  * cannot drift apart — the failure mode being a column that sorts by
  * something other than what it displays.
  */
-const COLUMNS: Array<{
+export const COLUMNS: Array<{
   field: SortField
   label: string
   align: 'left' | 'right' | 'center'
@@ -115,7 +115,7 @@ const COLUMNS: Array<{
  * whether the column exists at the current width — which would misalign every
  * row after it.
  */
-const HIDE: Partial<Record<SortField, string>> = Object.fromEntries(
+export const HIDE: Partial<Record<SortField, string>> = Object.fromEntries(
   COLUMNS.filter((c) => c.hide).map((c) => [c.field, c.hide!]),
 )
 
@@ -128,7 +128,7 @@ const OUTCOME_ORDER: Record<string, number> = {
 const VOLUME_ORDER: Record<string, number> = { hvn: 0, neutral: 1, lvn: 2 }
 
 /** Volume standing of the zone, or nothing when there is no profile. */
-function VolumeBadge({ setup }: { setup: DojoSetup }) {
+export function VolumeBadge({ setup }: { setup: Pick<DojoSetup, 'volume_node' | 'volume_poc_ratio'> }) {
   if (!setup.volume_node) return <span className="text-gray-600">—</span>
   const meta = VOLUME_NODE_META[setup.volume_node]
   if (!meta) return <span className="text-gray-600">—</span>
@@ -158,7 +158,7 @@ const CONFLUENCE_META: Record<ConfluenceBand, { className: string; hint: string 
 }
 
 /** Confluence as a band. Nothing renders for a row that predates the column. */
-function ConfluenceBadge({ band }: { band: ConfluenceBand }) {
+export function ConfluenceBadge({ band }: { band: ConfluenceBand }) {
   const meta = CONFLUENCE_META[band]
   if (!meta) return <span className="text-gray-600">—</span>
   return (
@@ -168,7 +168,7 @@ function ConfluenceBadge({ band }: { band: ConfluenceBand }) {
   )
 }
 
-function OutcomeBadge({ setup }: { setup: DojoSetup }) {
+export function OutcomeBadge({ setup }: { setup: Pick<DojoSetup, 'outcome' | 'invalidation_reason'> }) {
   const meta = DOJO_OUTCOME_META[setup.outcome]
   // An invalidated zone says WHY on hover. "Invalidated" alone invites the
   // question, and the answer is already stored.
@@ -187,7 +187,7 @@ function OutcomeBadge({ setup }: { setup: DojoSetup }) {
 }
 
 /** The full trade plan, shown when a row is expanded. */
-function TradePlan({ setup, livePrice }: { setup: DojoSetup; livePrice?: number }) {
+export function TradePlan({ setup, livePrice }: { setup: DojoSetup; livePrice?: number }) {
   const dist = distanceToEntry(setup, livePrice)
   const isLong = setup.direction === 'long'
 

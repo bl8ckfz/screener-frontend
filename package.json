@@ -1,7 +1,7 @@
 {
-  "name": "pulsaryx",
+  "name": "coin-sniffer",
   "version": "2.0.0",
-  "description": "Pulsaryx — Real-time crypto alerts & market analysis for 200+ Binance Futures pairs",
+  "description": "Coin-Sniffer — Real-time crypto alerts, Dojo confluence zones and market analysis for 200+ Binance Futures pairs",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,6 +12,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\"",
     "type-check": "tsc --noEmit",
+    "type-check:tests": "tsc --noEmit -p tsconfig.test.json",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage"

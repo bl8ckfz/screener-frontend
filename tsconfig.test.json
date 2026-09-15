@@ -1,0 +1,28 @@
+{
+  // The app's tsconfig includes only "src", so nothing under tests/ is ever
+  // type-checked by `npm run type-check` or by the build. That is fine for
+  // most tests — vitest transpiles without checking and the assertions still
+  // run — but it silently disables `@ts-expect-error`, which some tests use as
+  // the assertion itself.
+  //
+  // tests/types/publicDemo.test.ts is the case that matters: it asserts that a
+  // LOCKED Dojo zone cannot be passed to the chart adapter, and the only thing
+  // expressing that is a `@ts-expect-error`. Without this config that guard is
+  // decorative, and a future change could let a masked zone reach TradingChart
+  // — whose price axis would then print the levels the server withheld.
+  //
+  // Run with: npm run type-check:tests
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["vitest/globals", "node"],
+    // The app targets ES2020 for the browser bundle, but tests run on Node,
+    // where Array.prototype.at and friends exist. Without this an existing
+    // test fails to check for a reason that has nothing to do with its subject.
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    // Test fixtures build objects that are deliberately incomplete or unused;
+    // the app's stricter unused checks are noise here.
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "include": ["src", "tests/types", "tests/components"]
+}
