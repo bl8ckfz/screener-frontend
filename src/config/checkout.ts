@@ -27,7 +27,7 @@ export type CheckoutPlan = 'screener_monthly' | 'screener_yearly'
  * of the page is doing the selling. The locked zone row and the pricing table
  * are very different intents and it is worth being able to tell them apart.
  */
-export type CheckoutSource = 'hero' | 'locked_zone' | 'pricing' | 'footer'
+export type CheckoutSource = 'hero' | 'locked_zone' | 'trade_story' | 'pricing' | 'footer'
 
 /**
  * Build the checkout URL, or fall back to signup.

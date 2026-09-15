@@ -184,21 +184,35 @@ export function featuredZone(data: PublicDemoResponse): UnlockedZone | null {
   return z && isUnlocked(z) ? z : null
 }
 
+/** What the panel and the prose beneath it are currently both about. */
+export interface PageZone {
+  /** The subject: the row the visitor picked, else the server's featured zone. */
+  zone: PublicZone
+  /**
+   * Its plan — entry, stop, targets, dates — when there is one to show.
+   *
+   * Null for a locked zone, and that is the whole reason this is a separate
+   * field. A locked selection must NOT fall back to the featured zone's
+   * numbers: the page would then draw one trade's levels while the prose
+   * narrated another, which is worse than showing nothing. Null means "this
+   * one is still for sale", and both consumers render the lock instead.
+   */
+  plan: UnlockedZone | null
+}
+
 /**
- * The zone the page is currently telling: whatever the visitor selected, or
- * the one the server featured.
+ * Resolve what the page is about.
  *
  * Lives here rather than in either component because the chart and the prose
  * beneath it must resolve it identically — the copy says "the zone drawn on
  * the chart above", and two copies of this rule is how that sentence starts
- * lying. A selected zone that is still locked has no levels and no dates, so
- * it cannot be told; the page falls back to the featured one instead of
- * rendering a story full of blanks.
+ * lying.
  */
-export function drawnZone(
+export function pageZone(
   data: PublicDemoResponse | undefined,
   selected: PublicZone | null,
-): UnlockedZone | null {
-  if (selected && isUnlocked(selected)) return selected
-  return data ? featuredZone(data) : null
+): PageZone | null {
+  const zone = selected ?? (data ? featuredZone(data) : null)
+  if (!zone) return null
+  return { zone, plan: isUnlocked(zone) ? zone : null }
 }

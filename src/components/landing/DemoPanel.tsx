@@ -10,7 +10,7 @@ import { Suspense, lazy } from 'react'
 import { ChartSkeleton } from '@/components/ui/Skeleton'
 import { DemoZonesTable } from './DemoZonesTable'
 import { usePublicDemo } from '@/hooks/usePublicDemo'
-import { drawnZone, type PublicZone } from '@/types/publicDemo'
+import { pageZone, type PublicZone } from '@/types/publicDemo'
 
 interface DemoPanelProps {
   /**
@@ -58,17 +58,21 @@ export function DemoPanel({ selected, onSelect }: DemoPanelProps) {
     )
   }
 
-  // What the chart draws: whatever the visitor last clicked, if it resolved,
-  // otherwise the zone the server featured. Unlocked by construction.
-  const drawn = drawnZone(data, selected)
-  const chartSymbol =
-    data.symbols.find((s) => s.symbol === drawn?.symbol) ?? data.symbols[0] ?? null
+  // What the page is about: the row the visitor picked, else the featured zone.
+  const page = pageZone(data, selected)
 
-  // Only draw the zone when the chart is actually showing its pair. The server
-  // ships candles for every listed symbol, so this is normally always true —
-  // but if it ever ships fewer, the fallback above lands on another pair, and
-  // drawing these levels over it would put SOL's entry on BTC's candles.
-  const drawnHere = drawn && drawn.symbol === chartSymbol?.symbol ? drawn : null
+  // The chart follows that row even when it is locked — someone who clicks SOL
+  // should see SOL, with nothing drawn on it, rather than being bounced to
+  // another pair. Every listed symbol ships candles, so the fallback is for a
+  // short payload only.
+  const chartSymbol =
+    data.symbols.find((s) => s.symbol === page?.zone.symbol) ?? data.symbols[0] ?? null
+
+  // Levels are drawn only for an unlocked plan, and only on its own pair. The
+  // chart labels every price line on the axis, so a zone drawn over the wrong
+  // candles would put SOL's entry on BTC's chart.
+  const drawnHere =
+    page?.plan && page.plan.symbol === chartSymbol?.symbol ? page.plan : null
 
   return (
     <div className="overflow-hidden rounded-lg border border-gray-800 bg-[#0d0f12]">
