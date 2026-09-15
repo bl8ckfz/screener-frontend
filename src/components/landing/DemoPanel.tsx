@@ -6,11 +6,23 @@
  * live zones' levels withheld. Everything a visitor can see here is something
  * they can verify later against their own charts.
  */
-import { Suspense, lazy, useState } from 'react'
+import { Suspense, lazy } from 'react'
 import { ChartSkeleton } from '@/components/ui/Skeleton'
 import { DemoZonesTable } from './DemoZonesTable'
 import { usePublicDemo } from '@/hooks/usePublicDemo'
-import { featuredZone, isUnlocked, type PublicZone, type UnlockedZone } from '@/types/publicDemo'
+import { drawnZone, type PublicZone } from '@/types/publicDemo'
+
+interface DemoPanelProps {
+  /**
+   * The selected zone, owned by the page.
+   *
+   * Lifted out of this component so TradeStory below can re-tell whichever
+   * zone the visitor clicked. A context was overkill for one value read by
+   * two siblings.
+   */
+  selected: PublicZone | null
+  onSelect: (zone: PublicZone) => void
+}
 
 const DemoChart = lazy(() => import('./DemoChart'))
 
@@ -24,9 +36,8 @@ function freshness(generatedAt: string): string {
   return `updated ${hours}h ago`
 }
 
-export function DemoPanel() {
+export function DemoPanel({ selected, onSelect }: DemoPanelProps) {
   const { data, isLoading, isError } = usePublicDemo()
-  const [selected, setSelected] = useState<PublicZone | null>(null)
 
   if (isLoading) {
     return (
@@ -48,11 +59,16 @@ export function DemoPanel() {
   }
 
   // What the chart draws: whatever the visitor last clicked, if it resolved,
-  // otherwise the zone the server featured. Both are unlocked by construction.
-  const clicked: UnlockedZone | null = selected && isUnlocked(selected) ? selected : null
-  const drawn = clicked ?? featuredZone(data)
+  // otherwise the zone the server featured. Unlocked by construction.
+  const drawn = drawnZone(data, selected)
   const chartSymbol =
     data.symbols.find((s) => s.symbol === drawn?.symbol) ?? data.symbols[0] ?? null
+
+  // Only draw the zone when the chart is actually showing its pair. The server
+  // ships candles for every listed symbol, so this is normally always true —
+  // but if it ever ships fewer, the fallback above lands on another pair, and
+  // drawing these levels over it would put SOL's entry on BTC's candles.
+  const drawnHere = drawn && drawn.symbol === chartSymbol?.symbol ? drawn : null
 
   return (
     <div className="overflow-hidden rounded-lg border border-gray-800 bg-[#0d0f12]">
@@ -80,16 +96,16 @@ export function DemoPanel() {
 
       {chartSymbol && (
         <Suspense fallback={<div className="h-[420px]" />}>
-          <DemoChart symbol={chartSymbol} zone={drawn} />
+          <DemoChart symbol={chartSymbol} zone={drawnHere} />
         </Suspense>
       )}
 
       <div className="border-t border-gray-800">
         <DemoZonesTable
           zones={data.zones}
-          featuredId={drawn?.id}
+          featuredId={drawnHere?.id}
           selectedId={selected?.id ?? null}
-          onZoneSelect={setSelected}
+          onZoneSelect={onSelect}
         />
       </div>
     </div>

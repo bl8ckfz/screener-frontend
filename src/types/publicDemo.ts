@@ -183,3 +183,22 @@ export function featuredZone(data: PublicDemoResponse): UnlockedZone | null {
   const z = data.zones.find((z) => z.id === data.featured_id)
   return z && isUnlocked(z) ? z : null
 }
+
+/**
+ * The zone the page is currently telling: whatever the visitor selected, or
+ * the one the server featured.
+ *
+ * Lives here rather than in either component because the chart and the prose
+ * beneath it must resolve it identically — the copy says "the zone drawn on
+ * the chart above", and two copies of this rule is how that sentence starts
+ * lying. A selected zone that is still locked has no levels and no dates, so
+ * it cannot be told; the page falls back to the featured one instead of
+ * rendering a story full of blanks.
+ */
+export function drawnZone(
+  data: PublicDemoResponse | undefined,
+  selected: PublicZone | null,
+): UnlockedZone | null {
+  if (selected && isUnlocked(selected)) return selected
+  return data ? featuredZone(data) : null
+}

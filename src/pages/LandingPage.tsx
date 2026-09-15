@@ -9,7 +9,7 @@
  *
  * Signed-in users never see any of this; they are redirected to the app.
  */
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { LandingHeader, LandingFooter } from '@/components/landing/LandingChrome'
@@ -20,10 +20,20 @@ import { WhatElse } from '@/components/landing/WhatElse'
 import { Pricing } from '@/components/landing/Pricing'
 import { Faq } from '@/components/landing/Faq'
 import { checkoutUrl } from '@/config/checkout'
+import type { PublicZone } from '@/types/publicDemo'
 
 export function LandingPage() {
   const { isAuthenticated, loading } = useAuth()
   const navigate = useNavigate()
+
+  /**
+   * The zone the page is currently about.
+   *
+   * Owned here because two sections read it: the panel draws it on the chart,
+   * and TradeStory narrates it. Null means "whatever the server featured", and
+   * that fallback lives in drawnZone rather than in this state.
+   */
+  const [selectedZone, setSelectedZone] = useState<PublicZone | null>(null)
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
@@ -80,11 +90,11 @@ export function LandingPage() {
       */}
       {!isAuthenticated && (
         <section className="mx-auto max-w-6xl px-4 pb-8 sm:px-6">
-          <DemoPanel />
+          <DemoPanel selected={selectedZone} onSelect={setSelectedZone} />
         </section>
       )}
 
-      <TradeStory />
+      <TradeStory selected={selectedZone} />
       <TrackRecord />
       <WhatElse />
       <Pricing />
