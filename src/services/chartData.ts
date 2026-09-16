@@ -43,13 +43,28 @@ const USE_BACKEND_API = import.meta.env.VITE_USE_BACKEND_API === 'true'
  * @param symbol - Trading pair (e.g., 'BTCUSDT')
  * @param interval - Timeframe interval
  * @param limit - Number of candles to fetch (max 1500)
- * @returns Array of candlesticks
+ * @returns The candles, and where they came from
  */
+export interface KlineResult {
+  candles: Candlestick[]
+  /**
+   * 'live' when the series came from the exchange, 'stored' when our gateway
+   * served it from our own candle tables.
+   *
+   * The distinction is visible to the user, so it must not be swallowed. A
+   * stored series is exact bar for bar — nothing is derived — but it holds
+   * only CLOSED candles and only the minutes we successfully ingested. So the
+   * newest bar can be missing and older ones can have gaps, and a chart that
+   * quietly presents that as live is the failure this flag exists to prevent.
+   */
+  source: 'live' | 'stored'
+}
+
 export async function fetchKlines(
   symbol: string,
   interval: KlineInterval,
   limit: number = 200
-): Promise<Candlestick[]> {
+): Promise<KlineResult> {
   try {
     const safeLimit = Math.min(limit, 1500)
     const base = USE_BACKEND_API && BACKEND_API_BASE
@@ -89,8 +104,12 @@ export async function fetchKlines(
     }
 
     const data = await response.json()
-    
-    return data.map((kline: any[]) => ({
+
+    // Set by the gateway when it answered from candles_1m / candles_1d rather
+    // than from the exchange.
+    const source = response.headers.get('X-Cache') === 'DB' ? 'stored' : 'live'
+
+    const candles = data.map((kline: any[]) => ({
       time: Math.floor(kline[0] / 1000), // Open time (seconds)
       open: parseFloat(kline[1]),
       high: parseFloat(kline[2]),
@@ -100,6 +119,8 @@ export async function fetchKlines(
       quoteVolume: parseFloat(kline[7]), // Quote asset volume
       trades: parseInt(kline[8]), // Number of trades
     }))
+
+    return { candles, source }
   } catch (error) {
     console.error('Failed to fetch klines:', error)
     throw error

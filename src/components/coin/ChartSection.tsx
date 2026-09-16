@@ -95,6 +95,16 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, classNam
   const [chartData, setChartData] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  /**
+   * Whether the series on screen came from our own candle tables rather than
+   * the exchange.
+   *
+   * Surfaced rather than swallowed. A stored series is exact bar for bar, but
+   * it holds only CLOSED candles and only the minutes we ingested — so the
+   * newest bar can be absent and older ones can have holes. Presenting that as
+   * live would be the quiet kind of wrong this codebase keeps trying to avoid.
+   */
+  const [isStored, setIsStored] = useState(false)
   const visibilityRef = useRef(!document.hidden)
   // Set when a scheduled fetch was skipped because the tab was hidden, so
   // returning to it refetches once instead of showing a stale chart until the
@@ -246,9 +256,10 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, classNam
 
       try {
         const limit = options?.limit ?? getLimitForInterval(interval)
-        const data = await fetchKlines(selectedCoin.fullSymbol, interval, limit)
+        const { candles, source } = await fetchKlines(selectedCoin.fullSymbol, interval, limit)
         rateLimitedUntilRef.current = 0
-        setChartData(data)
+        setChartData(candles)
+        setIsStored(source === 'stored')
       } catch (err) {
         if (err instanceof RateLimitError) {
           rateLimitedUntilRef.current = Date.now() + err.retryAfterMs
@@ -405,6 +416,14 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, classNam
             {selectedCoin.symbol}
             <span className="text-gray-400 text-sm ml-2">/ {selectedCoin.pair}</span>
           </h3>
+          {isStored && (
+            <span
+              className="text-xs text-amber-500/80 italic"
+              title="The exchange was rate limited, so this chart is drawn from our own stored candles. Bars shown are exact, but the newest one may be missing and older gaps are possible."
+            >
+              stored candles
+            </span>
+          )}
           {selectedCoin.isPlaceholder ? (
             // No 24h ticker for this symbol — it is outside the tracked set.
             // Rendering the zeroed change as "0.00%" would read as a real

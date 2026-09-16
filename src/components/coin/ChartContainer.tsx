@@ -126,7 +126,7 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
       setError(null)
 
       try {
-        const data = await fetchKlines(coin.fullSymbol, interval, 200)
+        const { candles: data } = await fetchKlines(coin.fullSymbol, interval, 200)
         
         if (!isCancelled) {
           rateLimitedUntilRef.current = 0
@@ -194,7 +194,7 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
         }
 
         try {
-          const data = await fetchKlines(coin.fullSymbol, interval, 200)
+          const { candles: data } = await fetchKlines(coin.fullSymbol, interval, 200)
           if (!isCancelled && data.length > 0) {
             rateLimitedUntilRef.current = 0
             setChartData(data)
