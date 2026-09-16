@@ -30,7 +30,7 @@ export interface ChartContainerProps {
  * Manages chart data fetching, interval selection, and chart type toggle
  */
 export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
-  const [interval, setInterval] = useState<KlineInterval>('5m')
+  const [interval, setInterval] = useState<KlineInterval>('1d')
   const [showAlerts, setShowAlerts] = useState(true)
   
   // Ref for debouncing interval changes

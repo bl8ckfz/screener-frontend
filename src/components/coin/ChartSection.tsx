@@ -66,7 +66,14 @@ function clampTradingH(h: number) {
 }
 
 export function ChartSection({ selectedCoin, dojoSetup = null, onClose, className = '' }: ChartSectionProps) {
-  const [interval, setInterval] = useState<KlineInterval>('5m')
+  // Daily by default.
+  //
+  // It is the cheapest interval to serve (200 bars, weight 2 against 5 for 5m
+  // and 10 for 1m) and the one with the deepest stored history, so the common
+  // case costs the shared Binance budget least. It is also the timeframe the
+  // Dojo method works on, and ChartSection already forces 1d whenever a zone is
+  // selected — so this makes the default agree with what the product is for.
+  const [interval, setInterval] = useState<KlineInterval>('1d')
 
   // A Dojo zone is a high-timeframe plan, and its levels routinely sit tens
   // of percent away from spot — the 1000FLOKI weekly short is 45% above it.
