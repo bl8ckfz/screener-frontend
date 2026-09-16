@@ -86,6 +86,24 @@ const formatCrosshairLabel = (time: Time, intraday: boolean): string => {
  * selected. The median gap is used rather than the first, so one missing bar
  * or a listing gap cannot flip the whole axis.
  */
+/**
+ * How long one bar of this series lasts, in seconds.
+ *
+ * Median rather than the gap between the last two, so one missing bar or a
+ * listing gap cannot halve or double the answer — and the answer decides which
+ * bucket a live price belongs to.
+ */
+export const medianBarSeconds = (data: Candlestick[]): number => {
+  const gaps: number[] = []
+  for (let i = 1; i < data.length; i++) {
+    const gap = data[i].time - data[i - 1].time
+    if (gap > 0) gaps.push(gap)
+  }
+  if (gaps.length === 0) return 60
+  gaps.sort((a, b) => a - b)
+  return gaps[Math.floor(gaps.length / 2)]
+}
+
 export const isIntradaySeries = (data: Candlestick[]): boolean => {
   if (data.length < 3) return true
   const gaps: number[] = []
@@ -455,15 +473,42 @@ export function TradingChart({
     if (typeof livePrice !== 'number' || Number.isNaN(livePrice)) return
 
     const last = data[data.length - 1]
-    const lastTime = last.time as any
-    const updatedHigh = Math.max(last.high, livePrice)
-    const updatedLow = Math.min(last.low, livePrice)
+    const barSeconds = medianBarSeconds(data)
+    const nowSeconds = Math.floor(Date.now() / 1000)
 
+    // Which bar does this price belong to?
+    //
+    // The series may not reach the present. candles_1d holds CLOSED days only,
+    // so its newest bar is yesterday's; candles_1m is a minute behind for the
+    // same reason. Folding today's price into yesterday's candle would rewrite
+    // a settled bar — it silently moved a daily close by a third on a symbol
+    // whose price had drifted since.
+    //
+    // series.update() appends when handed a newer timestamp and amends when
+    // handed the current one, so one call covers both once the bucket is
+    // right.
+    const currentBucket = Math.floor(nowSeconds / barSeconds) * barSeconds
+    const lastTime = last.time as number
+
+    if (currentBucket > lastTime) {
+      // The live price belongs to a bar we do not have yet. Open a new one at
+      // the price rather than distorting the last closed bar.
+      mainSeriesRef.current.update({
+        time: currentBucket as any,
+        open: livePrice,
+        high: livePrice,
+        low: livePrice,
+        close: livePrice,
+      })
+      return
+    }
+
+    // The newest bar IS the forming one: amend it in place.
     mainSeriesRef.current.update({
-      time: lastTime,
+      time: lastTime as any,
       open: last.open,
-      high: updatedHigh,
-      low: updatedLow,
+      high: Math.max(last.high, livePrice),
+      low: Math.min(last.low, livePrice),
       close: livePrice,
     })
   }, [livePrice, data])

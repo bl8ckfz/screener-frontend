@@ -25,9 +25,18 @@ interface DemoChartProps {
    */
   zone: UnlockedZone | null
   height?: number
+  /**
+   * The current price, polled separately from the payload.
+   *
+   * Passed through to TradingChart, which opens a new bar for it when the
+   * stored series does not reach the present — candles_1d holds closed days
+   * only, so its newest bar is yesterday's and folding today's price into it
+   * would rewrite a settled candle.
+   */
+  livePrice?: number
 }
 
-export default function DemoChart({ symbol, zone, height = 420 }: DemoChartProps) {
+export default function DemoChart({ symbol, zone, height = 420, livePrice }: DemoChartProps) {
   const candles = useMemo<Candlestick[]>(
     () =>
       symbol.candles.map(([time, open, high, low, close, volume]) => ({
@@ -63,7 +72,7 @@ export default function DemoChart({ symbol, zone, height = 420 }: DemoChartProps
     <TradingChart
       data={candles}
       height={height}
-      livePrice={symbol.price}
+      livePrice={livePrice ?? symbol.price}
       showVolume={false}
       showAlerts={false}
       dojoSetup={zone ? toDojoSetup(zone) : null}

@@ -10,6 +10,7 @@ import { Suspense, lazy } from 'react'
 import { ChartSkeleton } from '@/components/ui/Skeleton'
 import { DemoZonesTable } from './DemoZonesTable'
 import { usePublicDemo } from '@/hooks/usePublicDemo'
+import { usePublicPrices } from '@/hooks/usePublicPrices'
 import { pageZone, type PublicZone } from '@/types/publicDemo'
 
 interface DemoPanelProps {
@@ -38,6 +39,8 @@ function freshness(generatedAt: string): string {
 
 export function DemoPanel({ selected, onSelect }: DemoPanelProps) {
   const { data, isLoading, isError } = usePublicDemo()
+  // Polled far faster than the payload above, which is cached a minute.
+  const livePrices = usePublicPrices()
 
   if (isLoading) {
     return (
@@ -74,6 +77,13 @@ export function DemoPanel({ selected, onSelect }: DemoPanelProps) {
   const drawnHere =
     page?.plan && page.plan.symbol === chartSymbol?.symbol ? page.plan : null
 
+  // Resolved once and shared, so the header and the chart cannot show different
+  // numbers for the same symbol. Falls back to the price baked into the payload
+  // when the fast poll has nothing yet.
+  const price = chartSymbol
+    ? livePrices[chartSymbol.symbol] ?? chartSymbol.price
+    : undefined
+
   return (
     <div className="overflow-hidden rounded-lg border border-gray-800 bg-[#0d0f12]">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 px-4 py-2.5">
@@ -83,7 +93,7 @@ export function DemoPanel({ selected, onSelect }: DemoPanelProps) {
           </span>
           {chartSymbol && (
             <span className="font-mono text-sm text-gray-300">
-              {chartSymbol.price.toLocaleString(undefined, { maximumFractionDigits: 6 })}
+              {price?.toLocaleString(undefined, { maximumFractionDigits: 6 })}
             </span>
           )}
           {chartSymbol?.price_source === 'candle_close' && (
@@ -100,7 +110,7 @@ export function DemoPanel({ selected, onSelect }: DemoPanelProps) {
 
       {chartSymbol && (
         <Suspense fallback={<div className="h-[420px]" />}>
-          <DemoChart symbol={chartSymbol} zone={drawnHere} />
+          <DemoChart symbol={chartSymbol} zone={drawnHere} livePrice={price} />
         </Suspense>
       )}
 

@@ -49,3 +49,44 @@ describe('isIntradaySeries', () => {
     expect(isIntradaySeries(series(60, 2))).toBe(true)
   })
 })
+
+// ── Which bar a live price belongs to ──────────────────────────────────────
+
+import { medianBarSeconds } from '@/components/coin/TradingChart'
+
+/**
+ * A stored series does not reach the present: candles_1d holds CLOSED days, so
+ * its newest bar is yesterday's, and candles_1m is a minute behind for the same
+ * reason. The live price therefore often belongs to a bar that does not exist
+ * yet — and folding it into the last stored one rewrites a settled candle,
+ * which is how a daily close silently moved by a third on COMPUSDT.
+ *
+ * Picking the right bar depends entirely on knowing the bar length.
+ */
+describe('medianBarSeconds', () => {
+  const series = (stepSeconds: number, n = 10): Candlestick[] =>
+    Array.from({ length: n }, (_, i) => ({
+      time: 1_789_557_480 + i * stepSeconds,
+      open: 1, high: 2, low: 0.5, close: 1.5,
+      volume: 0, quoteVolume: 0, trades: 0,
+    }))
+
+  it('reads the spacing of common intervals', () => {
+    expect(medianBarSeconds(series(60))).toBe(60)
+    expect(medianBarSeconds(series(300))).toBe(300)
+    expect(medianBarSeconds(series(86400))).toBe(86400)
+  })
+
+  it('is not fooled by a single missing bar', () => {
+    // Median, not the last gap: one hole would otherwise double the answer and
+    // put the live price in a bucket that does not exist.
+    const daily = series(86400, 10)
+    for (let i = 5; i < daily.length; i++) daily[i].time += 86400
+    expect(medianBarSeconds(daily)).toBe(86400)
+  })
+
+  it('falls back to a minute when the series is too short to tell', () => {
+    expect(medianBarSeconds([])).toBe(60)
+    expect(medianBarSeconds(series(300, 1))).toBe(60)
+  })
+})
