@@ -372,6 +372,13 @@ export const webhooks = {
 }
 
 /**
+ * Close code the backend uses when an open socket has lost its entitlement.
+ * 1008 (policy violation) — distinct from a network drop, which must keep
+ * retrying.
+ */
+export const WS_CLOSE_UNAUTHORIZED = 1008
+
+/**
  * WebSocket Client for Real-time Alerts (Singleton)
  */
 export class BackendWebSocketClient {
@@ -387,6 +394,13 @@ export class BackendWebSocketClient {
   private errorListeners: ((event: Event) => void)[] = []
   private pingInterval: NodeJS.Timeout | null = null
   private manualClose = false
+  /**
+   * Set when the backend closes us with WS_CLOSE_UNAUTHORIZED. Reconnecting
+   * cannot fix that — the handshake would be refused the same way — so the
+   * loop stops until something calls connect() again, which is what signing
+   * in or renewing a subscription does.
+   */
+  private authClosed = false
   private refCount = 0
   private disconnectTimeout: NodeJS.Timeout | null = null
 
@@ -449,6 +463,7 @@ export class BackendWebSocketClient {
     }
 
     this.manualClose = false
+    this.authClosed = false
     this.reconnectAttempts = 0
 
     console.log('[BackendWS] Connecting to', BACKEND_CONFIG.wsUrl)
@@ -500,6 +515,19 @@ export class BackendWebSocketClient {
       if (this.manualClose) {
         return
       }
+
+      // The backend re-checks entitlement on a timer now, and hangs up with
+      // this code when an open connection is no longer allowed one: the plan
+      // lapsed, the account was disabled, the token was revoked by a password
+      // change, or the token simply expired. Every one of those would refuse
+      // the next handshake too, so retrying forever is just noise — the close
+      // listeners already have the code and reason to act on.
+      if (event.code === WS_CLOSE_UNAUTHORIZED) {
+        this.authClosed = true
+        console.warn('[BackendWS] Session is no longer authorized:', event.reason || 'no reason given')
+        return
+      }
+
       
       // Attempt reconnection with exponential backoff
       if (this.reconnectAttempts < this.maxReconnectAttempts) {
@@ -616,6 +644,15 @@ export class BackendWebSocketClient {
         this.errorListeners.splice(index, 1)
       }
     }
+  }
+
+  /**
+   * True when the backend hung up on entitlement grounds and this client has
+   * stopped retrying, so the UI can tell "offline, reconnecting" apart from
+   * "this session is no longer allowed to stream".
+   */
+  isAuthClosed(): boolean {
+    return this.authClosed
   }
 
   /**
