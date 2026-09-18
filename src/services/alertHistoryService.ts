@@ -37,6 +37,17 @@ class AlertHistoryService {
     }
 
     const history = this.loadFromStorage()
+
+    // The id is derived from the alert, not generated, so the same alert
+    // arriving twice produces the same id. The backend used to publish every
+    // alert through both core NATS and JetStream on one subject, which
+    // delivered each one to this client twice and put both copies in history.
+    // That is fixed at the source; this makes the list idempotent regardless,
+    // because an id collision here can only mean the same alert.
+    if (history.some(e => e.id === entry.id)) {
+      return
+    }
+
     history.push(entry)
     
     // Enforce size limit: keep newest entries if over limit
