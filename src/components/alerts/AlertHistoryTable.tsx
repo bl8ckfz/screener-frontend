@@ -126,11 +126,20 @@ export function AlertHistoryTable({
         </div>
       </div>
       <div className="mt-2 flex items-center justify-between text-xs text-gray-400">
-        <span className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2 py-1 font-semibold text-accent">
-          {stat.totalAlerts}
-          <span className="text-[10px] uppercase text-accent/70">alerts</span>
-        </span>
-        <span>{formatTimeAgo(stat.lastAlertTimestamp)}</span>
+        {stat.totalAlerts > 0 ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2 py-1 font-semibold text-accent">
+            {stat.totalAlerts}
+            <span className="text-[10px] uppercase text-accent/70">alerts</span>
+          </span>
+        ) : (
+          <span
+            className="inline-flex items-center gap-1 rounded-full bg-gray-700/40 px-2 py-1 font-semibold text-gray-400"
+            title="No alerts in the last 48 hours. This coin is listed because it has a Dojo plan in play."
+          >
+            <span className="text-[10px] uppercase">plan only</span>
+          </span>
+        )}
+        <span>{stat.lastAlertTimestamp > 0 ? formatTimeAgo(stat.lastAlertTimestamp) : ''}</span>
       </div>
     </button>
   )
@@ -315,8 +324,22 @@ export function AlertHistoryTable({
                 </span>
               </td>
               <td className="py-1.5 px-2 text-center">
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-accent/20 text-accent font-bold text-xs">
-                  {stat.totalAlerts}
+                {/* Zero is truthful and needs saying differently: the row is
+                    here for a Dojo plan, not because something fired. A "0"
+                    reads as a count nobody asked for. */}
+                <span
+                  className={`inline-flex items-center justify-center w-6 h-6 rounded-full font-bold text-xs ${
+                    stat.totalAlerts > 0
+                      ? 'bg-accent/20 text-accent'
+                      : 'bg-gray-700/40 text-gray-500'
+                  }`}
+                  title={
+                    stat.totalAlerts > 0
+                      ? undefined
+                      : 'No alerts in the last 48 hours. This coin is listed because it has a Dojo plan in play.'
+                  }
+                >
+                  {stat.totalAlerts > 0 ? stat.totalAlerts : '–'}
                 </span>
               </td>
               <td className="py-1.5 px-2">
@@ -390,8 +413,22 @@ export function AlertHistoryTable({
                 </span>
               </td>
               <td className="py-1.5 px-2 text-center">
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-accent/20 text-accent font-bold text-xs">
-                  {stat.totalAlerts}
+                {/* Zero is truthful and needs saying differently: the row is
+                    here for a Dojo plan, not because something fired. A "0"
+                    reads as a count nobody asked for. */}
+                <span
+                  className={`inline-flex items-center justify-center w-6 h-6 rounded-full font-bold text-xs ${
+                    stat.totalAlerts > 0
+                      ? 'bg-accent/20 text-accent'
+                      : 'bg-gray-700/40 text-gray-500'
+                  }`}
+                  title={
+                    stat.totalAlerts > 0
+                      ? undefined
+                      : 'No alerts in the last 48 hours. This coin is listed because it has a Dojo plan in play.'
+                  }
+                >
+                  {stat.totalAlerts > 0 ? stat.totalAlerts : '–'}
                 </span>
               </td>
               <td className="py-1.5 px-2">

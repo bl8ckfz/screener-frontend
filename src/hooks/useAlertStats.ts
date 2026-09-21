@@ -8,6 +8,8 @@ import { alertHistory } from '@/services/alertHistory'
 import { USE_BACKEND_API } from '@/services/backendApi'
 import { useStore } from './useStore'
 import { useAlertRules } from './useAlertRules'
+import { useLiveDojoSetups } from './useLiveDojoSetups'
+import type { DojoSetup } from '@/types/dojo'
 
 /**
  * Hook to compute alert statistics merged with current coin data
@@ -36,12 +38,86 @@ export function useAlertStats(coins: Coin[]): CoinAlertStats[] {
       .map((alert) => toAlertHistoryEntry(alert))
   }, [backendAlertsQuery.data, isRuleEnabled])
 
+  // Coins with a Dojo plan in play, so they get a row even when nothing has
+  // fired for them recently. See withLivePlanRows.
+  const { bySymbol: livePlans } = useLiveDojoSetups()
+
   return useMemo(() => {
-    if (USE_BACKEND_API) {
-      return aggregateBySymbol(backendEntries, coins)
+    const base = USE_BACKEND_API
+      ? aggregateBySymbol(backendEntries, coins)
+      : alertHistoryService.getCoinStats(coins)
+    return withLivePlanRows(base, livePlans, coins)
+  }, [coins, refreshTrigger, backendEntries, livePlans])
+}
+
+/**
+ * Adds a row for every coin that has a Dojo plan in play but nothing in the
+ * alert window.
+ *
+ * WHY A ROW HAS TO BE INVENTED AT ALL
+ *
+ * Every row above comes from an alert, read over 48 hours from a table kept for
+ * seven days. A Dojo plan outlives both: a weekly zone can wait months for
+ * price, doing nothing and firing nothing the whole time. So the coins whose
+ * plans have been waiting longest — the ones most easily forgotten — were
+ * exactly the ones with no row, and pinning a badge to a row that does not
+ * exist shows nothing.
+ *
+ * The row is honest about what it is. totalAlerts is 0 because no alert fired,
+ * alertTypes is empty for the same reason, and the plan badges rendered beside
+ * them come from dojo_setups rather than from anything in this list.
+ */
+export function withLivePlanRows(
+  stats: CoinAlertStats[],
+  livePlans: Map<string, DojoSetup[]>,
+  currentCoins?: Coin[]
+): CoinAlertStats[] {
+  if (livePlans.size === 0) return stats
+
+  const present = new Set(stats.map((s) => s.symbol))
+  const added: CoinAlertStats[] = []
+
+  for (const [symbol, setups] of livePlans) {
+    if (present.has(symbol) || setups.length === 0) continue
+
+    const coin = currentCoins?.find((c) => c.symbol === symbol)
+    // Falls back to the close when the zone armed. A plan can outlive its
+    // symbol's place in the tracked universe, so there may be no live price —
+    // and a stale price is better than a zero, which reads as a real one.
+    const fallback = setups[setups.length - 1]
+
+    added.push({
+      symbol,
+      currentPrice: coin?.lastPrice ?? fallback.trigger_price ?? 0,
+      priceChange: coin?.priceChangePercent ?? 0,
+      // Truthfully zero: nothing has fired for this coin inside the window.
+      // The row is here for the plan, not for an alert.
+      totalAlerts: 0,
+      // The plan's own most recent moment, so sorting by "Latest" places the
+      // row sensibly instead of pinning every plan-only coin to the bottom on
+      // a timestamp of zero.
+      lastAlertTimestamp: lastPlanEvent(setups),
+      alertTypes: new Set<CombinedAlertType>(),
+      alerts: [],
+    })
+  }
+
+  return added.length > 0 ? [...stats, ...added] : stats
+}
+
+/** The most recent thing that happened to any of a coin's live plans. */
+function lastPlanEvent(setups: DojoSetup[]): number {
+  let latest = 0
+  for (const s of setups) {
+    // A fill outranks the publication: it is the later event and the more
+    // interesting one.
+    for (const iso of [s.fired_at, s.entry_hit_at]) {
+      if (!iso) continue
+      const t = Date.parse(iso)
+      if (!Number.isNaN(t) && t > latest) latest = t
     }
-    return alertHistoryService.getCoinStats(coins)
-  }, [coins, refreshTrigger, backendEntries])
+  }
+  return latest
 }
 
 function toAlertHistoryEntry(alert: AlertHistoryItem): AlertHistoryEntry {

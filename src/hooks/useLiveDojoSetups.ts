@@ -27,7 +27,7 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/useAuth'
 import { backendApi } from '@/services/backendApi'
-import { baseSymbol } from '@/types/dojo'
+import { baseSymbol, isLiveOutcome } from '@/types/dojo'
 import type { DojoSetup } from '@/types/dojo'
 
 const QUERY_KEY = ['dojoSetups', 'live'] as const
@@ -69,6 +69,20 @@ export function useLiveDojoSetups(): LiveDojoSetups {
   const bySymbol = useMemo(() => {
     const m = new Map<string, DojoSetup[]>()
     for (const s of data ?? []) {
+      // Belt and braces against a server that does not know status=live.
+      //
+      // An older API ignores an unrecognised status instead of rejecting it,
+      // so during a deploy where the frontend is ahead of the backend this
+      // request comes back as "the most recent setups, any outcome". Rendering
+      // those would mark resolved plans as in play, which is a worse lie than
+      // showing nothing.
+      //
+      // This is NOT what keeps the list complete — the server filter is, and
+      // has to be, because with no retention on dojo_setups the live plans are
+      // not the recent ones. This only refuses to believe a resolved plan is
+      // live.
+      if (!isLiveOutcome(s.outcome)) continue
+
       // Keyed on the base symbol, because that is what the coin list and the
       // alert table use. dojo_setups stores the full contract symbol.
       const key = baseSymbol(s.symbol)
