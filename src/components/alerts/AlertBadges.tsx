@@ -21,18 +21,25 @@ interface AlertBadgesProps {
   pinned?: PinnedBadge[]
 }
 
-/** A badge on the plan line: squared, below the alert types, outside their cap. */
+/** A chip on the Dojo line: below the alert types, outside their cap. */
 export interface PinnedBadge {
   key: string
-  text: string
+  /** Emoji, matching the marks used in the chat renderers. */
+  mark: string
+  /** What happened, in words: "Waiting", "In trade", "Stop taken". */
+  label: string
+  /** Which plan, when a coin carries more than one: "1W Short". */
+  detail?: string
+  /** Tailwind text and border classes carrying the state's colour. */
+  tone: string
   title: string
-  /** Background colour. Direction, for a Dojo plan. */
-  color: string
   /**
-   * Draw attention without competing with latestAlertType's ring: used for a
+   * Draws attention without competing with latestAlertType's ring: used for a
    * plan that is actually in a trade rather than still waiting for price.
    */
   emphasised?: boolean
+  /** This is the plan currently open on the chart. */
+  active?: boolean
   onClick?: () => void
 }
 
@@ -173,15 +180,15 @@ export function AlertBadges({ alertTypes, maxVisible = 3, latestAlertType, pinne
         </div>
       )}
 
-      {/* Plans, on their own line and SQUARED.
+      {/* The Dojo line: its own row, and read as words rather than as a code.
           
-          Not a style preference. These are persistent state — a plan is in play
-          for weeks — while the round badges above are a record that something
-          fired and then turned over. Mixing the two shapes on one line invited
-          them to be read as the same kind of thing, and let a busy coin's
-          momentum alerts crowd the plan out of view. */}
+          Not a style preference. The round badges above are a record that
+          something fired: a stream, capped, turning over. These are a plan,
+          which is in play for weeks. Sharing a line invited the two to be read
+          as the same kind of thing, and sharing the cap let a busy coin's
+          momentum alerts crowd the plan out of view entirely. */}
       {pinned && pinned.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1">
           {pinned.map((p) => (
             <div
               key={p.key}
@@ -199,13 +206,16 @@ export function AlertBadges({ alertTypes, maxVisible = 3, latestAlertType, pinne
                     }
                   : undefined
               }
-              className={`inline-flex items-center justify-center h-5 min-w-[1.5rem] px-1.5 rounded-md text-[10px] font-bold leading-none transition-all ${
-                p.emphasised ? 'ring-2 ring-emerald-300/80' : 'ring-1 ring-white/20'
-              } ${p.onClick ? 'cursor-pointer hover:brightness-110' : ''}`}
-              style={{ backgroundColor: p.color, color: '#fff' }}
+              className={`rounded border bg-gray-800/60 px-1.5 py-0.5 text-[10px] font-medium leading-none transition ${p.tone} ${
+                p.emphasised ? 'ring-1 ring-emerald-300/50' : ''
+              } ${p.active ? 'bg-gray-700/80 ring-1 ring-accent' : ''} ${
+                p.onClick ? 'cursor-pointer hover:bg-gray-700/60' : ''
+              }`}
               title={p.title}
             >
-              {p.text}
+              {p.mark && <span aria-hidden>{p.mark} </span>}
+              {p.label}
+              {p.detail && <span className="text-gray-500"> · {p.detail}</span>}
             </div>
           ))}
         </div>

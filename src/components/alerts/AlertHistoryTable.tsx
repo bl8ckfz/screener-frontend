@@ -1,8 +1,7 @@
 import { useMemo } from 'react'
 import type { CoinAlertStats } from '@/types/alertHistory'
 import { AlertBadges } from './AlertBadges'
-import { DojoAlertLinks } from './DojoAlertLinks'
-import { dojoPlanBadges } from './dojoPlanBadges'
+import { dojoChips } from './dojoPlanBadges'
 import { useLiveDojoSetups } from '@/hooks/useLiveDojoSetups'
 import { EmptyAlertHistory } from './EmptyAlertHistory'
 import { formatNumber } from '@/utils/format'
@@ -106,15 +105,8 @@ export function AlertHistoryTable({
               alertTypes={stat.alertTypes}
               maxVisible={4}
               latestAlertType={stat.alerts[0]?.alertType}
-              pinned={dojoPlanBadges(livePlans.get(stat.symbol), onOpenDojoSetup)}
+              pinned={dojoChips(livePlans.get(stat.symbol), stat.alerts, onOpenDojoSetup, activeSetupId)}
             />
-            {onOpenDojoSetup && (
-              <DojoAlertLinks
-                alerts={stat.alerts}
-                onOpenSetup={onOpenDojoSetup}
-                activeSetupId={activeSetupId}
-              />
-            )}
           </div>
         </div>
         <div className="text-right">
@@ -347,19 +339,8 @@ export function AlertHistoryTable({
                   alertTypes={stat.alertTypes} 
                   maxVisible={4}
                   latestAlertType={stat.alerts[0]?.alertType}
-                  pinned={dojoPlanBadges(livePlans.get(stat.symbol), onOpenDojoSetup)}
+                  pinned={dojoChips(livePlans.get(stat.symbol), stat.alerts, onOpenDojoSetup, activeSetupId)}
                 />
-                {/* Dojo alerts open their own plan rather than the coin. The
-                    row cannot: it is keyed on the symbol, and a symbol
-                    routinely carries a long and a short on different
-                    timeframes. */}
-                {onOpenDojoSetup && (
-                  <DojoAlertLinks
-                    alerts={stat.alerts}
-                    onOpenSetup={onOpenDojoSetup}
-                    activeSetupId={activeSetupId}
-                  />
-                )}
               </td>
               <td className="py-1.5 px-2 text-right text-[10px] text-gray-400">
                 {formatTimeAgo(stat.lastAlertTimestamp)}
@@ -436,19 +417,8 @@ export function AlertHistoryTable({
                   alertTypes={stat.alertTypes} 
                   maxVisible={4}
                   latestAlertType={stat.alerts[0]?.alertType}
-                  pinned={dojoPlanBadges(livePlans.get(stat.symbol), onOpenDojoSetup)}
+                  pinned={dojoChips(livePlans.get(stat.symbol), stat.alerts, onOpenDojoSetup, activeSetupId)}
                 />
-                {/* Dojo alerts open their own plan rather than the coin. The
-                    row cannot: it is keyed on the symbol, and a symbol
-                    routinely carries a long and a short on different
-                    timeframes. */}
-                {onOpenDojoSetup && (
-                  <DojoAlertLinks
-                    alerts={stat.alerts}
-                    onOpenSetup={onOpenDojoSetup}
-                    activeSetupId={activeSetupId}
-                  />
-                )}
               </td>
               <td className="py-1.5 px-2 text-right text-[10px] text-gray-400">
                 {formatTimeAgo(stat.lastAlertTimestamp)}
