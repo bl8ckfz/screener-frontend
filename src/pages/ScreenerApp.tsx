@@ -178,7 +178,7 @@ export function ScreenerApp() {
         if (isSettingsOpen) {
           setIsSettingsOpen(false)
         } else if (selectedAlert) {
-          setSelectedAlert(null)
+          handleCloseChart()
         } else if (searchQuery) {
           setSearchQuery('')
         }
@@ -282,10 +282,32 @@ export function ScreenerApp() {
         ? prev
         : { coin, alertStat: alertStats.find((stat) => stat.symbol === coin.symbol) }
     )
-    // alertStats changes every poll and must not re-run this; the plan and the
-    // coin list are what decide which coin to show.
+    // ONLY the plan's identity. Nothing else may re-run this.
+    //
+    // `coins` used to be a dependency, and it refetches every five seconds —
+    // so closing the chart on a selected plan set selectedAlert to null, the
+    // next poll re-ran this effect, found the plan still selected, and put the
+    // chart straight back. On mobile, where the chart is a drawer covering the
+    // screen, that made it impossible to dismiss: it reopened every couple of
+    // seconds.
+    //
+    // It was never needed. liveCoin below re-resolves the selected coin
+    // against fresh data on every poll, so a plan opened before the coin list
+    // loaded still upgrades from its placeholder without this running again.
+    //
+    // alertStats is deliberately absent for the same reason.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dojoSelection.setup?.id, coins])
+  }, [dojoSelection.setup?.id])
+
+  // Closing the chart closes the PLAN with it.
+  //
+  // The zone overlay is part of the chart, and the selection also lives in the
+  // URL — so leaving the plan selected after a close would keep ?setup= in the
+  // address bar and reopen it on the next refresh, having just been dismissed.
+  const handleCloseChart = () => {
+    setSelectedAlert(null)
+    dojoSelection.clear()
+  }
 
   // Handle coin table row click
   const handleCoinClick = (coin: any) => {
@@ -472,7 +494,7 @@ export function ScreenerApp() {
             <ChartSection 
               selectedCoin={liveCoin}
               dojoSetup={selectedDojoSetup}
-              onClose={() => setSelectedAlert(null)}
+              onClose={handleCloseChart}
             />
           </div>
         </div>
@@ -483,7 +505,7 @@ export function ScreenerApp() {
             open={!!liveCoin}
             selectedCoin={liveCoin}
             dojoSetup={selectedDojoSetup}
-            onClose={() => setSelectedAlert(null)}
+            onClose={handleCloseChart}
           />
         )}
 
