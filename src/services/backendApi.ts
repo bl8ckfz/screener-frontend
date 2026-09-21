@@ -9,7 +9,7 @@
 
 import { authService } from './authService'
 import type { Alert } from '@/types/alert'
-import type { DojoSetup, DojoOutcome } from '@/types/dojo'
+import type { DojoSetup, DojoOutcome, DojoSummary } from '@/types/dojo'
 
 interface UserSettings {
   userId: string
@@ -270,6 +270,55 @@ export const backendApi = {
 
     const response = await fetchWithTimeout(
       `${BACKEND_CONFIG.baseUrl}/api/dojo/setups?${q}`
+    )
+    return response.json()
+  },
+
+  /**
+   * One setup by id.
+   *
+   * The list above cannot stand in for this. It is capped, filtered and
+   * ordered by recency, so a plan published last month — or one outside
+   * whatever filter the user currently has set — is simply not in it. A dojo
+   * alert carries the id of the plan it is about, and this is what resolves it.
+   *
+   * Returns null on 404, which is a real and expected answer: the plan may
+   * predate the records. The caller must say so rather than falling back to
+   * another setup on the same symbol, because a symbol routinely carries two
+   * — a long and a short on different timeframes — and showing the wrong one
+   * means showing the wrong levels.
+   */
+  async getDojoSetup(id: string): Promise<DojoSetup | null> {
+    const response = await fetchWithTimeout(
+      `${BACKEND_CONFIG.baseUrl}/api/dojo/setups/${encodeURIComponent(id)}`
+    )
+    if (response.status === 404) return null
+    return response.json()
+  },
+
+  /**
+   * Outcome counts over the WHOLE filtered population.
+   *
+   * Takes the same filters as getDojoSetups, and the backend runs both through
+   * one clause builder, so the summary always describes the rows the table is
+   * showing rather than whichever page happened to load.
+   */
+  async getDojoSummary(params: {
+    symbol?: string
+    timeframe?: string
+    direction?: 'long' | 'short'
+    status?: DojoOutcome
+    since?: string
+  } = {}): Promise<DojoSummary> {
+    const q = new URLSearchParams()
+    if (params.symbol) q.set('symbol', params.symbol)
+    if (params.timeframe) q.set('timeframe', params.timeframe)
+    if (params.direction) q.set('direction', params.direction)
+    if (params.status) q.set('status', params.status)
+    if (params.since) q.set('since', params.since)
+
+    const response = await fetchWithTimeout(
+      `${BACKEND_CONFIG.baseUrl}/api/dojo/summary?${q}`
     )
     return response.json()
   },

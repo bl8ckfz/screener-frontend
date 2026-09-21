@@ -1,4 +1,4 @@
-import type { CombinedAlertType } from './alert'
+import type { CombinedAlertType, DojoAlertContext } from './alert'
 
 /**
  * Single alert history entry - immutable record of an alert firing
@@ -15,6 +15,16 @@ export interface AlertHistoryEntry {
     value?: number
     threshold?: number
   }
+  /**
+   * Which Dojo plan this alert is about, when it is about one.
+   *
+   * Carried through the per-symbol aggregation so an individual alert stays
+   * navigable. Aggregating by symbol is why this is needed at all: the table
+   * shows one row per coin, and a symbol routinely carries two zones — a long
+   * and a short on different timeframes — so the symbol alone cannot say which
+   * plan an alert meant.
+   */
+  dojo?: DojoAlertContext
 }
 
 /**

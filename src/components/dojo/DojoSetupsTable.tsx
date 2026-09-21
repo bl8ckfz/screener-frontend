@@ -12,6 +12,7 @@
  */
 
 import { Fragment, useMemo, useState } from 'react'
+import { DojoTimeline } from './DojoTimeline'
 import { useDojoSetups, type DojoSetupFilters } from '@/hooks/useDojoSetups'
 import {
   DOJO_OUTCOME_META,
@@ -253,6 +254,13 @@ export function TradePlan({ setup, livePrice }: { setup: DojoSetup; livePrice?: 
           {!distanceIsLive(livePrice) && ' (measured from the close when the zone armed)'}
         </p>
       )}
+
+      {/* The plan's own history, from the timestamps already on this row.
+          Following one zone used to mean reconstructing it by hand across the
+          table, the chart and the alert feed. */}
+      <div className="mt-3 border-t border-gray-700/50 pt-3">
+        <DojoTimeline setup={setup} />
+      </div>
     </div>
   )
 }
@@ -400,29 +408,45 @@ export function DojoSetupsTable({
 
   return (
     <div className="flex flex-col">
-      {/* Summary */}
+      {/* Summary.
+          Counted by the backend over the WHOLE filtered population, not over
+          the page of rows below. The two used to be the same derivation, so
+          the hit rate silently described whichever ≤200 rows had loaded and
+          moved whenever a filter changed. */}
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 border-b border-gray-700 text-sm">
-        <span className="text-gray-300">
-          <span className="font-semibold text-white">{summary.total}</span> zones
-        </span>
-        <span className="text-gray-400">{summary.armed} waiting</span>
-        <span className="text-gray-400">{summary.open} open</span>
-        {summary.invalidated > 0 && (
-          <span
-            className="text-gray-600"
-            title="Zones retired before price ever reached the entry — the leg re-anchored, the validating gap was mitigated, or structure flipped. Excluded from the hit rate, since no trade was taken."
-          >
-            {summary.invalidated} invalidated
-          </span>
-        )}
-        {summary.hitRate !== null ? (
-          <span className="text-gray-400" title="Resolved trades only — zones price never reached are excluded, since there was no trade to win or lose">
-            {summary.wins}/{summary.resolved} hit target ({summary.hitRate.toFixed(0)}%)
-          </span>
+        {!summary ? (
+          // Nothing rather than zeros while it loads. Zeros would read as "no
+          // trades", which is a claim about the method rather than about the
+          // request still being in flight.
+          <span className="text-gray-500">counting zones…</span>
         ) : (
-          <span className="text-gray-500" title="No setup has been filled and resolved yet">
-            no resolved trades yet
-          </span>
+          <>
+            <span className="text-gray-300">
+              <span className="font-semibold text-white">{summary.total}</span> zones
+            </span>
+            <span className="text-gray-400">{summary.unfilled} waiting</span>
+            <span className="text-gray-400">{summary.open} open</span>
+            {summary.invalidated > 0 && (
+              <span
+                className="text-gray-600"
+                title="Zones retired before price ever reached the entry — the leg re-anchored, the validating gap was mitigated, or structure flipped. Excluded from the hit rate, since no trade was taken."
+              >
+                {summary.invalidated} invalidated
+              </span>
+            )}
+            {summary.hit_rate !== null ? (
+              <span
+                className="text-gray-400"
+                title="Resolved trades only, counted across every zone matching these filters — not just the rows loaded below. Zones price never reached are excluded, since there was no trade to win or lose."
+              >
+                {summary.wins}/{summary.resolved} hit target ({summary.hit_rate.toFixed(0)}%)
+              </span>
+            ) : (
+              <span className="text-gray-500" title="No setup has been filled and resolved yet">
+                no resolved trades yet
+              </span>
+            )}
+          </>
         )}
       </div>
 

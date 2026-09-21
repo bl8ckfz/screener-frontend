@@ -22,11 +22,27 @@ import { SearchBar } from '@/components/controls'
 import { ShortcutHelp, BackendStatus } from '@/components/ui'
 import { StorageMigration } from '@/components/StorageMigration'
 import { AlertHistoryTable } from '@/components/alerts'
+import { useSelectedDojoSetup } from '@/hooks/useSelectedDojoSetup'
+import { useAuth } from '@/hooks/useAuth'
 import { SettingsModal } from '@/components/settings'
 import { FEATURE_FLAGS } from '@/config'
 import { DojoSetupsTable } from '@/components/dojo/DojoSetupsTable'
 import { coinFromDojoSetup } from '@/types/dojo'
 import type { DojoSetup } from '@/types/dojo'
+import type { Coin } from '@/types/coin'
+import type { CoinAlertStats } from '@/types/alertHistory'
+
+/**
+ * The coin the right-hand chart is showing, and its alert activity.
+ *
+ * alertStat is optional on purpose: a Dojo zone can outlive its symbol's place
+ * in the tracked universe, so a plan may well be selected for a coin that has
+ * fired no alerts in the retained window.
+ */
+interface SelectedAlert {
+  coin: Coin
+  alertStat?: CoinAlertStats
+}
 
 export function ScreenerApp() {
   // Backend data polling (every 5 seconds)
@@ -79,11 +95,18 @@ export function ScreenerApp() {
 
   // Local state for UI interactions
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedAlert, setSelectedAlert] = useState<any>(null)
+  // Typed rather than `any`, because an updater callback over an `any` state
+  // gives its parameter an implicit any and fails the strict build.
+  const [selectedAlert, setSelectedAlert] = useState<SelectedAlert | null>(null)
   const [showShortcutHelp, setShowShortcutHelp] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'coins' | 'alerts' | 'dojo'>('coins')
-  const [selectedDojoSetup, setSelectedDojoSetup] = useState<DojoSetup | null>(null)
+  // The open Dojo plan. Held by a hook rather than useState because it also
+  // lives in the URL (so a refresh keeps it) and can be opened by id alone
+  // (which is all an alert carries).
+  const { isAuthenticated } = useAuth()
+  const dojoSelection = useSelectedDojoSetup(isAuthenticated)
+  const selectedDojoSetup = dojoSelection.setup
   const [isMobile, setIsMobile] = useState(false)
   
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -190,7 +213,11 @@ export function ScreenerApp() {
   
   // Handle alert click
   const handleAlertClick = (symbol: string) => {
-    setSelectedDojoSetup(null)
+    // Clearing is right HERE and only here: this is the row click, which is
+    // about the coin. A Dojo alert inside that row has its own handler below
+    // and must not be routed through this one, or opening a plan would be
+    // immediately undone.
+    dojoSelection.clear()
     const coin = coins?.find((c) => c.symbol === symbol)
     if (coin) {
       const alertStat = alertStats.find((stat) => stat.symbol === symbol)
@@ -204,7 +231,7 @@ export function ScreenerApp() {
   // keyed on the base (1000FLOKI), which is the same mismatch the alert tab
   // has — so it reuses the same normalisation rather than inventing another.
   const handleDojoSetupSelect = (setup: DojoSetup) => {
-    setSelectedDojoSetup(setup)
+    dojoSelection.select(setup)
     const base = setup.symbol.replace(/(USDT|FDUSD|TRY)$/, '')
     // A zone outlives the coin list. dojo_setups holds a symbol until it fills
     // or resolves, which can be weeks, while coins is the top ~200 by 24h
@@ -220,9 +247,49 @@ export function ScreenerApp() {
     setSelectedAlert({ coin, alertStat })
   }
 
+  // Open the exact plan a Dojo alert refers to.
+  //
+  // THIS IS THE CONNECTION THAT WAS MISSING. The backend has always sent a
+  // setup_id on its Dojo alerts; both alert transforms dropped it, and the
+  // row click then cleared any zone overlay — so an alert reading "price
+  // entered the zone" opened a chart with no zone on it, and the user had to
+  // find the row by hand in another tab.
+  //
+  // Only the id is known here, so the plan is fetched by id. It deliberately
+  // does NOT fall back to another setup on the same symbol: a symbol
+  // routinely carries a long and a short on different timeframes, and the
+  // substitute would be a different thesis with different levels.
+  const handleOpenDojoSetup = (setupId: string) => {
+    dojoSelection.selectById(setupId)
+  }
+
+  // Once the plan resolves, bring the chart with it. Split from the click
+  // because the row arrives asynchronously when opened by id, and the chart
+  // needs the symbol the plan names rather than the one the alert row sat in.
+  useEffect(() => {
+    const setup = dojoSelection.setup
+    if (!setup) return
+
+    const base = setup.symbol.replace(/(USDT|FDUSD|TRY)$/, '')
+    const coin =
+      coins?.find((c) => c.symbol === base || c.fullSymbol === setup.symbol) ??
+      coinFromDojoSetup(setup, livePrices[setup.symbol])
+
+    // Only when it actually changes. The plan resolving must not re-set an
+    // identical selection, or the chart would remount on every poll.
+    setSelectedAlert((prev) =>
+      prev?.coin?.fullSymbol === coin.fullSymbol && prev?.coin?.symbol === coin.symbol
+        ? prev
+        : { coin, alertStat: alertStats.find((stat) => stat.symbol === coin.symbol) }
+    )
+    // alertStats changes every poll and must not re-run this; the plan and the
+    // coin list are what decide which coin to show.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dojoSelection.setup?.id, coins])
+
   // Handle coin table row click
   const handleCoinClick = (coin: any) => {
-    setSelectedDojoSetup(null)
+    dojoSelection.clear()
     const alertStat = alertStats.find((stat) => stat.symbol === coin.symbol)
     setSelectedAlert({ coin, alertStat })
   }
@@ -360,12 +427,17 @@ export function ScreenerApp() {
                     stats={filteredAlertStats}
                     selectedSymbol={selectedAlert?.coin?.symbol}
                     onAlertClick={handleAlertClick}
+                    onOpenDojoSetup={handleOpenDojoSetup}
+                    activeSetupId={dojoSelection.setupId}
                   />
                 )}
                 {activeTab === 'dojo' && (
                   <DojoSetupsTable
                     onSetupSelect={handleDojoSetupSelect}
-                    selectedId={selectedDojoSetup?.id ?? null}
+                    // The ID rather than the loaded row, so a plan opened from
+                    // an alert highlights its row immediately instead of only
+                    // once the fetch lands.
+                    selectedId={dojoSelection.setupId}
                     livePrices={livePrices}
                     searchQuery={searchQuery}
                   />
@@ -376,6 +448,27 @@ export function ScreenerApp() {
 
           {/* Right Column - Chart */}
           <div className={`lg:col-span-7 ${mobileSheetEnabled ? 'hidden md:block' : ''}`}>
+            {/* A plan that could not be found is SAID, never substituted.
+                Showing another zone on the same symbol would be a different
+                thesis with different levels, presented as the one that was
+                asked for. */}
+            {dojoSelection.isMissing && (
+              <div className="mb-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+                <p className="font-semibold">That plan is no longer available.</p>
+                <p className="mt-1 text-amber-200/80">
+                  The alert refers to a setup that is not in the current records. Nothing
+                  else is shown in its place, because another zone on the same symbol
+                  would be a different trade with different levels.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => dojoSelection.clear()}
+                  className="mt-2 rounded border border-amber-400/40 px-2 py-1 text-xs font-medium hover:bg-amber-500/20"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
             <ChartSection 
               selectedCoin={liveCoin}
               dojoSetup={selectedDojoSetup}

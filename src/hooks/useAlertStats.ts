@@ -57,6 +57,11 @@ function toAlertHistoryEntry(alert: AlertHistoryItem): AlertHistoryEntry {
       value: alert.value,
       threshold: alert.threshold,
     },
+    // Kept, so the alert can still be opened as the plan it refers to. This
+    // transform is the third place an alert is reshaped on its way to the
+    // screen, and it used to be where the Dojo context was finally lost even
+    // when the two before it had preserved it.
+    dojo: alert.dojo,
   }
 }
 

@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { CoinAlertStats } from '@/types/alertHistory'
 import { AlertBadges } from './AlertBadges'
+import { DojoAlertLinks } from './DojoAlertLinks'
 import { EmptyAlertHistory } from './EmptyAlertHistory'
 import { formatNumber } from '@/utils/format'
 import { WatchlistStar } from '@/components/coin/WatchlistStar'
@@ -11,11 +12,28 @@ interface AlertHistoryTableProps {
   stats: CoinAlertStats[]
   selectedSymbol?: string
   onAlertClick: (symbol: string, alert: CoinAlertStats) => void
+  /**
+   * Opens the exact Dojo plan an alert refers to.
+   *
+   * Separate from onAlertClick because the two mean different things. A row
+   * click selects a COIN; this selects a PLAN, and the row it sits in cannot
+   * identify one — the table aggregates by symbol, and a symbol routinely
+   * carries two zones.
+   */
+  onOpenDojoSetup?: (setupId: string) => void
+  /** The plan currently open, so its chip reads as selected. */
+  activeSetupId?: string | null
 }
 
 type SortField = 'symbol' | 'price' | 'change' | 'alerts' | 'lastAlert'
 
-export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick }: AlertHistoryTableProps) {
+export function AlertHistoryTable({
+  stats,
+  selectedSymbol,
+  onAlertClick,
+  onOpenDojoSetup,
+  activeSetupId,
+}: AlertHistoryTableProps) {
   const watchlistSymbols = useStore((state) => state.watchlistSymbols)
   const alertHistorySort = useStore((state) => state.alertHistorySort)
   const setAlertHistorySort = useStore((state) => state.setAlertHistorySort)
@@ -77,6 +95,13 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick }: Alert
           <div>
             <div className="font-mono text-sm font-semibold text-white">{stat.symbol}</div>
             <AlertBadges alertTypes={stat.alertTypes} maxVisible={4} latestAlertType={stat.alerts[0]?.alertType} />
+            {onOpenDojoSetup && (
+              <DojoAlertLinks
+                alerts={stat.alerts}
+                onOpenSetup={onOpenDojoSetup}
+                activeSetupId={activeSetupId}
+              />
+            )}
           </div>
         </div>
         <div className="text-right">
@@ -287,6 +312,17 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick }: Alert
                   maxVisible={4}
                   latestAlertType={stat.alerts[0]?.alertType}
                 />
+                {/* Dojo alerts open their own plan rather than the coin. The
+                    row cannot: it is keyed on the symbol, and a symbol
+                    routinely carries a long and a short on different
+                    timeframes. */}
+                {onOpenDojoSetup && (
+                  <DojoAlertLinks
+                    alerts={stat.alerts}
+                    onOpenSetup={onOpenDojoSetup}
+                    activeSetupId={activeSetupId}
+                  />
+                )}
               </td>
               <td className="py-1.5 px-2 text-right text-[10px] text-gray-400">
                 {formatTimeAgo(stat.lastAlertTimestamp)}
@@ -350,6 +386,17 @@ export function AlertHistoryTable({ stats, selectedSymbol, onAlertClick }: Alert
                   maxVisible={4}
                   latestAlertType={stat.alerts[0]?.alertType}
                 />
+                {/* Dojo alerts open their own plan rather than the coin. The
+                    row cannot: it is keyed on the symbol, and a symbol
+                    routinely carries a long and a short on different
+                    timeframes. */}
+                {onOpenDojoSetup && (
+                  <DojoAlertLinks
+                    alerts={stat.alerts}
+                    onOpenSetup={onOpenDojoSetup}
+                    activeSetupId={activeSetupId}
+                  />
+                )}
               </td>
               <td className="py-1.5 px-2 text-right text-[10px] text-gray-400">
                 {formatTimeAgo(stat.lastAlertTimestamp)}

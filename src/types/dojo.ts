@@ -180,6 +180,51 @@ export function isLiveOutcome(o: DojoOutcome): boolean {
   return LIVE_OUTCOMES.includes(o)
 }
 
+/**
+ * Outcome counts over the whole filtered population, from GET /api/dojo/summary.
+ *
+ * WHY THIS COMES FROM THE BACKEND
+ *
+ * It used to be computed here, over whatever rows the table had loaded — a
+ * page capped at 200 and re-derived every time a filter changed. So the
+ * denominator moved with the view, and a number presented as the method's hit
+ * rate actually described the current page. That is worse than showing
+ * nothing, because it looks like it means something.
+ *
+ * Mirrors DojoSummary in cmd/api-gateway/handlers_dojo.go.
+ */
+export interface DojoSummary {
+  /** Every setup matching the filters, resolved or not. */
+  total: number
+
+  /** The denominator of hitRate: filled trades that reached a target or a stop. */
+  resolved: number
+  wins: number
+  losses: number
+
+  /**
+   * The three states that are NOT part of the hit rate, reported so a reader
+   * can see how much of the population it speaks for.
+   *
+   * unfilled and invalidated are excluded deliberately and are not losses:
+   * price never reached the resting limit, so no trade was opened. Counting
+   * them would understate the method rather than measure it. open is simply
+   * not finished yet.
+   */
+  unfilled: number
+  invalidated: number
+  open: number
+
+  /**
+   * A percentage, or null when nothing has resolved.
+   *
+   * Null rather than zero, and it must stay null through every layer: "no
+   * trades yet" and "every trade lost" are different facts that would
+   * otherwise both render as 0%.
+   */
+  hit_rate: number | null
+}
+
 /** Display metadata per outcome, so the table and any summary agree. */
 export const DOJO_OUTCOME_META: Record<
   DojoOutcome,

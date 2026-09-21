@@ -49,6 +49,19 @@ export type FuturesAlertType =
   // zone, so this supersedes the near_* alert rather than adding to it.
   | 'futures_dojo_filled_long' // Dojo Entry Filled (Long)
   | 'futures_dojo_filled_short' // Dojo Entry Filled (Short)
+  // How the zone ENDED. Until these existed the scanner announced that a zone
+  // armed, that price arrived and that the limit filled, and then went silent:
+  // invalidation and settlement were written to the database and told nobody.
+  //
+  // An invalidated zone never filled, so it is neither a win nor a loss — it
+  // is a plan that stopped being a plan, and the action is to cancel any
+  // resting order on it.
+  | 'futures_dojo_invalidated_long' // Dojo Zone Invalidated (Long)
+  | 'futures_dojo_invalidated_short' // Dojo Zone Invalidated (Short)
+  | 'futures_dojo_target_long' // Dojo Target Reached (Long)
+  | 'futures_dojo_target_short' // Dojo Target Reached (Short)
+  | 'futures_dojo_stopped_long' // Dojo Stop Taken (Long)
+  | 'futures_dojo_stopped_short' // Dojo Stop Taken (Short)
 
 /**
  * Legacy alert types (DEPRECATED - kept for backwards compatibility only)
@@ -107,6 +120,49 @@ export interface FuturesAlertCondition {
 }
 
 /**
+ * What a Dojo alert says about the plan behind it.
+ *
+ * THIS IS AN ALLOWLIST, and deliberately narrow. The backend scrubs its alert
+ * metadata so the published LEVELS travel and the ratios and the swing they
+ * were measured from do not — entry and stop alone reconstruct the leg for
+ * anyone holding the two plan constants, and the leg yields the whole
+ * fibonacci ladder. See internal/dojo/emitter.go.
+ *
+ * Copying the whole metadata map into the frontend would make that contract
+ * one forgotten backend field away from breaking. So each field is named here
+ * on purpose, and a new one is a deliberate act rather than a side effect.
+ */
+export interface DojoAlertContext {
+  /** The dojo_setups row this alert is about. Resolves via GET /api/dojo/setups/{id}. */
+  setupId: string
+  /**
+   * Which moment in the zone's life this is.
+   *
+   * A discriminator the backend sets explicitly, rather than something parsed
+   * back out of the rule type — the arrival and fill rule types carry no
+   * timeframe, so the rule type alone cannot say everything the event does.
+   */
+  event?:
+    | 'zone_armed'
+    | 'zone_entered'
+    | 'entry_filled'
+    | 'zone_invalidated'
+    | 'target_hit'
+    | 'stop_hit'
+  direction?: 'long' | 'short'
+  /** The timeframe that armed the zone: '1d' | '5d' | '1w'. */
+  timeframe?: string
+  /** Published levels. Present on most events, absent on some; never invented. */
+  otzLow?: number
+  otzHigh?: number
+  entry?: number
+  stopLoss?: number
+  tp1?: number
+  /** Why a zone was retired, for the invalidation event only. */
+  invalidationReason?: string
+}
+
+/**
  * Alert notification
  */
 export interface Alert {
@@ -124,6 +180,20 @@ export interface Alert {
   dismissed: boolean
   source?: 'main' | 'watchlist' // Track alert source for separate history/webhooks
   watchlistId?: string // ID of the watchlist that triggered this alert (if source is watchlist)
+  /**
+   * Which Dojo plan this alert is about, when it is about one.
+   *
+   * Carried through from the backend alert's metadata, which both transforms
+   * used to declare and then drop — so an alert saying "price entered the
+   * zone" arrived with no way to find the zone. Clicking it opened a bare
+   * chart with no plan on it.
+   *
+   * Populated ONLY from the metadata allowlist in the two transforms. The rest
+   * of the metadata map stays dropped: it carries the scrub contract's
+   * published levels, and widening this to the whole blob would make every
+   * future backend field a frontend surface by default.
+   */
+  dojo?: DojoAlertContext
   // Futures-specific data (optional)
   futuresData?: {
     change_5m?: number
@@ -714,6 +784,16 @@ export const FUTURES_ALERT_LABELS: Record<FuturesAlertType, string> = {
   futures_dojo_near_short: '🎯🔴 Dojo Zone Entered (Short)',
   futures_dojo_filled_long: '✅🟢 Dojo Entry Filled (Long)',
   futures_dojo_filled_short: '✅🔴 Dojo Entry Filled (Short)',
+  // How the zone ended. The emoji follows one zone through its whole life:
+  // 🥋 formed, 🎯 price arrived, ✅ the limit filled, then 🏁 target, 🛑 stop,
+  // or ⌛ it died unfilled. Matches pkg/webhook/delivery.go, so a channel and
+  // the app label the same event the same way.
+  futures_dojo_invalidated_long: '⌛🟢 Dojo Zone Invalidated (Long)',
+  futures_dojo_invalidated_short: '⌛🔴 Dojo Zone Invalidated (Short)',
+  futures_dojo_target_long: '🏁🟢 Dojo Target Reached (Long)',
+  futures_dojo_target_short: '🏁🔴 Dojo Target Reached (Short)',
+  futures_dojo_stopped_long: '🛑🟢 Dojo Stop Taken (Long)',
+  futures_dojo_stopped_short: '🛑🔴 Dojo Stop Taken (Short)',
 }
 
 /**
@@ -760,6 +840,20 @@ export const DEFAULT_FUTURES_ALERT_CONFIG: FuturesAlertConfig = {
     futures_dojo_near_short: { enabled: true, severity: 'critical' },
     futures_dojo_filled_long: { enabled: true, severity: 'critical' },
     futures_dojo_filled_short: { enabled: true, severity: 'critical' },
+    // On by default, and deliberately so. These close the loop on a zone the
+    // user was already told about: without them the scanner announces that a
+    // trade started and never that it ended. Defaulting them off would
+    // recreate the gap they exist to fill.
+    //
+    // 'high' rather than 'critical': an ending is worth knowing, but it is not
+    // the moment to act. The one exception is invalidation, which asks the
+    // reader to cancel a resting order they may still have working.
+    futures_dojo_invalidated_long: { enabled: true, severity: 'critical' },
+    futures_dojo_invalidated_short: { enabled: true, severity: 'critical' },
+    futures_dojo_target_long: { enabled: true, severity: 'high' },
+    futures_dojo_target_short: { enabled: true, severity: 'high' },
+    futures_dojo_stopped_long: { enabled: true, severity: 'high' },
+    futures_dojo_stopped_short: { enabled: true, severity: 'high' },
   },
   globalThresholds: {
     priceChange_15m: 1.0, // 1%

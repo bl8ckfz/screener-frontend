@@ -7,6 +7,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { BackendWebSocketClient } from '@/services/backendApi'
+import { readDojoAlertContext } from '@/services/dojoAlertContext'
 import { debug } from '@/utils/debug'
 import type { Alert } from '@/types/alert'
 
@@ -87,6 +88,16 @@ export function useBackendAlerts(
       read: false,
       dismissed: false,
       source: 'main' as const,
+      // Which plan this alert is about, when it is about one.
+      //
+      // metadata was declared on BackendAlert and never read, so a Dojo alert
+      // arrived with the setup id already in hand and threw it away. Clicking
+      // one then opened a chart with no zone on it.
+      //
+      // Read through the shared allowlist rather than inline, so this path and
+      // the history path cannot drift — an alert must not navigate while it is
+      // live and stop navigating after a refresh.
+      dojo: readDojoAlertContext(backendAlert.rule_type, backendAlert.metadata),
     }
   }, [])
 

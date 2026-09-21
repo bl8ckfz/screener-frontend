@@ -6,6 +6,7 @@
  */
 
 import { backendApi } from './backendApi'
+import { readDojoAlertContext } from './dojoAlertContext'
 import type { AlertHistoryItem } from '@/types/alert'
 
 /**
@@ -188,6 +189,10 @@ export class AlertHistory {
       read: false,
       dismissed: false,
       source: 'main',
+      // Same allowlist as the live path, through the same reader. An alert
+      // must not navigate to its plan while it is live and stop navigating
+      // once it has been reloaded from history.
+      dojo: readDojoAlertContext(alert.rule_type, alert.metadata),
     }
   }
 
