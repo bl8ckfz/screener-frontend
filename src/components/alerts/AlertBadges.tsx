@@ -7,13 +7,38 @@ interface AlertBadgesProps {
   alertTypes: Set<CombinedAlertType>
   maxVisible?: number
   latestAlertType?: CombinedAlertType // Highlight this alert as the most recent
+  /**
+   * Badges that are shown first and are NOT counted against maxVisible.
+   *
+   * For state that persists rather than events that accumulate. A Dojo plan is
+   * in play for weeks and stays worth seeing the whole time, whereas the alert
+   * types behind the badges below are a stream — so a busy coin's momentum
+   * alerts must not be able to push the plan out of view, which is exactly
+   * what slicing a single combined list did.
+   */
+  pinned?: PinnedBadge[]
+}
+
+/** A badge rendered ahead of the alert types and outside their budget. */
+export interface PinnedBadge {
+  key: string
+  text: string
+  title: string
+  /** Background colour. Direction, for a Dojo plan. */
+  color: string
+  /**
+   * Draw attention without competing with latestAlertType's ring: used for a
+   * plan that is actually in a trade rather than still waiting for price.
+   */
+  emphasised?: boolean
+  onClick?: () => void
 }
 
 /**
  * Display alert type badges with colors matching alert severity
  * Shows first N badges, then "+X more" if there are additional types
  */
-export function AlertBadges({ alertTypes, maxVisible = 3, latestAlertType }: AlertBadgesProps) {
+export function AlertBadges({ alertTypes, maxVisible = 3, latestAlertType, pinned }: AlertBadgesProps) {
   const alertColors = useStore((state) => state.alertColors)
   const types = Array.from(alertTypes)
   const visibleTypes = types.slice(0, maxVisible)
@@ -108,12 +133,43 @@ export function AlertBadges({ alertTypes, maxVisible = 3, latestAlertType }: Ale
     return type
   }
 
-  if (types.length === 0) {
+  if (types.length === 0 && !pinned?.length) {
     return null
   }
 
   return (
     <div className="flex flex-wrap gap-1.5">
+      {/* Pinned first and outside the maxVisible budget. These say the coin has
+          a plan in play, which stays true for as long as the plan is live —
+          unlike the alert types beside them, which are a stream that turns
+          over. Counting them together let a busy coin's momentum alerts push
+          the plan out of view. */}
+      {pinned?.map((p) => (
+        <div
+          key={p.key}
+          role={p.onClick ? 'button' : undefined}
+          tabIndex={p.onClick ? 0 : undefined}
+          onClick={p.onClick ? (e) => { e.stopPropagation(); p.onClick?.() } : undefined}
+          onKeyDown={
+            p.onClick
+              ? (e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    p.onClick?.()
+                  }
+                }
+              : undefined
+          }
+          className={`flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-bold transition-all ${
+            p.emphasised ? 'ring-2 ring-emerald-300/80' : 'ring-1 ring-white/25'
+          } ${p.onClick ? 'cursor-pointer hover:scale-110' : ''}`}
+          style={{ backgroundColor: p.color, color: '#fff' }}
+          title={p.title}
+        >
+          {p.text}
+        </div>
+      ))}
       {visibleTypes.map((type) => {
         const badge = getAlertBadge(type, latestAlertType === type)
         return (

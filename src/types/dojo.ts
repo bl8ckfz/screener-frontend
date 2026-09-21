@@ -319,6 +319,33 @@ export function distanceIsLive(livePrice?: number): boolean {
   return !!livePrice && livePrice > 0
 }
 
+/**
+ * The base symbol a setup's perp trades under: ZETAUSDT becomes ZETA.
+ *
+ * dojo_setups stores the full contract symbol while the coin list and the alert
+ * table key on the base, so anything matching a plan to a row has to cross that
+ * gap. It was being crossed by an inline regex in three places, which is two
+ * more than can be kept in step.
+ */
+export function baseSymbol(symbol: string): string {
+  return symbol.replace(/(USDT|FDUSD|TRY)$/, '')
+}
+
+/**
+ * What a caller can ask GET /api/dojo/setups to filter on.
+ *
+ * 'live' is not an outcome. It is the union of 'unfilled' and 'open' — waiting
+ * or running, the two states a plan can still be acted on in — and it exists
+ * because that union cannot be expressed as a single outcome value.
+ *
+ * It matters that the server applies it. dojo_setups has no retention, so the
+ * live plans are not reliably the recent ones: a weekly zone can wait months
+ * while a hundred others are published and resolved around it. Fetching the
+ * most recent page and filtering here would drop exactly the long-lived plans
+ * that most need to stay visible.
+ */
+export type DojoStatusFilter = DojoOutcome | 'live'
+
 /** Whole days since the zone was published. */
 export function daysSince(iso: string): number | null {
   const t = Date.parse(iso)

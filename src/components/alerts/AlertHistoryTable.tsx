@@ -2,6 +2,8 @@ import { useMemo } from 'react'
 import type { CoinAlertStats } from '@/types/alertHistory'
 import { AlertBadges } from './AlertBadges'
 import { DojoAlertLinks } from './DojoAlertLinks'
+import { dojoPlanBadges } from './dojoPlanBadges'
+import { useLiveDojoSetups } from '@/hooks/useLiveDojoSetups'
 import { EmptyAlertHistory } from './EmptyAlertHistory'
 import { formatNumber } from '@/utils/format'
 import { WatchlistStar } from '@/components/coin/WatchlistStar'
@@ -34,6 +36,12 @@ export function AlertHistoryTable({
   onOpenDojoSetup,
   activeSetupId,
 }: AlertHistoryTableProps) {
+  // Which coins have a plan IN PLAY, from dojo_setups rather than from the
+  // alert stream. The badges below are alert types, read over 48 hours from a
+  // table kept for seven days; a Dojo plan outlives both, so once its armed
+  // alert ages out nothing in the row says the coin has a plan at all.
+  const { bySymbol: livePlans } = useLiveDojoSetups()
+
   const watchlistSymbols = useStore((state) => state.watchlistSymbols)
   const alertHistorySort = useStore((state) => state.alertHistorySort)
   const setAlertHistorySort = useStore((state) => state.setAlertHistorySort)
@@ -94,7 +102,12 @@ export function AlertHistoryTable({
           <WatchlistStar symbol={stat.symbol} />
           <div>
             <div className="font-mono text-sm font-semibold text-white">{stat.symbol}</div>
-            <AlertBadges alertTypes={stat.alertTypes} maxVisible={4} latestAlertType={stat.alerts[0]?.alertType} />
+            <AlertBadges
+              alertTypes={stat.alertTypes}
+              maxVisible={4}
+              latestAlertType={stat.alerts[0]?.alertType}
+              pinned={dojoPlanBadges(livePlans.get(stat.symbol), onOpenDojoSetup)}
+            />
             {onOpenDojoSetup && (
               <DojoAlertLinks
                 alerts={stat.alerts}
@@ -311,6 +324,7 @@ export function AlertHistoryTable({
                   alertTypes={stat.alertTypes} 
                   maxVisible={4}
                   latestAlertType={stat.alerts[0]?.alertType}
+                  pinned={dojoPlanBadges(livePlans.get(stat.symbol), onOpenDojoSetup)}
                 />
                 {/* Dojo alerts open their own plan rather than the coin. The
                     row cannot: it is keyed on the symbol, and a symbol
@@ -385,6 +399,7 @@ export function AlertHistoryTable({
                   alertTypes={stat.alertTypes} 
                   maxVisible={4}
                   latestAlertType={stat.alerts[0]?.alertType}
+                  pinned={dojoPlanBadges(livePlans.get(stat.symbol), onOpenDojoSetup)}
                 />
                 {/* Dojo alerts open their own plan rather than the coin. The
                     row cannot: it is keyed on the symbol, and a symbol

@@ -9,7 +9,7 @@
 
 import { authService } from './authService'
 import type { Alert } from '@/types/alert'
-import type { DojoSetup, DojoOutcome, DojoSummary } from '@/types/dojo'
+import type { DojoSetup, DojoSummary, DojoStatusFilter } from '@/types/dojo'
 
 interface UserSettings {
   userId: string
@@ -256,7 +256,7 @@ export const backendApi = {
     symbol?: string
     timeframe?: string
     direction?: 'long' | 'short'
-    status?: DojoOutcome
+    status?: DojoStatusFilter
     since?: string
     limit?: number
   } = {}): Promise<{ setups: DojoSetup[]; count: number }> {
@@ -307,7 +307,7 @@ export const backendApi = {
     symbol?: string
     timeframe?: string
     direction?: 'long' | 'short'
-    status?: DojoOutcome
+    status?: DojoStatusFilter
     since?: string
   } = {}): Promise<DojoSummary> {
     const q = new URLSearchParams()
