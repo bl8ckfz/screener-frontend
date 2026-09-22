@@ -106,7 +106,7 @@ export const COLUMNS: Array<{
   },
   {
     field: 'age', label: 'Age', align: 'right',
-    title: 'Days since the zone was published. Outcomes are settled once a day from confirmed bars, so a fill can take until the next daily pass to show.',
+    title: 'Days since the zone was published. A running trade settles from minute candles, usually within minutes of the touch; anything missed waits for the daily pass.',
   },
   { field: 'status', label: 'Status', align: 'left' },
 ]

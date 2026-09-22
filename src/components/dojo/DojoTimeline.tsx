@@ -17,10 +17,12 @@
  * neither a win nor a loss, and a timeline that rendered it as a stop would be
  * making a claim the data does not support.
  *
- * It also does not claim precision it lacks. Settlement replays DAILY candles
- * once a day, so a fill is known to the day and not to the minute, and a
- * candle that touched both the target and the stop is resolved to the stop.
- * Both are stated rather than left for the reader to assume.
+ * It also does not claim precision it lacks. A running trade settles from
+ * MINUTE candles, usually within minutes of the touch, but the daily replay is
+ * still the backstop — so a date is the moment of record and not necessarily
+ * the moment of the touch. And a candle that touched both the target and the
+ * stop is resolved to the stop, at either resolution, because a candle carries
+ * no ordering inside itself. Both are stated rather than left to be assumed.
  */
 
 import type { DojoSetup } from '@/types/dojo'
@@ -150,10 +152,10 @@ export function DojoTimeline({ setup }: DojoTimelineProps) {
       {/* The limits of the record, stated with it rather than left to be
           assumed. A reader who sees a date will otherwise take it as exact. */}
       <p className="mt-2 border-t border-gray-700/60 pt-2 text-[10px] leading-relaxed text-gray-600">
-        Outcomes are settled once a day against daily candles, so these dates are
-        accurate to the day rather than the minute. A candle that touched both the
-        target and the stop is recorded as the stop, because a daily candle carries
-        no intraday ordering.
+        A running trade is settled from minute candles, usually within minutes of
+        the touch; anything missed is settled by a daily pass and dated to the day.
+        A candle that touched both the target and the stop is recorded as the stop,
+        because a candle carries no ordering inside itself.
       </p>
     </div>
   )
