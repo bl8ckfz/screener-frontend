@@ -13,6 +13,7 @@
 
 import { Fragment, useMemo, useState } from 'react'
 import { DojoTimeline } from './DojoTimeline'
+import { useAuth } from '@/hooks/useAuth'
 import { useDojoSetups, type DojoSetupFilters } from '@/hooks/useDojoSetups'
 import {
   DOJO_OUTCOME_META,
@@ -112,6 +113,20 @@ export const COLUMNS: Array<{
 ]
 
 /**
+ * The columns this account actually gets.
+ *
+ * Vol is dropped rather than rendered empty for an account without plan
+ * detail. The server strips volume_node from the payload, so leaving the
+ * column in place would print a column of dashes — and a dash in this table
+ * means "no volume profile for this symbol", which is a statement about the
+ * data rather than about the subscription. An absent column says nothing
+ * false; the expanded plan is where the offer is made.
+ */
+export function columnsFor(hasPlanDetails: boolean) {
+  return hasPlanDetails ? COLUMNS : COLUMNS.filter((c) => c.field !== 'volume')
+}
+
+/**
  * Visibility class per column, so a header and its cell cannot disagree about
  * whether the column exists at the current width — which would misalign every
  * row after it.
@@ -188,7 +203,19 @@ export function OutcomeBadge({ setup }: { setup: Pick<DojoSetup, 'outcome' | 'in
 }
 
 /** The full trade plan, shown when a row is expanded. */
-export function TradePlan({ setup, livePrice }: { setup: DojoSetup; livePrice?: number }) {
+export function TradePlan({
+  setup,
+  livePrice,
+  // Defaults to showing it, because the landing page renders this same
+  // component for a handful of curated zones and has its own masking upstream.
+  // Nothing is held back by this flag in any case: the server strips the
+  // fields, and this only decides whether their absence is explained.
+  hasPlanDetails = true,
+}: {
+  setup: DojoSetup
+  livePrice?: number
+  hasPlanDetails?: boolean
+}) {
   const dist = distanceToEntry(setup, livePrice)
   const isLong = setup.direction === 'long'
 
@@ -234,18 +261,31 @@ export function TradePlan({ setup, livePrice }: { setup: DojoSetup; livePrice?: 
         ))}
       </div>
 
-      <div className="mt-3 pt-3 border-t border-gray-700/50 flex flex-wrap items-center gap-2">
-        <span className="text-xs text-gray-400">Backed by</span>
-        {setup.backings.length > 0 ? (
-          setup.backings.map((b) => (
-            <span key={b} className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 text-xs font-mono">
-              {b}
-            </span>
-          ))
-        ) : (
-          <span className="text-xs text-gray-500">—</span>
-        )}
-      </div>
+      {hasPlanDetails ? (
+        <div className="mt-3 pt-3 border-t border-gray-700/50 flex flex-wrap items-center gap-2">
+          <span className="text-xs text-gray-400">Backed by</span>
+          {setup.backings.length > 0 ? (
+            setup.backings.map((b) => (
+              <span key={b} className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 text-xs font-mono">
+                {b}
+              </span>
+            ))
+          ) : (
+            <span className="text-xs text-gray-500">—</span>
+          )}
+        </div>
+      ) : (
+        // Says what is missing and why, rather than leaving a gap. An empty
+        // "Backed by —" would read as "this zone has no backing", which is the
+        // opposite of true: nothing publishes without it.
+        <div className="mt-3 pt-3 border-t border-gray-700/50">
+          <p className="text-xs text-gray-500">
+            <span className="text-gray-400">Backed by</span> · the levels behind this zone, its
+            volume context and the point of control are part of Pro. The plan above — zone, entry,
+            stop, targets and the confluence rating — is not affected.
+          </p>
+        </div>
+      )}
 
       {dist !== null && setup.outcome === 'unfilled' && (
         <p className="mt-2 text-xs text-gray-400">
@@ -374,6 +414,8 @@ export function DojoSetupsTable({
   const [sortField, setSortField] = useState<SortField>('age')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const { setups, summary, isLoading, isError, isAuthenticated } = useDojoSetups(filters)
+  const { hasPlanDetails } = useAuth()
+  const columns = useMemo(() => columnsFor(hasPlanDetails), [hasPlanDetails])
 
   const toggleSort = (field: SortField) => {
     if (field === sortField) {
@@ -548,7 +590,7 @@ export function DojoSetupsTable({
                 paint its own background over the scrolling rows. */}
             <thead className="bg-gray-900 sticky top-0 z-10">
               <tr className="border-b border-gray-700">
-                {COLUMNS.map((c) => {
+                {columns.map((c) => {
                   const active = sortField === c.field
                   return (
                     <th
@@ -621,9 +663,11 @@ export function DojoSetupsTable({
                       <td className={`px-2 py-2 text-center ${HIDE.confluence ?? ''}`}>
                         <ConfluenceBadge band={s.confluence_band} />
                       </td>
-                      <td className={`px-2 py-2 text-center ${HIDE.volume ?? ''}`}>
-                        <VolumeBadge setup={s} />
-                      </td>
+                      {hasPlanDetails && (
+                        <td className={`px-2 py-2 text-center ${HIDE.volume ?? ''}`}>
+                          <VolumeBadge setup={s} />
+                        </td>
+                      )}
                       <td className="px-2 py-2 text-right font-mono text-gray-500">
                         {age === null ? '—' : age === 0 ? 'today' : `${age}d`}
                       </td>
@@ -633,8 +677,8 @@ export function DojoSetupsTable({
                     </tr>
                     {isOpen && (
                       <tr>
-                        <td colSpan={COLUMNS.length} className="p-0">
-                          <TradePlan setup={s} livePrice={livePrice} />
+                        <td colSpan={columns.length} className="p-0">
+                          <TradePlan setup={s} livePrice={livePrice} hasPlanDetails={hasPlanDetails} />
                         </td>
                       </tr>
                     )}

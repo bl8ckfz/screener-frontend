@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo, createContext, useContext, ReactNode } from 'react'
-import { authService, hasWebhookAccess, type User } from '@/services/authService'
+import { authService, hasWebhookAccess, hasPlanDetailAccess, type User } from '@/services/authService'
 import { watchlistService } from '@/services/watchlistService'
 import { webhookService } from '@/services/webhookService'
 import { useStore } from '@/hooks/useStore'
@@ -22,6 +22,8 @@ interface AuthContextType {
   isAdmin: boolean
   hasTvAddon: boolean
   hasWebhooks: boolean
+  /** Whether Backed by, Volume and Point of control are shown. */
+  hasPlanDetails: boolean
   currentPlan: string | null
   trialDaysRemaining: number | null
   // Actions
@@ -143,6 +145,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return hasWebhookAccess(user)
   }, [user, forceExpired])
 
+  const hasPlanDetails = useMemo(() => {
+    if (forceExpired && user?.role !== 'admin') return false
+    return hasPlanDetailAccess(user)
+  }, [user, forceExpired])
+
   const syncWatchlist = async () => {
     try {
       const symbols = await watchlistService.getWatchlist()
@@ -221,6 +228,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!user,
         ...subscriptionState,
         hasWebhooks,
+        hasPlanDetails,
         login,
         register,
         verifyEmail,

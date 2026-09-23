@@ -447,6 +447,39 @@ export const authService = {
  * than the gate the user gets a form that 403s on save; if it is stingier they
  * cannot reach a feature they are paying for.
  */
+/**
+ * May this account see HOW a zone was built?
+ *
+ * The plan is what the subscription buys — zone, entry, stop, targets, R:R,
+ * and the confluence band that says how strongly the scanner rated it. What
+ * this gates is the derivation behind that band: which levels back the zone,
+ * and where it sits in the traded volume distribution. Someone holding those
+ * can reproduce the method; someone holding the band knows the verdict without
+ * the working.
+ *
+ * The rule is the same as hasWebhookAccess today and is written out again
+ * rather than delegated, because they are two different questions. Webhooks
+ * could be unbundled from Pro, or plan detail sold separately, and a shared
+ * implementation would silently move whichever one was not being edited.
+ *
+ * Trial accounts do not qualify, deliberately: a trial evaluates the product,
+ * it does not grant what is sold on top of it. The backend enforces the same
+ * rule in planDetailAccess (cmd/api-gateway/handlers_dojo.go) and strips the
+ * fields from the response, so this only decides what the UI asks for and how
+ * it explains an absence — it is not what keeps the data back.
+ */
+export function hasPlanDetailAccess(user: User | null): boolean {
+  if (!user) return false
+  if (user.role === 'admin') return true
+  if (user.role !== 'pro') return false
+
+  if (user.status === 'active') return true
+  if (user.status === 'canceled') {
+    return user.plan_expires_at ? new Date(user.plan_expires_at) > new Date() : false
+  }
+  return false
+}
+
 export function hasWebhookAccess(user: User | null): boolean {
   if (!user) return false
   if (user.role === 'admin') return true
