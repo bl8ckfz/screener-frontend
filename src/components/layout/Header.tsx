@@ -2,6 +2,7 @@
 import { UserMenu } from '@/components/auth'
 import { TrialBanner } from '@/components/auth'
 import { SettingsButton } from '@/components/settings'
+import { LogoMark } from '@/components/ui'
 
 interface HeaderProps {
   title?: string
@@ -35,6 +36,7 @@ export function Header({
       >
         <div className="w-full max-w-full px-2 py-2 sm:px-6 sm:py-4 sm:max-w-[1920px] sm:mx-auto">
           <div className="flex items-center justify-between gap-2">
+            <LogoMark className="w-6 h-6 sm:w-9 sm:h-9" />
             <div className="min-w-0 flex-1">
               <h1 className="text-sm sm:text-2xl font-bold text-white truncate">{title}</h1>
               {subtitle && (

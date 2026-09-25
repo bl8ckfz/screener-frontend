@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { authService } from '@/services/authService'
+import { Logo } from '@/components/ui'
 
 export function LoginPage() {
   const [email, setEmail] = useState('')
@@ -69,7 +70,7 @@ export function LoginPage() {
       {/* Minimal Header */}
       <header className="px-4 sm:px-6 py-4">
         <Link to="/" className="text-xl font-bold text-white hover:text-gray-300 transition-colors">
-          🔍 Coin Sniffer
+          <Logo size={26} />
         </Link>
       </header>
 

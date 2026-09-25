@@ -6,12 +6,13 @@
  */
 import { Link } from 'react-router-dom'
 import { checkoutUrl } from '@/config/checkout'
+import { Logo } from '@/components/ui'
 
 export function LandingHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-gray-900 bg-black/85 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-        <span className="font-semibold tracking-tight text-white">Coin-Sniffer</span>
+        <Logo size={24} className="font-semibold tracking-tight text-white" />
 
         <nav className="flex items-center gap-1 sm:gap-3">
           <a

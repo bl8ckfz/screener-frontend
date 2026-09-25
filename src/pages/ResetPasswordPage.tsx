@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { authService } from '@/services/authService'
+import { Logo } from '@/components/ui'
 
 export function ResetPasswordPage() {
   const [searchParams] = useSearchParams()
@@ -59,7 +60,7 @@ export function ResetPasswordPage() {
       {/* Header */}
       <header className="px-4 sm:px-6 py-4">
         <Link to="/" className="text-xl font-bold text-white hover:text-gray-300 transition-colors">
-          🔍 Coin Sniffer
+          <Logo size={26} />
         </Link>
       </header>
 

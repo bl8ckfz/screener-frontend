@@ -12,6 +12,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { authService } from '@/services/authService'
+import { Logo } from '@/components/ui'
 
 type InviteState = 'loading' | 'valid' | 'invalid' | 'error'
 
@@ -103,7 +104,7 @@ export function InvitePage() {
       <div className="min-h-screen bg-black flex flex-col">
         <header className="px-4 sm:px-6 py-4">
           <Link to="/" className="text-xl font-bold text-white hover:text-gray-300 transition-colors">
-            🔍 Coin Sniffer
+            <Logo size={26} />
           </Link>
         </header>
 
@@ -169,7 +170,7 @@ export function InvitePage() {
     <div className="min-h-screen bg-black flex flex-col">
       <header className="px-4 sm:px-6 py-4">
         <Link to="/" className="text-xl font-bold text-white hover:text-gray-300 transition-colors">
-          🔍 Coin Sniffer
+          <Logo size={26} />
         </Link>
       </header>
 

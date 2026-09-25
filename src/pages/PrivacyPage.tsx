@@ -6,6 +6,7 @@
  */
 
 import { Link } from 'react-router-dom'
+import { Logo } from '@/components/ui'
 
 export function PrivacyPage() {
   return (
@@ -14,7 +15,7 @@ export function PrivacyPage() {
       <header className="px-4 sm:px-6 py-4 border-b border-gray-800">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <Link to="/" className="text-xl font-bold text-white hover:text-gray-300 transition-colors">
-            🔍 Coin Sniffer
+            <Logo size={26} />
           </Link>
           <Link
             to="/"
