@@ -4,7 +4,8 @@
  * Provides authentication state and methods to components
  */
 
-import { useState, useEffect, useCallback, useMemo, createContext, useContext, ReactNode } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef, createContext, useContext, ReactNode } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { authService, hasWebhookAccess, hasPlanDetailAccess, type User } from '@/services/authService'
 import { watchlistService } from '@/services/watchlistService'
 import { webhookService } from '@/services/webhookService'
@@ -46,6 +47,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [forceExpired, setForceExpired] = useState(false)
+  const queryClient = useQueryClient()
+
+  // Cached responses belong to the account that fetched them. None of the query
+  // keys name the user, so without this a sign-out followed by a sign-in as
+  // someone else rendered the previous account's rows — Pro-only plan detail
+  // included — until the next refetch. Cleared on every change of account,
+  // including sign-out, but not on the first load, which has nothing cached.
+  const previousUserId = useRef<string | null | undefined>(undefined)
+  useEffect(() => {
+    if (loading) return
+    const id = user?.id ?? null
+    if (previousUserId.current !== undefined && previousUserId.current !== id) {
+      queryClient.clear()
+    }
+    previousUserId.current = id
+  }, [user?.id, loading, queryClient])
 
   // Set up 403 interceptor once
   useEffect(() => {

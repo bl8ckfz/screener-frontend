@@ -289,11 +289,17 @@ export const backendApi = {
    * means showing the wrong levels.
    */
   async getDojoSetup(id: string): Promise<DojoSetup | null> {
-    const response = await fetchWithTimeout(
-      `${BACKEND_CONFIG.baseUrl}/api/dojo/setups/${encodeURIComponent(id)}`
-    )
-    if (response.status === 404) return null
-    return response.json()
+    try {
+      const response = await fetchWithTimeout(
+        `${BACKEND_CONFIG.baseUrl}/api/dojo/setups/${encodeURIComponent(id)}`
+      )
+      return await response.json()
+    } catch (error) {
+      // fetchWithTimeout throws on every non-2xx, so the 404 arrives here
+      // rather than as a response to inspect.
+      if (error instanceof BackendHttpError && error.status === 404) return null
+      throw error
+    }
   },
 
   /**

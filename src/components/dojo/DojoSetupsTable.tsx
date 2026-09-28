@@ -206,10 +206,11 @@ export function OutcomeBadge({ setup }: { setup: Pick<DojoSetup, 'outcome' | 'in
 export function TradePlan({
   setup,
   livePrice,
-  // Defaults to showing it, because the landing page renders this same
-  // component for a handful of curated zones and has its own masking upstream.
-  // Nothing is held back by this flag in any case: the server strips the
-  // fields, and this only decides whether their absence is explained.
+  // The server strips the Pro-only fields, so this is not what withholds them.
+  // It decides whether their absence is explained, and it keeps a row fetched
+  // under another account (or before a plan lapsed) from rendering detail this
+  // account is not entitled to. Defaults to true for callers that have
+  // already decided; the landing page passes false.
   hasPlanDetails = true,
 }: {
   setup: DojoSetup
@@ -236,7 +237,7 @@ export function TradePlan({
     ['Price when armed', formatDojoPrice(setup.trigger_price), 'The last confirmed close at the moment this zone was published — not a live price'],
   ]
 
-  if (setup.volume_node) {
+  if (hasPlanDetails && setup.volume_node) {
     const meta = VOLUME_NODE_META[setup.volume_node]
     const ratio =
       setup.volume_poc_ratio !== undefined
@@ -244,7 +245,7 @@ export function TradePlan({
         : ''
     rows.push(['Volume', `${meta?.label ?? setup.volume_node}${ratio}`, meta?.hint])
   }
-  if (setup.volume_poc !== undefined) {
+  if (hasPlanDetails && setup.volume_poc !== undefined) {
     rows.push(['Point of control', formatDojoPrice(setup.volume_poc), 'The price with the most traded volume in the series'])
   }
 

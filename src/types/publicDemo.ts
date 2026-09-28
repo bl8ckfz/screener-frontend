@@ -21,7 +21,7 @@
  * either break those call sites or, worse, let `undefined` render silently in
  * a subscriber's trade plan.
  */
-import type { DojoSetup, DojoOutcome, ConfluenceBand, VolumeNode, DojoInvalidationReason } from '@/types/dojo'
+import type { DojoSetup, DojoOutcome, ConfluenceBand, DojoInvalidationReason } from '@/types/dojo'
 
 /** Fields every public zone carries, locked or not. */
 interface PublicZoneBase {
@@ -38,8 +38,12 @@ interface PublicZoneBase {
    */
   rr: number
   confluence_band: ConfluenceBand
+  /**
+   * Always empty. What backs a zone, where it sits in the volume profile and
+   * the price of its best level are Pro-only on the authenticated API, so the
+   * public one never serves them. Kept because DojoSetup requires the field.
+   */
   backings: string[]
-  volume_node?: VolumeNode
 
   outcome: DojoOutcome
   invalidation_reason?: DojoInvalidationReason
@@ -68,7 +72,6 @@ export interface UnlockedZone extends PublicZoneBase {
   tp1: number
   tp2: number
   tp3: number
-  best_level?: number
 
   /**
    * When each thing happened. Dates, never levels.
@@ -165,9 +168,7 @@ export function toDojoSetup(z: UnlockedZone): DojoSetup {
     tp3: z.tp3,
     rr: z.rr,
     confluence_band: z.confluence_band,
-    best_level: z.best_level,
     backings: z.backings,
-    volume_node: z.volume_node,
     outcome: z.outcome,
     invalidation_reason: z.invalidation_reason,
     entry_hit_at: z.entry_hit_at,

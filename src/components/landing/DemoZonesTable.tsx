@@ -1,8 +1,8 @@
 /**
  * The zone table, as a visitor sees it.
  *
- * Reuses the paying app's own cells — VolumeBadge, ConfluenceBadge,
- * OutcomeBadge, TradePlan — rather than reimplementing them, because the page
+ * Reuses the paying app's own cells — ConfluenceBadge, OutcomeBadge,
+ * TradePlan — rather than reimplementing them, because the page
  * is making a claim ("this is the actual product") that a lookalike would
  * quietly break the moment either copy drifted.
  *
@@ -13,7 +13,6 @@
 import { Fragment, useState } from 'react'
 import { Lock } from 'lucide-react'
 import {
-  VolumeBadge,
   ConfluenceBadge,
   OutcomeBadge,
   TradePlan,
@@ -121,7 +120,6 @@ export function DemoZonesTable({
             <th className="px-3 py-2 text-right font-medium">Entry</th>
             <th className="hidden px-3 py-2 text-right font-medium sm:table-cell">R:R</th>
             <th className="hidden px-3 py-2 text-center font-medium lg:table-cell">Conf</th>
-            <th className="hidden px-3 py-2 text-center font-medium xl:table-cell">Vol</th>
             <th className="hidden px-3 py-2 text-right font-medium sm:table-cell">Age</th>
             <th className="px-3 py-2 font-medium">Status</th>
           </tr>
@@ -164,9 +162,6 @@ export function DemoZonesTable({
                   <td className="hidden px-3 py-2.5 text-center lg:table-cell">
                     <ConfluenceBadge band={zone.confluence_band} />
                   </td>
-                  <td className="hidden px-3 py-2.5 text-center xl:table-cell">
-                    <VolumeBadge setup={{ volume_node: zone.volume_node }} />
-                  </td>
                   <td className="hidden px-3 py-2.5 text-right font-mono text-gray-400 sm:table-cell">
                     {age === null ? '—' : `${age}d`}
                   </td>
@@ -182,9 +177,9 @@ export function DemoZonesTable({
 
                 {isOpen && (
                   <tr className="border-b border-gray-900 bg-gray-950">
-                    <td colSpan={9}>
+                    <td colSpan={8}>
                       {isUnlocked(zone) ? (
-                        <TradePlan setup={toDojoSetup(zone)} />
+                        <TradePlan setup={toDojoSetup(zone)} hasPlanDetails={false} />
                       ) : (
                         <LockedPlan zone={zone} />
                       )}
