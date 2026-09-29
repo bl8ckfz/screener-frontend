@@ -21,7 +21,7 @@
 import type { ReactNode } from 'react'
 import { Lock } from 'lucide-react'
 import { usePublicDemo } from '@/hooks/usePublicDemo'
-import { pageZone, type PublicZone, type UnlockedZone } from '@/types/publicDemo'
+import { isUnlocked, pageZone, type PublicZone, type UnlockedZone } from '@/types/publicDemo'
 import { formatDojoPrice } from '@/types/dojo'
 import { checkoutUrl } from '@/config/checkout'
 
@@ -32,6 +32,8 @@ interface TradeStoryProps {
    * other than the one drawn above it.
    */
   selected?: PublicZone | null
+  /** Select a zone, as clicking its row in the panel would. */
+  onSelect?: (zone: PublicZone) => void
 }
 
 function formatDay(iso: string): string {
@@ -54,8 +56,8 @@ function Steps({ steps }: { steps: Step[] }) {
     <ol className="mt-10 space-y-8">
       {steps.map((step, i) => (
         <li key={step.title} className="grid gap-x-6 gap-y-1 sm:grid-cols-[9rem_1fr]">
-          <div className="font-mono text-sm text-gray-500">
-            <span className="mr-2 text-gray-700">{i + 1}</span>
+          <div className="font-mono text-sm text-gray-400">
+            <span className="mr-2 text-gray-500">{i + 1}</span>
             {step.when}
           </div>
           <div>
@@ -70,9 +72,12 @@ function Steps({ steps }: { steps: Step[] }) {
   )
 }
 
-function Heading({ children }: { children: ReactNode }) {
+function Heading({ children, eyebrow }: { children: ReactNode; eyebrow?: string }) {
   return (
     <>
+      {eyebrow && (
+        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[#f5a623]">{eyebrow}</p>
+      )}
       <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
         What you are looking at
       </h2>
@@ -90,7 +95,7 @@ function Heading({ children }: { children: ReactNode }) {
  * locked row uses, deliberately: the visitor should recognise that they are
  * being shown the shape of a real plan, not a marketing paragraph about one.
  */
-function OpenStory({ zone }: { zone: PublicZone }) {
+function OpenStory({ zone, examples }: { zone: PublicZone; examples?: ReactNode }) {
   const side = zone.direction === 'long' ? 'demand' : 'supply'
   const symbol = zone.symbol.replace(/USDT$/, '')
   const masked = ['Entry', 'Stop loss', 'Target 1', 'Target 2', 'Target 3']
@@ -115,7 +120,7 @@ function OpenStory({ zone }: { zone: PublicZone }) {
             {masked.map((label) => (
               <div key={label} className="flex items-baseline justify-between gap-4">
                 <dt>{label}</dt>
-                <dd className="inline-flex items-center gap-1.5 text-gray-600">
+                <dd className="inline-flex items-center gap-1.5 text-gray-400">
                   <Lock size={11} aria-hidden="true" />
                   <span className="font-mono tracking-widest">•••••</span>
                 </dd>
@@ -138,10 +143,10 @@ function OpenStory({ zone }: { zone: PublicZone }) {
     {
       when: 'Right now',
       title:
-        zone.outcome === 'open' ? 'Filled, and running' : 'Waiting for price to come back',
+        zone.outcome === 'open' ? 'Entry hit, and running' : 'Waiting for price to come back',
       body:
         zone.outcome === 'open'
-          ? 'The limit filled and the trade is live, so how it ends is not written yet. It will be logged here either way.'
+          ? 'Price reached the entry and the plan is running, so how it ends is not written yet. It will be logged here either way.'
           : 'Most of the work is waiting. The order sits there until price returns to the area, which can take weeks — and sometimes never happens at all, in which case nothing is risked and nothing is lost.',
     },
     {
@@ -153,18 +158,19 @@ function OpenStory({ zone }: { zone: PublicZone }) {
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-20 sm:px-6">
-      <Heading>
+      <Heading eyebrow="Live · still open">
         The {symbol} zone you picked, on the chart above. It has not resolved yet, so this
         is as much of it as there is to tell — the levels are the part subscribers paid
         for. Pick a closed row in the list to read one all the way through.
       </Heading>
+      {examples}
       <Steps steps={steps} />
     </section>
   )
 }
 
 /** The closed version: a trade with an ending, told with its real numbers. */
-function ClosedStory({ zone }: { zone: UnlockedZone }) {
+function ClosedStory({ zone, examples }: { zone: UnlockedZone; examples?: ReactNode }) {
   const side = zone.direction === 'long' ? 'demand' : 'supply'
   const symbol = zone.symbol.replace(/USDT$/, '')
 
@@ -191,7 +197,7 @@ function ClosedStory({ zone }: { zone: UnlockedZone }) {
   const waiting = filled
     ? {
         when: zone.entry_hit_at ? formatDay(zone.entry_hit_at) : 'Then, eventually',
-        title: 'Price came back and the limit filled',
+        title: 'Price came back and hit the entry',
         body: 'Most of the work is waiting. The order sits there until price returns to the area, which can take days or weeks — and often never happens at all.',
       }
     : {
@@ -239,17 +245,73 @@ function ClosedStory({ zone }: { zone: UnlockedZone }) {
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-20 sm:px-6">
-      <Heading>
+      <Heading eyebrow="Past example · from the live record">
         The {symbol} zone drawn on the chart above, from the day it published to the day
         it closed{daysToResolve !== null && ` — ${daysToResolve} days`}. Pick another row
         in the list to read that one instead.
       </Heading>
+      {examples}
       <Steps steps={steps} />
     </section>
   )
 }
 
-export function TradeStory({ selected = null }: TradeStoryProps) {
+/**
+ * One way to end, per button: the newest real zone that ended that way.
+ *
+ * Only outcomes present in the payload get a button — a missing kind of
+ * example is simply absent, never stood in for. The featured zone already
+ * leads with the best one; this is how a visitor finds the others, stops and
+ * retired zones included, without scanning the table for them.
+ */
+const EXAMPLE_KINDS = [
+  { outcome: 'target', label: 'Hit target' },
+  { outcome: 'stopped', label: 'Stopped out' },
+  { outcome: 'invalidated', label: 'Retired before entry' },
+] as const
+
+function ExamplePicker({
+  zones,
+  current,
+  onSelect,
+}: {
+  zones: PublicZone[]
+  current: PublicZone
+  onSelect: (zone: PublicZone) => void
+}) {
+  const examples = EXAMPLE_KINDS.flatMap((kind) => {
+    // Zones arrive newest first, so the first match is the latest.
+    const zone = zones.find((z) => z.outcome === kind.outcome && isUnlocked(z))
+    return zone ? [{ ...kind, zone }] : []
+  })
+  if (examples.length < 2) return null
+
+  return (
+    <div className="mt-6 flex flex-wrap items-center gap-2">
+      <span className="text-xs text-gray-400">See a real example that</span>
+      {examples.map(({ label, zone }) => {
+        const active = zone.id === current.id
+        return (
+          <button
+            key={zone.id}
+            type="button"
+            onClick={() => onSelect(zone)}
+            aria-pressed={active}
+            className={`rounded border px-2.5 py-1 text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#f5a623] ${
+              active
+                ? 'border-[#f5a623] text-white'
+                : 'border-gray-700 text-gray-300 hover:border-gray-500 hover:text-white'
+            }`}
+          >
+            {label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+export function TradeStory({ selected = null, onSelect }: TradeStoryProps) {
   const { data } = usePublicDemo()
   const page = pageZone(data, selected)
 
@@ -258,7 +320,16 @@ export function TradeStory({ selected = null }: TradeStoryProps) {
   // one lie that discredits everything else on it.
   if (!page) return null
 
+  const examples =
+    onSelect && data ? (
+      <ExamplePicker zones={data.zones} current={page.zone} onSelect={onSelect} />
+    ) : null
+
   // A locked row gets the open telling, never the closed one padded out with
   // another trade's numbers.
-  return page.plan ? <ClosedStory zone={page.plan} /> : <OpenStory zone={page.zone} />
+  return page.plan ? (
+    <ClosedStory zone={page.plan} examples={examples} />
+  ) : (
+    <OpenStory zone={page.zone} examples={examples} />
+  )
 }

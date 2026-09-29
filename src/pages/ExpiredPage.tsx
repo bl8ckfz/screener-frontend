@@ -9,6 +9,7 @@ import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { authService } from '@/services/authService'
 import { planPrice, planPeriod, yearlySaving } from '@/config/plans'
+import { INCLUDED, PRO, TRIAL } from '@/config/access'
 import { Logo } from '@/components/ui'
 
 type CheckoutState = 'idle' | 'loading' | 'error'
@@ -37,14 +38,10 @@ const PLANS: PlanCard[] = [
     name: 'Screener',
     price: planPrice('screener_monthly'),
     period: planPeriod('screener_monthly'),
-    description: 'Real-time crypto futures screener',
-    features: [
-      'Real-time alerts (Surge, Scout, Whale, Volume)',
-      '200+ Binance Futures pairs',
-      'Multi-timeframe analysis',
-      'Custom watchlist',
-      'Live alert feed & history',
-    ],
+    description: 'Dojo zones, momentum alerts and the live dashboard',
+    // The shared list, so this screen offers what the landing page sold.
+    // It used to list only the momentum alerts and never mention the zones.
+    features: [...INCLUDED],
   },
   {
     slug: 'screener_yearly',  // env: WHOP_PLAN_SCREENER_YEARLY
@@ -52,7 +49,7 @@ const PLANS: PlanCard[] = [
     price: planPrice('screener_yearly'),
     period: planPeriod('screener_yearly'),
     savings: `Save ${yearlySaving('screener_monthly', 'screener_yearly')}`,
-    description: 'Real-time crypto futures screener',
+    description: 'Dojo zones, momentum alerts and the live dashboard',
     features: [
       'Everything in monthly',
       '1 month free',
@@ -117,7 +114,7 @@ export function ExpiredPage() {
           </h1>
           <p className="text-gray-400 mb-10 max-w-lg mx-auto leading-relaxed">
             {isNewUser
-              ? 'Try Coin Sniffer free for 7 days. No charge until your trial ends.'
+              ? TRIAL.terms
               : wasTrial
                 ? 'Your 7-day free trial has ended. Choose a plan to continue using Coin Sniffer.'
                 : 'Renew your subscription to continue accessing real-time alerts and market analysis.'}
@@ -168,7 +165,7 @@ export function ExpiredPage() {
                       Redirecting…
                     </span>
                   ) : isNewUser ? (
-                    'Start Free Trial'
+                    TRIAL.cta
                   ) : (
                     'Subscribe'
                   )}
@@ -176,6 +173,10 @@ export function ExpiredPage() {
               </div>
             ))}
           </div>
+
+          <p className="text-sm text-gray-400 max-w-lg mx-auto mb-6">
+            {PRO.summary} {PRO.how}
+          </p>
 
           {/* Error message */}
           {checkoutState === 'error' && (

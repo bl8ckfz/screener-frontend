@@ -66,7 +66,7 @@ describe('TradeStory', () => {
     expect(text).not.toContain('Stopped out')
     // "unfilled" and "the gap that validated it filled" are both correct here;
     // what must never appear is a claim that the ORDER filled.
-    expect(text).not.toContain('the limit filled')
+    expect(text).not.toContain('hit the entry')
     expect(text).not.toMatch(/Filled, then/i)
   })
 
@@ -78,7 +78,7 @@ describe('TradeStory', () => {
       sl_hit_at: '2026-09-23T00:00:00Z',
     })
 
-    expect(text).toContain('the limit filled')
+    expect(text).toContain('hit the entry')
     expect(text).toContain('Stopped out')
   })
 
@@ -90,7 +90,7 @@ describe('TradeStory', () => {
       tp1_hit_at: '2026-09-27T00:00:00Z',
     })
 
-    expect(text).toContain('the limit filled')
+    expect(text).toContain('hit the entry')
     expect(text).toContain('first target')
   })
 })

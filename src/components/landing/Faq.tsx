@@ -1,3 +1,5 @@
+import { PRO, TRIAL } from '@/config/access'
+
 /**
  * The questions a sceptical trader actually asks, answered without hedging.
  *
@@ -27,8 +29,12 @@ const QA: Array<{ q: string; a: string }> = [
     a: 'Because the levels are the product. Zones that have resolved are shown in full — the trade is over, and the record is what you are here to check. Zones still waiting for price show everything except the prices.',
   },
   {
+    q: 'How does the free trial work?',
+    a: TRIAL.terms,
+  },
+  {
     q: 'Can I get the alerts in my own Discord or Telegram?',
-    a: 'Yes, as a Pro feature arranged individually — it is aimed at people running their own community or piping alerts into their own tooling. Ask after you subscribe.',
+    a: `Yes, with Pro — aimed at people running their own community or piping alerts into their own tooling. ${PRO.how}`,
   },
 ]
 

@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { Logo } from '@/components/ui'
+import { TRIAL_DAYS } from '@/config/access'
 
 export function SignupPage() {
   const [email, setEmail] = useState('')
@@ -101,7 +102,17 @@ export function SignupPage() {
       <div className="flex-1 flex items-center justify-center px-4">
         <div className="w-full max-w-md">
           <h1 className="text-3xl font-bold text-white mb-2">Create your account</h1>
-          <p className="text-gray-400 mb-8">Start your 7-day free trial</p>
+          {/* Registering grants nothing by itself — access starts at the Whop
+              checkout. So say what happens next rather than promising a trial
+              this step does not start, and tell a buyer who already paid how
+              their purchase finds them. */}
+          <p className="text-gray-400 mb-2">
+            Next you’ll choose a plan and start your {TRIAL_DAYS}-day free trial.
+          </p>
+          <p className="text-sm text-gray-400 mb-8">
+            Already checked out on Whop? Sign up with the same email and your access unlocks
+            automatically.
+          </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>

@@ -10,6 +10,7 @@
  */
 import { planPrice, planPeriod, yearlySaving } from '@/config/plans'
 import { checkoutUrl } from '@/config/checkout'
+import { INCLUDED, PRO, TRIAL, TRIAL_DAYS } from '@/config/access'
 
 export function Pricing() {
   return (
@@ -19,7 +20,7 @@ export function Pricing() {
           Pricing
         </h2>
         <p className="mt-3 max-w-prose text-gray-400">
-          One plan. Every zone, every alert, the dashboard, and webhook delivery on request.
+          One plan, billed monthly or yearly, with a {TRIAL_DAYS}-day free trial.
         </p>
 
         <div className="mt-10 grid gap-4 sm:grid-cols-2">
@@ -33,7 +34,7 @@ export function Pricing() {
               href={checkoutUrl('screener_monthly', 'pricing')}
               className="mt-6 block rounded bg-[#f5a623] px-4 py-2.5 text-center text-sm font-medium text-black transition-colors hover:bg-[#ffb83d] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5a623]"
             >
-              Get access
+              {TRIAL.cta}
             </a>
           </div>
 
@@ -52,8 +53,39 @@ export function Pricing() {
               href={checkoutUrl('screener_yearly', 'pricing')}
               className="mt-6 block rounded bg-[#f5a623] px-4 py-2.5 text-center text-sm font-medium text-black transition-colors hover:bg-[#ffb83d] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5a623]"
             >
-              Get access
+              {TRIAL.cta}
             </a>
+          </div>
+        </div>
+
+        {/* The answers a buyer needs before paying, in one place and from the
+            same source as every other screen that states them. */}
+        <div className="mt-10 grid gap-8 sm:grid-cols-2">
+          <div>
+            <h3 className="text-sm font-medium text-white">Included in every plan and the trial</h3>
+            <ul className="mt-3 space-y-2">
+              {INCLUDED.map((item) => (
+                <li key={item} className="flex gap-2 text-sm leading-relaxed text-gray-400">
+                  <span className="text-[#f5a623]" aria-hidden>✓</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-sm font-medium text-white">How the trial works</h3>
+              <p className="mt-3 text-sm leading-relaxed text-gray-400">{TRIAL.terms}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-white">Pro, on request</h3>
+              <ul className="mt-3 space-y-1.5">
+                {PRO.items.map((item) => (
+                  <li key={item} className="text-sm leading-relaxed text-gray-400">+ {item}</li>
+                ))}
+              </ul>
+              <p className="mt-2 text-sm leading-relaxed text-gray-400">{PRO.how}</p>
+            </div>
           </div>
         </div>
 
