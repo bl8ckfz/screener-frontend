@@ -24,6 +24,7 @@ import { StorageMigration } from '@/components/StorageMigration'
 import { AlertHistoryTable } from '@/components/alerts'
 import { WatchlistErrorNotice } from '@/components/watchlist'
 import { useSelectedDojoSetup } from '@/hooks/useSelectedDojoSetup'
+import { useWorkspaceState } from '@/hooks/useWorkspaceState'
 import { useAuth } from '@/hooks/useAuth'
 import { SettingsModal } from '@/components/settings'
 import { FEATURE_FLAGS } from '@/config'
@@ -101,20 +102,25 @@ export function ScreenerApp() {
   const [selectedAlert, setSelectedAlert] = useState<SelectedAlert | null>(null)
   const [showShortcutHelp, setShowShortcutHelp] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'coins' | 'alerts' | 'dojo'>('coins')
+  // The tab and chart coin survive a refresh and a return visit; see the hook.
+  const workspace = useWorkspaceState()
+  const activeTab = workspace.tab
+  const setActiveTab = workspace.setTab
   // The open Dojo plan. Held by a hook rather than useState because it also
   // lives in the URL (so a refresh keeps it) and can be opened by id alone
   // (which is all an alert carries).
   const { isAuthenticated } = useAuth()
   const dojoSelection = useSelectedDojoSetup(isAuthenticated)
   const selectedDojoSetup = dojoSelection.setup
-  const [isMobile, setIsMobile] = useState(false)
+  // Initialised from the media query rather than false, so the first render
+  // (and the workspace restore that runs on it) already knows the width.
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 768px)').matches)
   // Below the lg breakpoint the grid is a single column, so the chart would
   // render underneath the whole list — selecting a row between 769px and
   // 1023px updated a chart the user could not see. Those widths use the
   // drawer too. Kept separate from isMobile, which also sets the phone-only
   // sticky offsets.
-  const [isNarrow, setIsNarrow] = useState(false)
+  const [isNarrow, setIsNarrow] = useState(() => window.matchMedia('(max-width: 1023px)').matches)
   
   const searchInputRef = useRef<HTMLInputElement>(null)
 
@@ -342,6 +348,34 @@ export function ScreenerApp() {
     }
     return m
   }, [coins])
+
+  // Put the last coin back on the chart once the coin list has arrived.
+  //
+  // Not on a fresh launch at drawer widths: there the chart is a full-screen
+  // sheet, and reopening it over the app every time it starts would be in the
+  // way. A refresh (the coin is in the URL) still restores it.
+  useEffect(() => {
+    const symbol = workspace.restoredCoin
+    if (!symbol || !coins || coins.length === 0) return
+    workspace.consumeRestoredCoin()
+    if (drawerEnabled && !workspace.restoredCoinFromUrl) return
+    if (selectedAlert || dojoSelection.setupId) return
+    const coin = coins.find((c) => c.symbol === symbol)
+    if (coin) {
+      setSelectedAlert({ coin, alertStat: alertStats.find((stat) => stat.symbol === symbol) })
+    }
+    // Once, when the list first loads; consumeRestoredCoin ends it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [coins, workspace.restoredCoin])
+
+  // Remember the chart's coin, except while a plan owns the chart — the plan
+  // is already in the URL and names its own coin. Held off until the restore
+  // above has run, or the empty first render would erase what it restores.
+  useEffect(() => {
+    if (workspace.restoredCoin) return
+    workspace.rememberCoin(dojoSelection.setupId ? null : selectedAlert?.coin?.symbol ?? null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedAlert?.coin?.symbol, dojoSelection.setupId, workspace.restoredCoin])
 
   // Get live coin data for selected coin
   const liveCoin = useMemo(() => {
