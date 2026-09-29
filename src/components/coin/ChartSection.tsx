@@ -16,6 +16,8 @@ import type { AlertHistoryItem, CombinedAlertType, Alert } from '@/types/alert'
 import { ChartSkeleton, ErrorState, EmptyState, VerticalSplitter } from '@/components/ui'
 import { debug } from '@/utils/debug'
 import type { DojoSetup } from '@/types/dojo'
+import { PlanPanel } from '@/components/dojo/PlanPanel'
+import { useAuth } from '@/hooks/useAuth'
 
 /**
  * How far to spread candle-close refetches across clients, in milliseconds.
@@ -46,6 +48,12 @@ export interface ChartSectionProps {
   /** Dojo zone to overlay, when the user arrived here from the Dojo tab. */
   dojoSetup?: DojoSetup | null
   onClose?: () => void
+  /**
+   * Hide the coin header, for a container that draws its own — the mobile
+   * drawer. Used to be done with `hidden md:flex`, which tied it to a
+   * breakpoint rather than to whether anything else shows the symbol.
+   */
+  hideHeader?: boolean
   className?: string
 }
 
@@ -65,7 +73,8 @@ function clampTradingH(h: number) {
   return Math.min(Math.max(h, MIN_CHART_HEIGHT), MAX_CHART_HEIGHT)
 }
 
-export function ChartSection({ selectedCoin, dojoSetup = null, onClose, className = '' }: ChartSectionProps) {
+export function ChartSection({ selectedCoin, dojoSetup = null, onClose, hideHeader = false, className = '' }: ChartSectionProps) {
+  const { hasPlanDetails } = useAuth()
   // Daily by default.
   //
   // It is the cheapest interval to serve (200 bars, weight 2 against 5 for 5m
@@ -81,8 +90,18 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, classNam
   // outside the visible price range and the zone would simply not appear.
   // Daily pulls 200 bars, which is wide enough to contain the whole leg.
   useEffect(() => {
-    if (dojoSetup) setInterval('1d')
+    if (dojoSetup) {
+      setInterval('1d')
+      autoFocusForRef.current = dojoSetup.id
+    }
   }, [dojoSetup?.id])
+
+  // Framing the chart on the plan. Bumped by the Focus button, and once
+  // automatically when a newly opened plan's daily candles arrive — so a plan
+  // opens showing the stretch it is about rather than wherever the previous
+  // coin's chart happened to be scrolled.
+  const [focusKey, setFocusKey] = useState(0)
+  const autoFocusForRef = useRef<string | null>(null)
   const [showAlerts, setShowAlerts] = useState(true)
 
   // TradingChart height — persisted to localStorage; timeline grows freely below
@@ -112,6 +131,10 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, classNam
    * live would be the quiet kind of wrong this codebase keeps trying to avoid.
    */
   const [isStored, setIsStored] = useState(false)
+  // Which symbol and interval chartData actually holds. The auto-focus waits
+  // for the plan's own series; without this it could fire on the previous
+  // coin's candles still on screen while the new ones load.
+  const [loadedFor, setLoadedFor] = useState<string | null>(null)
   const visibilityRef = useRef(!document.hidden)
   // Set when a scheduled fetch was skipped because the tab was hidden, so
   // returning to it refetches once instead of showing a stale chart until the
@@ -266,6 +289,7 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, classNam
         const { candles, source } = await fetchKlines(selectedCoin.fullSymbol, interval, limit)
         rateLimitedUntilRef.current = 0
         setChartData(candles)
+        setLoadedFor(`${selectedCoin.fullSymbol}:${interval}`)
         setIsStored(source === 'stored')
       } catch (err) {
         if (err instanceof RateLimitError) {
@@ -290,6 +314,16 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, classNam
     }
     loadChartData()
   }, [loadChartData, selectedCoin])
+
+  useEffect(() => {
+    if (!dojoSetup || !selectedCoin || autoFocusForRef.current !== dojoSetup.id) return
+    if (loadedFor !== `${selectedCoin.fullSymbol}:1d` || chartData.length === 0) return
+    autoFocusForRef.current = null
+    setFocusKey((k) => k + 1)
+    // Identities only: both objects are rebuilt on every five-second poll,
+    // and nothing here depends on more than which plan and which symbol.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadedFor, chartData, dojoSetup?.id, selectedCoin?.fullSymbol])
 
   // Visibility tracking to pause live updates in background tabs.
   //
@@ -392,11 +426,27 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, classNam
     )
   }
 
+  // The plan does not depend on candles, so it stays up while the chart
+  // loads or fails — the levels and status are still worth reading.
+  const planPanel = dojoSetup ? (
+    <PlanPanel
+      setup={dojoSetup}
+      // Same rule as TradingChart's livePrice: a placeholder coin's price is
+      // the close from the day the zone armed, not a current one.
+      livePrice={selectedCoin.isPlaceholder ? undefined : selectedCoin.lastPrice}
+      hasPlanDetails={hasPlanDetails}
+      onFocusChart={() => setFocusKey((k) => k + 1)}
+    />
+  ) : null
+
   // Show loading state
   if (isLoading && chartData.length === 0) {
     return (
-      <div className={`bg-gray-800 rounded-lg p-4 ${className}`}>
-        <ChartSkeleton />
+      <div className={`bg-gray-800 rounded-lg ${className}`}>
+        {planPanel}
+        <div className="p-4">
+          <ChartSkeleton />
+        </div>
       </div>
     )
   }
@@ -404,73 +454,81 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, classNam
   // Show error state
   if (error) {
     return (
-      <div className={`bg-gray-800 rounded-lg p-4 ${className}`}>
-        <ErrorState
-          message={error}
-          description="Failed to load chart data"
-          // Calls the loader directly. Setting the interval to the value it
-          // already holds is a no-op in React, so it never refetched. A retry
-          // inside an active rate-limit backoff is still refused by the
-          // loader, which is what the error message tells the user to expect.
-          onRetry={() => loadChartData()}
-        />
+      <div className={`bg-gray-800 rounded-lg ${className}`}>
+        {planPanel}
+        <div className="p-4">
+          <ErrorState
+            message={error}
+            description="Failed to load chart data"
+            // Calls the loader directly. Setting the interval to the value it
+            // already holds is a no-op in React, so it never refetched. A retry
+            // inside an active rate-limit backoff is still refused by the
+            // loader, which is what the error message tells the user to expect.
+            onRetry={() => loadChartData()}
+          />
+        </div>
       </div>
     )
   }
 
   return (
     <div className={`bg-gray-800 rounded-lg transition-all duration-300 w-full max-w-full overflow-hidden ${className}`} style={{ maxWidth: '100vw' }}>
-      {/* Header with coin info and close button - hidden on mobile */}
-      <div className="hidden md:flex items-center justify-between p-3 md:p-4 border-b border-gray-700">
-        <div className="flex items-center space-x-3">
-          <h3 className="text-lg font-semibold text-white">
-            {selectedCoin.symbol}
-            <span className="text-gray-400 text-sm ml-2">/ {selectedCoin.pair}</span>
-          </h3>
-          {isStored && (
-            <span
-              className="text-xs text-amber-500/80 italic"
-              title="The exchange was rate limited, so this chart is drawn from our own stored candles. Bars shown are exact, but the newest one may be missing and older gaps are possible."
+      {/* Header with coin info and close button — omitted where the
+          container (the mobile drawer) already shows the symbol. */}
+      {!hideHeader && (
+        <div className="flex items-center justify-between p-3 md:p-4 border-b border-gray-700">
+          <div className="flex items-center space-x-3">
+            <h3 className="text-lg font-semibold text-white">
+              {selectedCoin.symbol}
+              <span className="text-gray-400 text-sm ml-2">/ {selectedCoin.pair}</span>
+            </h3>
+            {isStored && (
+              <span
+                className="text-xs text-amber-500/80 italic"
+                title="The exchange was rate limited, so this chart is drawn from our own stored candles. Bars shown are exact, but the newest one may be missing and older gaps are possible."
+              >
+                stored candles
+              </span>
+            )}
+            {selectedCoin.isPlaceholder ? (
+              // No 24h ticker for this symbol — it is outside the tracked set.
+              // Rendering the zeroed change as "0.00%" would read as a real
+              // figure, and a flat day is not what happened.
+              <span
+                className="text-xs text-gray-500 italic"
+                title="This symbol is outside the tracked top ~200 by volume, so 24h stats are unavailable. The chart itself is live."
+              >
+                24h stats unavailable
+              </span>
+            ) : (
+              <div className={`text-sm font-mono ${
+                selectedCoin.priceChangePercent > 0
+                  ? 'text-bullish'
+                  : selectedCoin.priceChangePercent < 0
+                    ? 'text-bearish'
+                    : 'text-neutral'
+              }`}>
+                {selectedCoin.priceChangePercent > 0 ? '+' : ''}
+                {selectedCoin.priceChangePercent.toFixed(2)}%
+              </div>
+            )}
+          </div>
+          
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-white transition-colors"
+              aria-label="Deselect coin"
             >
-              stored candles
-            </span>
-          )}
-          {selectedCoin.isPlaceholder ? (
-            // No 24h ticker for this symbol — it is outside the tracked set.
-            // Rendering the zeroed change as "0.00%" would read as a real
-            // figure, and a flat day is not what happened.
-            <span
-              className="text-xs text-gray-500 italic"
-              title="This symbol is outside the tracked top ~200 by volume, so 24h stats are unavailable. The chart itself is live."
-            >
-              24h stats unavailable
-            </span>
-          ) : (
-            <div className={`text-sm font-mono ${
-              selectedCoin.priceChangePercent > 0
-                ? 'text-bullish'
-                : selectedCoin.priceChangePercent < 0
-                  ? 'text-bearish'
-                  : 'text-neutral'
-            }`}>
-              {selectedCoin.priceChangePercent > 0 ? '+' : ''}
-              {selectedCoin.priceChangePercent.toFixed(2)}%
-            </div>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           )}
         </div>
-        
-        {onClose && (
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
-            aria-label="Deselect coin"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        )}
-      </div>
+      )}
+
+      {planPanel}
 
       {/* Chart Controls */}
       <div className="flex items-center gap-1 md:gap-2 px-1 md:px-4 py-1 md:py-2 border-b border-gray-700 overflow-x-auto scrollbar-hide">
@@ -533,6 +591,7 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, classNam
               showAlerts={showAlerts}
               alerts={chartAlerts}
               dojoSetup={dojoSetup}
+              focusKey={focusKey}
             />
           </div>
         </div>

@@ -19,7 +19,8 @@ import { debug } from '@/utils/debug'
 import { useStore } from '@/hooks/useStore'
 import type { AlertColorConfig } from '@/types/alertColors'
 import { resolveAlertColor, isBullishAlertType } from '@/types/alertColors'
-import { formatDojoPrice, type DojoSetup } from '@/types/dojo'
+import { DOJO_OUTCOME_META, formatDojoPrice, isLiveOutcome, type DojoSetup } from '@/types/dojo'
+import { publishedCandleIndex } from '@/components/dojo/planModel'
 
 // Format epoch seconds to local time string for axis/crosshair consistency with timeline
 const formatLocalTimeLabel = (time: Time): string => {
@@ -134,8 +135,19 @@ export interface TradingChartProps {
    * still meaningful drawn over a daily chart.
    */
   dojoSetup?: DojoSetup | null
+  /**
+   * Bumped to frame the chart on the plan: from shortly before it was
+   * published to now. A counter rather than a callback so the parent can
+   * request it without holding a ref into the chart.
+   */
+  focusKey?: number
   className?: string
 }
+
+/** Bars shown before the publication candle when framing a plan. */
+const FOCUS_LEAD_BARS = 15
+/** Empty bars kept to the right of the last candle when framing a plan. */
+const FOCUS_RIGHT_PAD = 5
 
 /**
  * Determine alert marker size based on alert type priority
@@ -185,6 +197,7 @@ export function TradingChart({
   showAlerts = false,
   alerts = [],
   dojoSetup = null,
+  focusKey = 0,
   className = '',
 }: TradingChartProps) {
   const alertColors = useStore((state) => state.alertColors)
@@ -198,6 +211,9 @@ export function TradingChart({
   // with it, so the recreation path needs to know what to restore.
   const dojoSetupRef = useRef<DojoSetup | null>(dojoSetup)
   dojoSetupRef.current = dojoSetup
+  // Read by the focus effect, which must frame whatever series is current.
+  const dataRef = useRef(data)
+  dataRef.current = data
   // Same reason as dojoSetupRef: the chart is built once, but the crosshair
   // formatter needs the CURRENT series granularity every time it fires.
   const intradayRef = useRef(true)
@@ -347,7 +363,19 @@ export function TradingChart({
     if (!setup) return
 
     const isLong = setup.direction === 'long'
-    const zoneColor = isLong ? '#089981' : '#f23645' // the Dojo Pine palette
+    // A plan that is over is drawn as history: one muted grey, thin lines,
+    // and its status on the entry label. Drawn in full colour it looked
+    // exactly like a live plan, inviting action on levels that no longer mean
+    // anything.
+    const ended = !isLiveOutcome(setup.outcome)
+    const muted = '#6b7280'
+    const zoneColor = ended ? muted : isLong ? '#089981' : '#f23645' // the Dojo Pine palette
+    const entryColor = ended ? muted : '#f5a623'
+    const stopColor = ended ? muted : '#f23645'
+    const targetColor = ended ? muted : '#089981'
+    const entryTitle = ended
+      ? `${DOJO_OUTCOME_META[setup.outcome].label} · Entry ${formatDojoPrice(setup.entry)}`
+      : `Entry ${formatDojoPrice(setup.entry)}`
 
     const levels: Array<{
       price: number
@@ -360,11 +388,11 @@ export function TradingChart({
       { price: setup.otz_high, color: zoneColor, style: LineStyle.Dotted, title: 'Zone top', width: 1 },
       { price: setup.otz_low, color: zoneColor, style: LineStyle.Dotted, title: 'Zone bottom', width: 1 },
       // Entry is the one level that matters most — solid and thicker.
-      { price: setup.entry, color: '#f5a623', style: LineStyle.Solid, title: `Entry ${formatDojoPrice(setup.entry)}`, width: 2 },
-      { price: setup.stop_loss, color: '#f23645', style: LineStyle.Dashed, title: 'Stop', width: 1 },
-      { price: setup.tp1, color: '#089981', style: LineStyle.Dashed, title: 'TP1', width: 1 },
-      { price: setup.tp2, color: '#089981', style: LineStyle.Dotted, title: 'TP2', width: 1 },
-      { price: setup.tp3, color: '#089981', style: LineStyle.Dotted, title: 'TP3', width: 1 },
+      { price: setup.entry, color: entryColor, style: ended ? LineStyle.Dashed : LineStyle.Solid, title: entryTitle, width: ended ? 1 : 2 },
+      { price: setup.stop_loss, color: stopColor, style: LineStyle.Dashed, title: 'Stop', width: 1 },
+      { price: setup.tp1, color: targetColor, style: LineStyle.Dashed, title: 'TP1', width: 1 },
+      { price: setup.tp2, color: targetColor, style: LineStyle.Dotted, title: 'TP2', width: 1 },
+      { price: setup.tp3, color: targetColor, style: LineStyle.Dotted, title: 'TP3', width: 1 },
     ]
 
     dojoLinesRef.current = levels
@@ -599,7 +627,9 @@ export function TradingChart({
     if (mainSeriesRef.current) {
       drawDojoZone(mainSeriesRef.current, dojoSetup)
     }
-  }, [dojoSetup?.id])
+    // The outcome too: a plan that ends while open must turn grey.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dojoSetup?.id, dojoSetup?.outcome])
 
   // Update alert markers when alerts change or toggle
   useEffect(() => {
@@ -607,10 +637,28 @@ export function TradingChart({
 
     const mainSeries = mainSeriesRef.current
 
-    // Clear markers when alerts are disabled or empty
+    // Where the plan was published, so its context does not have to be
+    // reconstructed from dates. Independent of the alerts toggle: it belongs
+    // to the plan, not to the alert feed.
+    const planMarkers: SeriesMarker<Time>[] = []
+    if (dojoSetup) {
+      const idx = publishedCandleIndex(dojoSetup, data)
+      if (idx >= 0) {
+        planMarkers.push({
+          time: data[idx].time as Time,
+          position: dojoSetup.direction === 'long' ? 'belowBar' : 'aboveBar',
+          color: isLiveOutcome(dojoSetup.outcome) ? '#f5a623' : '#9ca3af',
+          shape: 'square',
+          size: 1,
+          text: 'Published',
+        })
+      }
+    }
+
+    // Only the plan's marker when alerts are disabled or empty
     if (!showAlerts || alerts.length === 0) {
-      markersRef.current = []
-      mainSeries.setMarkers([])
+      markersRef.current = planMarkers
+      mainSeries.setMarkers(planMarkers)
       return
     }
 
@@ -656,13 +704,36 @@ export function TradingChart({
           size,
         } as SeriesMarker<Time>
       })
+      .concat(planMarkers)
       .sort((a, b) => (a.time as number) - (b.time as number))
 
     debug.log(`📍 Setting ${markers.length} alert markers on chart`)
     
     markersRef.current = markers
     mainSeries.setMarkers(markers)
-  }, [showAlerts, alerts, data, alertColors]) // Alert color changes also trigger update
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showAlerts, alerts, data, alertColors, dojoSetup?.id, dojoSetup?.outcome]) // Alert color changes also trigger update
+
+  // Frame the chart on the plan when asked.
+  //
+  // Deferred a frame so it lands AFTER the series-recreation effect's own
+  // deferred restore of the previous zoom — otherwise a focus requested in
+  // the same render as new data would be undone by it.
+  useEffect(() => {
+    if (!focusKey) return
+    const id = requestAnimationFrame(() => {
+      const chart = chartRef.current
+      const setup = dojoSetupRef.current
+      const series = dataRef.current
+      if (!chart || !setup || series.length === 0) return
+      const idx = publishedCandleIndex(setup, series)
+      chart.timeScale().setVisibleLogicalRange({
+        from: Math.max(0, (idx < 0 ? 0 : idx) - FOCUS_LEAD_BARS),
+        to: series.length - 1 + FOCUS_RIGHT_PAD,
+      })
+    })
+    return () => cancelAnimationFrame(id)
+  }, [focusKey])
 
   return (
     <div className={`relative ${className}`}>

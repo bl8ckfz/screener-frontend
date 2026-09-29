@@ -11,8 +11,9 @@
  * price still has to travel to reach the entry, and whether it ever did.
  */
 
-import { Fragment, useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { DojoTimeline } from './DojoTimeline'
+import { planRows } from './planModel'
 import { InfoHint } from '@/components/ui/InfoHint'
 import { useAuth } from '@/hooks/useAuth'
 import { useDojoSetups, type DojoSetupFilters } from '@/hooks/useDojoSetups'
@@ -22,7 +23,6 @@ import {
   isLiveOutcome,
   VOLUME_NODE_META,
   formatDojoPrice,
-  stopRiskPct,
   distanceToEntry,
   distanceIsLive,
   daysSince,
@@ -74,24 +74,33 @@ export const COLUMNS: Array<{
    *
    * The table shares the viewport with the chart, so ten columns overflow
    * long before the window is small. Hiding beats horizontal scrolling
-   * because NOTHING IS LOST: R:R and Volume both appear in the expanded trade
-   * plan, so the row is one click from the full picture either way. They are
+   * because NOTHING IS LOST: R:R, Confluence and Volume all appear in the
+   * plan panel, so the row is one click from the full picture either way. They are
    * still sortable at any width — the sort control simply lives on a header
    * you can only see when there is room for it.
    */
   hide?: string
 }> = [
+  // Order answers the questions in the order they are asked: which coin, is
+  // it still live, how close is it, which way. The levels and ratings follow,
+  // and the last three drop out first as the panel narrows — all of them are
+  // in the plan panel beside the chart, so nothing is lost by hiding them.
   { field: 'symbol', label: 'Symbol', align: 'left' },
-  { field: 'timeframe', label: 'TF', align: 'left' },
-  { field: 'direction', label: 'Side', align: 'left' },
-  { field: 'entry', label: 'Entry', align: 'right' },
+  { field: 'status', label: 'Status', align: 'left' },
   {
     field: 'distance', label: 'To entry', align: 'right',
     title: 'How far price must travel from where it is now to reach the entry. Unsigned — the direction is already given by Side.',
   },
-  // First to go: R:R is ~3.0 by construction for every zone, so it rarely
-  // distinguishes one row from another. Conf goes next — it reads HIGH or
-  // MEDIUM on almost everything, since anything weaker never publishes.
+  { field: 'direction', label: 'Side', align: 'left' },
+  { field: 'timeframe', label: 'TF', align: 'left' },
+  { field: 'entry', label: 'Entry', align: 'right' },
+  {
+    field: 'age', label: 'Age', align: 'right',
+    title: 'Days since the zone was published. A running trade settles from minute candles, usually within minutes of the touch; anything missed waits for the daily pass.',
+  },
+  // R:R is ~3.0 by construction for every zone, so it rarely distinguishes
+  // one row from another. Confluence reads HIGH or MEDIUM on almost
+  // everything, since anything weaker never publishes.
   {
     field: 'rr', label: 'R:R', align: 'right',
     hide: 'hidden xl:table-cell',
@@ -99,18 +108,13 @@ export const COLUMNS: Array<{
   {
     field: 'confluence', label: 'Confluence', align: 'center',
     title: 'How much independent agreement backs this zone, relative to the most its timeframe can carry',
-    hide: 'hidden lg:table-cell',
+    hide: 'hidden xl:table-cell',
   },
   {
     field: 'volume', label: 'Volume', align: 'center',
     title: 'Whether the zone sits on transacted history (HVN) or in a thin patch price can travel through (LVN)',
-    hide: 'hidden xl:table-cell',
+    hide: 'hidden 2xl:table-cell',
   },
-  {
-    field: 'age', label: 'Age', align: 'right',
-    title: 'Days since the zone was published. A running trade settles from minute candles, usually within minutes of the touch; anything missed waits for the daily pass.',
-  },
-  { field: 'status', label: 'Status', align: 'left' },
 ]
 
 /**
@@ -204,7 +208,17 @@ export function OutcomeBadge({ setup }: { setup: Pick<DojoSetup, 'outcome' | 'in
   )
 }
 
-/** The full trade plan, shown when a row is expanded. */
+/** Keyed passthrough, so a mapped cell needs no wrapper element. */
+function Cell({ children }: { children: ReactNode }) {
+  return <>{children}</>
+}
+
+/**
+ * The full trade plan as a block.
+ *
+ * The app shows plans in PlanPanel beside the chart; this remains for the
+ * landing demo's expanded rows, and shares its wording through planModel.
+ */
 export function TradePlan({
   setup,
   livePrice,
@@ -222,34 +236,7 @@ export function TradePlan({
   const dist = distanceToEntry(setup, livePrice)
   const isLong = setup.direction === 'long'
 
-  const rows: Array<[string, string, string?]> = [
-    [
-      'Zone',
-      `${formatDojoPrice(setup.otz_low)} – ${formatDojoPrice(setup.otz_high)}`,
-      'The whole area price has to trade back into for this setup to be live',
-    ],
-    ['Entry price', formatDojoPrice(setup.entry), 'The precise point inside the zone. A resting limit — set it and wait'],
-    [
-      'Stop',
-      `${formatDojoPrice(setup.stop_loss)} (stop distance ${stopRiskPct(setup).toFixed(1)}%)`,
-      'Where the setup is wrong. The percentage is the distance from the entry to the stop — not account risk. Position sizing is computed from it.',
-    ],
-    ['Targets', `${formatDojoPrice(setup.tp1)} / ${formatDojoPrice(setup.tp2)} / ${formatDojoPrice(setup.tp3)}`, 'Scale out across the three, or take the first and move the stop'],
-    ['R:R to TP1', setup.rr.toFixed(2)],
-    ['Price when armed', formatDojoPrice(setup.trigger_price), 'The last confirmed close at the moment this zone was published — not a live price'],
-  ]
-
-  if (hasPlanDetails && setup.volume_node) {
-    const meta = VOLUME_NODE_META[setup.volume_node]
-    const ratio =
-      setup.volume_poc_ratio !== undefined
-        ? ` · ${(setup.volume_poc_ratio * 100).toFixed(0)}% of POC`
-        : ''
-    rows.push(['Volume', `${meta?.label ?? setup.volume_node}${ratio}`, meta?.hint])
-  }
-  if (hasPlanDetails && setup.volume_poc !== undefined) {
-    rows.push(['Point of control', formatDojoPrice(setup.volume_poc), 'The price with the most traded volume in the series'])
-  }
+  const rows = planRows(setup, hasPlanDetails)
 
   return (
     <div className="bg-gray-900/60 px-4 py-3 border-t border-gray-700">
@@ -345,6 +332,9 @@ export function filterAndSortSetups(
       case 'direction': return s.direction
       case 'entry': return s.entry
       case 'distance': {
+        // Only a zone still waiting has an entry ahead of it; for the rest the
+        // cell shows a dash, so they sort with the other unknowns.
+        if (s.outcome !== 'unfilled') return null
         const d = distanceToEntry(s, livePrices?.[s.symbol])
         return d === null ? null : Math.abs(d)
       }
@@ -411,7 +401,6 @@ export function DojoSetupsTable({
 }: DojoSetupsTableProps = {}) {
   const [filters, setFilters] = useState<DojoSetupFilters>({})
   const [view, setView] = useState<ViewFilter>('live')
-  const [expanded, setExpanded] = useState<string | null>(null)
   // Age ascending by default: newest zone first, which is what the API
   // already returns, so the initial view is unchanged and now explicit.
   const [sortField, setSortField] = useState<SortField>('age')
@@ -624,68 +613,94 @@ export function DojoSetupsTable({
                 const livePrice = livePrices?.[s.symbol]
                 const dist = distanceToEntry(s, livePrice)
                 const age = daysSince(s.fired_at)
-                const isOpen = expanded === s.id
-                return (
-                  <Fragment key={s.id}>
-                    <tr
-                      onClick={() => {
-                        setExpanded(isOpen ? null : s.id)
-                        // Always push the selection, even when collapsing —
-                        // clicking a row is how you ask to see it charted.
-                        onSetupSelect?.(s)
-                      }}
-                      className={`border-b border-gray-700/50 hover:bg-gray-700/30 cursor-pointer ${
-                        selectedId === s.id ? 'bg-gray-700/40' : ''
+                const isSelected = selectedId === s.id
+                // One renderer per column, looked up by field and emitted in
+                // the order of `columns` — so reordering COLUMNS reorders the
+                // cells too, and a header can never sit over another
+                // column's data.
+                const cells: Record<SortField, ReactNode> = {
+                  symbol: (
+                    <td className="px-2 py-2 font-medium text-white whitespace-nowrap">{s.symbol}</td>
+                  ),
+                  status: (
+                    <td className="px-2 py-2">
+                      <OutcomeBadge setup={s} />
+                    </td>
+                  ),
+                  distance: (
+                    <td
+                      className={`px-2 py-2 text-right font-mono ${
+                        distanceIsLive(livePrice) ? 'text-gray-200' : 'text-gray-400 italic'
                       }`}
+                      title={
+                        distanceIsLive(livePrice)
+                          ? 'Measured from the current price'
+                          : 'No live price for this symbol — measured from the close when the zone armed'
+                      }
                     >
-                      <td className="px-2 py-2 font-medium text-white whitespace-nowrap">{s.symbol}</td>
-                      <td className="px-2 py-2 uppercase text-gray-300">{s.timeframe}</td>
-                      <td className={`px-2 py-2 capitalize font-medium ${
-                        s.direction === 'long' ? 'text-green-400' : 'text-red-400'
-                      }`}>
-                        {s.direction}
-                      </td>
-                      <td className="px-2 py-2 text-right font-mono text-gray-100">
-                        {formatDojoPrice(s.entry)}
-                      </td>
-                      <td
-                        className={`px-2 py-2 text-right font-mono ${
-                          distanceIsLive(livePrice) ? 'text-gray-300' : 'text-gray-500 italic'
-                        }`}
-                        title={
-                          distanceIsLive(livePrice)
-                            ? 'Measured from the current price'
-                            : 'No live price for this symbol — measured from the close when the zone armed'
-                        }
-                      >
-                        {dist === null ? '—' : `${Math.abs(dist).toFixed(1)}%`}
-                      </td>
-                      <td className={`px-2 py-2 text-right font-mono text-gray-100 ${HIDE.rr ?? ''}`}>
-                        {s.rr.toFixed(2)}
-                      </td>
-                      <td className={`px-2 py-2 text-center ${HIDE.confluence ?? ''}`}>
-                        <ConfluenceBadge band={s.confluence_band} />
-                      </td>
-                      {hasPlanDetails && (
-                        <td className={`px-2 py-2 text-center ${HIDE.volume ?? ''}`}>
-                          <VolumeBadge setup={s} />
-                        </td>
-                      )}
-                      <td className="px-2 py-2 text-right font-mono text-gray-500">
-                        {age === null ? '—' : age === 0 ? 'today' : `${age}d`}
-                      </td>
-                      <td className="px-2 py-2">
-                        <OutcomeBadge setup={s} />
-                      </td>
-                    </tr>
-                    {isOpen && (
-                      <tr>
-                        <td colSpan={columns.length} className="p-0">
-                          <TradePlan setup={s} livePrice={livePrice} hasPlanDetails={hasPlanDetails} />
-                        </td>
-                      </tr>
-                    )}
-                  </Fragment>
+                      {/* Only meaningful while the entry is still ahead. */}
+                      {dist === null || s.outcome !== 'unfilled' ? '—' : `${Math.abs(dist).toFixed(1)}%`}
+                    </td>
+                  ),
+                  direction: (
+                    <td className={`px-2 py-2 capitalize font-medium ${
+                      s.direction === 'long' ? 'text-green-400' : 'text-red-400'
+                    }`}>
+                      {s.direction}
+                    </td>
+                  ),
+                  timeframe: <td className="px-2 py-2 uppercase text-gray-300">{s.timeframe}</td>,
+                  entry: (
+                    <td className="px-2 py-2 text-right font-mono text-gray-100">
+                      {formatDojoPrice(s.entry)}
+                    </td>
+                  ),
+                  age: (
+                    <td className="px-2 py-2 text-right font-mono text-gray-400">
+                      {age === null ? '—' : age === 0 ? 'today' : `${age}d`}
+                    </td>
+                  ),
+                  rr: (
+                    <td className={`px-2 py-2 text-right font-mono text-gray-100 ${HIDE.rr ?? ''}`}>
+                      {s.rr.toFixed(2)}
+                    </td>
+                  ),
+                  confluence: (
+                    <td className={`px-2 py-2 text-center ${HIDE.confluence ?? ''}`}>
+                      <ConfluenceBadge band={s.confluence_band} />
+                    </td>
+                  ),
+                  volume: (
+                    <td className={`px-2 py-2 text-center ${HIDE.volume ?? ''}`}>
+                      <VolumeBadge setup={s} />
+                    </td>
+                  ),
+                }
+                return (
+                  <tr
+                    key={s.id}
+                    // The plan opens in the panel beside the chart (or the
+                    // drawer on a phone), so the row only selects. It used to
+                    // expand inline too, which showed the same plan twice.
+                    onClick={() => onSetupSelect?.(s)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        onSetupSelect?.(s)
+                      }
+                    }}
+                    tabIndex={0}
+                    aria-selected={isSelected}
+                    className={`border-b border-gray-700/50 cursor-pointer transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-accent ${
+                      isSelected
+                        ? 'bg-accent-bg shadow-[inset_3px_0_0_0_#2B95FF]'
+                        : 'hover:bg-gray-700/30'
+                    }`}
+                  >
+                    {columns.map((c) => (
+                      <Cell key={c.field}>{cells[c.field]}</Cell>
+                    ))}
+                  </tr>
                 )
               })}
             </tbody>

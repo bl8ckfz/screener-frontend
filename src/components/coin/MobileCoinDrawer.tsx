@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import type { Coin } from '@/types/coin'
 import { ChartSection } from './ChartSection'
-import type { DojoSetup } from '@/types/dojo'
+import { DOJO_OUTCOME_META, distanceToEntry, type DojoSetup } from '@/types/dojo'
 
 interface MobileCoinDrawerProps {
   open: boolean
@@ -11,7 +11,8 @@ interface MobileCoinDrawerProps {
   onClose: () => void
 }
 
-// Mobile-only bottom sheet that presents the chart and alert timeline
+// Mobile-only sheet that presents the plan (when one is open), the chart and
+// the alert timeline — the plan first, since it is what the user tapped for.
 export function MobileCoinDrawer({ open, selectedCoin, dojoSetup = null, onClose }: MobileCoinDrawerProps) {
   useEffect(() => {
     if (!open) return
@@ -35,17 +36,39 @@ export function MobileCoinDrawer({ open, selectedCoin, dojoSetup = null, onClose
 
   if (!open || !selectedCoin) return null
 
+  // The plan's standing, pinned in the header so it stays visible while the
+  // plan and chart scroll beneath it.
+  const dist = dojoSetup
+    ? distanceToEntry(dojoSetup, selectedCoin.isPlaceholder ? undefined : selectedCoin.lastPrice)
+    : null
+
   return (
     <div className="fixed inset-0 z-50 md:hidden" style={{ maxWidth: '100vw' }}>
       <div className="absolute inset-0 bg-black/80" onClick={onClose} aria-label="Close chart drawer" />
       <div className="absolute inset-0 bg-gray-900 animate-in slide-in-from-bottom-6 overflow-hidden" style={{ maxWidth: '100vw' }}>
         {/* Header with drag handle */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-1.5 py-1.5 bg-gray-800/95 backdrop-blur-sm border-b border-gray-700 min-h-[40px] w-full" style={{ maxWidth: '100vw', boxSizing: 'border-box' }}>
-          <div className="flex items-center gap-1 min-w-0 flex-1">
-            <span className="text-[11px] font-semibold text-white truncate">
+        <div className="sticky top-0 z-10 flex items-center justify-between px-1.5 py-1.5 bg-gray-800/95 backdrop-blur-sm border-b border-gray-700 min-h-[52px] w-full" style={{ maxWidth: '100vw', boxSizing: 'border-box' }}>
+          <div className="flex items-center gap-2 min-w-0 flex-1 pl-1.5">
+            <span className="text-sm font-semibold text-white truncate">
               {selectedCoin.symbol}
             </span>
-            <span className="text-gray-400 text-[9px] flex-shrink-0">{selectedCoin.pair}</span>
+            {dojoSetup ? (
+              <>
+                <span className={`text-xs font-medium ${dojoSetup.direction === 'long' ? 'text-green-400' : 'text-red-400'}`}>
+                  {dojoSetup.direction === 'long' ? 'Long' : 'Short'} {dojoSetup.timeframe.toUpperCase()}
+                </span>
+                <span className={`px-1.5 py-0.5 rounded text-[11px] font-semibold whitespace-nowrap ${DOJO_OUTCOME_META[dojoSetup.outcome].className}`}>
+                  {DOJO_OUTCOME_META[dojoSetup.outcome].label}
+                </span>
+                {dojoSetup.outcome === 'unfilled' && dist !== null && (
+                  <span className="text-xs font-mono text-gray-300 whitespace-nowrap">
+                    {Math.abs(dist).toFixed(1)}% away
+                  </span>
+                )}
+              </>
+            ) : (
+              <span className="text-gray-400 text-xs flex-shrink-0">{selectedCoin.pair}</span>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -61,8 +84,8 @@ export function MobileCoinDrawer({ open, selectedCoin, dojoSetup = null, onClose
         </div>
         
         {/* Scrollable content */}
-        <div className="mobile-drawer-scroll h-[calc(100vh-40px)] overflow-y-auto overscroll-contain w-full" style={{ maxWidth: '100vw', boxSizing: 'border-box' }}>
-          <ChartSection selectedCoin={selectedCoin} dojoSetup={dojoSetup} className="pb-safe" />
+        <div className="mobile-drawer-scroll h-[calc(100vh-52px)] overflow-y-auto overscroll-contain w-full" style={{ maxWidth: '100vw', boxSizing: 'border-box' }}>
+          <ChartSection selectedCoin={selectedCoin} dojoSetup={dojoSetup} hideHeader className="pb-safe" />
         </div>
       </div>
     </div>
