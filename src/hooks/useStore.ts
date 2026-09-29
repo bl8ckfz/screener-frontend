@@ -66,6 +66,12 @@ interface AppState {
 
   // Watchlist (simplified - single default watchlist)
   watchlistSymbols: string[]
+  /**
+   * The last watchlist save the backend rejected, for the UI to say so.
+   * Transient: not persisted, and cleared by the notice that shows it.
+   */
+  watchlistError: string | null
+  clearWatchlistError: () => void
 
   // Webhooks
   webhooks: Webhook[]
@@ -171,6 +177,7 @@ const initialState = {
   
   // Watchlist defaults (simplified - single array)
   watchlistSymbols: [] as string[],
+  watchlistError: null as string | null,
   
   // Webhook defaults
   webhooks: [] as Webhook[],
@@ -333,18 +340,28 @@ export const useStore = create<AppState>()(
             ? state.watchlistSymbols.filter((s) => s !== symbol)
             : [...state.watchlistSymbols, symbol]
           
-          // Sync to backend if authenticated
+          // Sync to backend if authenticated.
+          //
+          // Optimistic, so BOTH directions revert on failure and say so. Only
+          // the add used to revert, and neither told the user: a failed remove
+          // left a star that came back on the next load, with no explanation.
           if (authService.isAuthenticated()) {
             if (isInWatchlist) {
-              watchlistService.removeSymbol(symbol).catch((err) =>
+              watchlistService.removeSymbol(symbol).catch((err) => {
                 console.error('Failed to remove symbol from backend:', err)
-              )
+                set((state) => ({
+                  watchlistSymbols: state.watchlistSymbols.includes(symbol)
+                    ? state.watchlistSymbols
+                    : [...state.watchlistSymbols, symbol],
+                  watchlistError: `Couldn't remove ${symbol} from your watchlist. Please try again.`,
+                }))
+              })
             } else {
               watchlistService.addSymbol(symbol).catch((err) => {
                 console.error('Failed to add symbol to backend:', err)
-                // Revert local state on error
                 set((state) => ({
                   watchlistSymbols: state.watchlistSymbols.filter((s) => s !== symbol),
+                  watchlistError: `Couldn't add ${symbol} to your watchlist. Please try again.`,
                 }))
               })
             }
@@ -355,6 +372,9 @@ export const useStore = create<AppState>()(
 
       setWatchlistSymbols: (watchlistSymbols) =>
         set({ watchlistSymbols }),
+
+      clearWatchlistError: () =>
+        set({ watchlistError: null }),
 
       setAlertRules: (alertRules) =>
         set({ alertRules }),

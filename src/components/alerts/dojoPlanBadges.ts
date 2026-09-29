@@ -36,12 +36,12 @@ const EVENT_META: Record<
 > = {
   zone_armed: { label: 'Zone armed', mark: '🥋', tone: 'text-accent border-accent/40' },
   zone_entered: { label: 'Zone entered', mark: '🎯', tone: 'text-amber-300 border-amber-400/40' },
-  entry_filled: { label: 'Entry filled', mark: '✅', tone: 'text-emerald-300 border-emerald-400/40' },
+  entry_filled: { label: 'Entry hit', mark: '✅', tone: 'text-emerald-300 border-emerald-400/40' },
   target_hit: { label: 'Target reached', mark: '🏁', tone: 'text-emerald-300 border-emerald-400/40' },
   stop_hit: { label: 'Stop taken', mark: '🛑', tone: 'text-red-300 border-red-400/40' },
   // Grey, and deliberately not the loss colour. The zone never filled, so this
   // is not a losing trade — it is a plan that stopped being a plan.
-  zone_invalidated: { label: 'Invalidated', mark: '⌛', tone: 'text-gray-400 border-gray-600' },
+  zone_invalidated: { label: 'Retired', mark: '⌛', tone: 'text-gray-400 border-gray-600' },
 }
 
 /** "1W Short" — which of a coin's plans this chip is about. */
@@ -59,13 +59,13 @@ function livePlanChip(s: DojoSetup, onOpen?: (setupId: string) => void): PinnedB
   return {
     key: s.id,
     mark: running ? '✅' : '🥋',
-    label: running ? 'In trade' : 'Waiting',
+    label: running ? 'Entry hit' : 'Waiting',
     detail: detailOf(s.timeframe, s.direction),
     tone: running
       ? 'text-emerald-300 border-emerald-400/40'
       : 'text-accent border-accent/40',
     title: running
-      ? 'The entry filled and the trade is running to its target or its stop. Click to open the plan.'
+      ? 'Price reached the entry and the plan is running to its target or its stop. Click to open the plan.'
       : 'Published and waiting for price to reach the entry — nothing risked yet. Click to open the plan.',
     // Whether money is at risk right now is the most useful thing this row can
     // say at a glance, so a running trade is emphasised over a waiting one.

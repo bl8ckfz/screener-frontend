@@ -100,7 +100,7 @@ export function DojoTimeline({ setup }: DojoTimelineProps) {
     steps.push({
       key: 'invalidated',
       mark: '⌛',
-      label: setup.entry_hit_at ? 'Thesis expired while open' : 'Zone invalidated',
+      label: setup.entry_hit_at ? 'Thesis expired after entry' : 'Retired before entry',
       at: formatWhen(setup.invalidated_at),
       detail:
         (reason && DOJO_INVALIDATION_HINT[reason]) ??

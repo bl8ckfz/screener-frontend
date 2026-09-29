@@ -13,6 +13,7 @@
 
 import { Fragment, useMemo, useState } from 'react'
 import { DojoTimeline } from './DojoTimeline'
+import { InfoHint } from '@/components/ui/InfoHint'
 import { useAuth } from '@/hooks/useAuth'
 import { useDojoSetups, type DojoSetupFilters } from '@/hooks/useDojoSetups'
 import {
@@ -46,8 +47,8 @@ const TIMEFRAMES = ['1d', '5d', '1w'] as const
 export type ViewFilter = 'live' | 'closed' | 'all'
 
 const VIEWS: Array<{ id: ViewFilter; label: string; title: string }> = [
-  { id: 'live', label: 'Live', title: 'Waiting for price, or filled and running' },
-  { id: 'closed', label: 'Closed', title: 'Hit target, stopped out, or invalidated before ever filling' },
+  { id: 'live', label: 'Live', title: 'Waiting for price, or entry hit and running' },
+  { id: 'closed', label: 'Closed', title: 'Hit target, stopped out, or retired before entry' },
   { id: 'all', label: 'All', title: 'Every zone ever published' },
 ]
 
@@ -96,12 +97,12 @@ export const COLUMNS: Array<{
     hide: 'hidden xl:table-cell',
   },
   {
-    field: 'confluence', label: 'Conf', align: 'center',
+    field: 'confluence', label: 'Confluence', align: 'center',
     title: 'How much independent agreement backs this zone, relative to the most its timeframe can carry',
     hide: 'hidden lg:table-cell',
   },
   {
-    field: 'volume', label: 'Vol', align: 'center',
+    field: 'volume', label: 'Volume', align: 'center',
     title: 'Whether the zone sits on transacted history (HVN) or in a thin patch price can travel through (LVN)',
     hide: 'hidden xl:table-cell',
   },
@@ -178,27 +179,28 @@ export function ConfluenceBadge({ band }: { band: ConfluenceBand }) {
   const meta = CONFLUENCE_META[band]
   if (!meta) return <span className="text-gray-600">—</span>
   return (
-    <span title={meta.hint} className={`px-1.5 py-0.5 rounded text-xs font-semibold ${meta.className}`}>
-      {band}
-    </span>
+    <InfoHint hint={meta.hint}>
+      <span className={`px-1.5 py-0.5 rounded text-xs font-semibold ${meta.className}`}>
+        {band}
+      </span>
+    </InfoHint>
   )
 }
 
 export function OutcomeBadge({ setup }: { setup: Pick<DojoSetup, 'outcome' | 'invalidation_reason'> }) {
   const meta = DOJO_OUTCOME_META[setup.outcome]
-  // An invalidated zone says WHY on hover. "Invalidated" alone invites the
+  // A retired zone says WHY on hover or tap. "Invalidated" alone invites the
   // question, and the answer is already stored.
   const reasonHint =
     setup.outcome === 'invalidated' && setup.invalidation_reason
       ? `${meta.hint} — ${DOJO_INVALIDATION_HINT[setup.invalidation_reason]}`
       : meta.hint
   return (
-    <span
-      title={reasonHint}
-      className={`px-2 py-0.5 rounded text-xs font-semibold whitespace-nowrap ${meta.className}`}
-    >
-      {meta.label}
-    </span>
+    <InfoHint hint={reasonHint} align="right">
+      <span className={`px-2 py-0.5 rounded text-xs font-semibold whitespace-nowrap ${meta.className}`}>
+        {meta.label}
+      </span>
+    </InfoHint>
   )
 }
 
@@ -222,15 +224,15 @@ export function TradePlan({
 
   const rows: Array<[string, string, string?]> = [
     [
-      'Zone (whole demand)',
+      'Zone',
       `${formatDojoPrice(setup.otz_low)} – ${formatDojoPrice(setup.otz_high)}`,
       'The whole area price has to trade back into for this setup to be live',
     ],
-    ['Entry (precise sniper)', formatDojoPrice(setup.entry), 'The precise point inside the zone. A resting limit — set it and wait'],
+    ['Entry price', formatDojoPrice(setup.entry), 'The precise point inside the zone. A resting limit — set it and wait'],
     [
       'Stop',
-      `${formatDojoPrice(setup.stop_loss)} (${stopRiskPct(setup).toFixed(1)}% risk)`,
-      'Where the setup is wrong. The percentage is the distance from the entry — the risk per unit that position sizing is computed from.',
+      `${formatDojoPrice(setup.stop_loss)} (stop distance ${stopRiskPct(setup).toFixed(1)}%)`,
+      'Where the setup is wrong. The percentage is the distance from the entry to the stop — not account risk. Position sizing is computed from it.',
     ],
     ['Targets', `${formatDojoPrice(setup.tp1)} / ${formatDojoPrice(setup.tp2)} / ${formatDojoPrice(setup.tp3)}`, 'Scale out across the three, or take the first and move the stop'],
     ['R:R to TP1', setup.rr.toFixed(2)],
@@ -468,13 +470,13 @@ export function DojoSetupsTable({
               <span className="font-semibold text-white">{summary.total}</span> zones
             </span>
             <span className="text-gray-400">{summary.unfilled} waiting</span>
-            <span className="text-gray-400">{summary.open} open</span>
+            <span className="text-gray-400">{summary.open} entry hit</span>
             {summary.invalidated > 0 && (
               <span
                 className="text-gray-600"
                 title="Zones retired before price ever reached the entry — the leg re-anchored, the validating gap was mitigated, or structure flipped. Excluded from the hit rate, since no trade was taken."
               >
-                {summary.invalidated} invalidated
+                {summary.invalidated} retired
               </span>
             )}
             {summary.hit_rate !== null ? (
@@ -562,7 +564,7 @@ export function DojoSetupsTable({
           <p className="mt-1 text-xs text-gray-500">
             {view === 'live'
               ? 'Nothing is waiting for price or currently running. Closed zones are under the Closed tab.'
-              : 'Nothing has resolved or been invalidated yet.'}
+              : 'Nothing has resolved or been retired yet.'}
           </p>
         </div>
       ) : visible.length === 0 && setups.length > 0 ? (

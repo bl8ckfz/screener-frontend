@@ -119,7 +119,7 @@ export function DemoZonesTable({
             <th className="px-3 py-2 font-medium">Side</th>
             <th className="px-3 py-2 text-right font-medium">Entry</th>
             <th className="hidden px-3 py-2 text-right font-medium sm:table-cell">R:R</th>
-            <th className="hidden px-3 py-2 text-center font-medium lg:table-cell">Conf</th>
+            <th className="hidden px-3 py-2 text-center font-medium lg:table-cell">Confluence</th>
             <th className="hidden px-3 py-2 text-right font-medium sm:table-cell">Age</th>
             <th className="px-3 py-2 font-medium">Status</th>
           </tr>
@@ -194,10 +194,10 @@ export function DemoZonesTable({
 
       {zones.some((z) => z.outcome === 'invalidated') && (
         <p className="max-w-prose px-3 py-3 text-xs leading-relaxed text-gray-500">
-          A zone marked invalid stopped being tradeable before price ever reached the
+          A zone marked retired stopped being tradeable before price ever reached the
           entry — the swing it was measured from re-anchored, the gap that validated it
-          was filled, or structure turned against it. Hover the badge for which one. No
-          order was ever filled, so it is not a loss and is not counted as one.
+          was filled, or structure turned against it. Tap the badge for which one. Price
+          never reached the entry, so it is not a loss and is not counted as one.
         </p>
       )}
     </div>

@@ -74,7 +74,7 @@ describe('dojoChips', () => {
     expect(waiting.detail).toBe('1W Short')
 
     const [running] = dojoChips([setup({ outcome: 'open' })], [])
-    expect(running.label).toBe('In trade')
+    expect(running.label).toBe('Entry hit')
   })
 
   // The single most useful thing the row can say at a glance is whether money
@@ -124,7 +124,7 @@ describe('dojoChips', () => {
     )
 
     expect(chips).toHaveLength(1)
-    expect(chips[0].label).toBe('In trade')
+    expect(chips[0].label).toBe('Entry hit')
   })
 
   it('names the reason a zone was retired', () => {
@@ -132,7 +132,7 @@ describe('dojoChips', () => {
     alert.dojo!.invalidationReason = 'fvg_mitigated'
 
     const [chip] = dojoChips([], [alert])
-    expect(chip.label).toBe('Invalidated')
+    expect(chip.label).toBe('Retired')
     expect(chip.title).toMatch(/fvg mitigated/i)
   })
 

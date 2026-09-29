@@ -235,10 +235,13 @@ export const DOJO_OUTCOME_META: Record<
     className: 'bg-gray-500/20 text-gray-300',
     hint: 'Price has not reached the entry yet — neither a win nor a loss',
   },
+  // "Entry hit", not "Open" or "In trade": the scanner observes price, not
+  // anybody's orders, so a label implying the user holds a position would be
+  // claiming something it cannot know.
   open: {
-    label: 'Open',
+    label: 'Entry hit',
     className: 'bg-blue-500/20 text-blue-300',
-    hint: 'Entry filled, still running',
+    hint: 'Price reached the entry. The plan is running to its target or its stop',
   },
   target: {
     label: 'Target',
@@ -255,13 +258,14 @@ export const DOJO_OUTCOME_META: Record<
   // it will never become one, so it is styled to recede rather than invite
   // action.
   invalidated: {
-    // "Invalid", not "Invalidated": at 11 characters it was the widest label
+    // "Retired", not "Invalidated": at 11 characters that was the widest label
     // in the Status column and set the width of the whole table, which put the
     // Dojo tab back into horizontal scrolling. Seven characters matches
-    // Waiting and Stopped exactly, and the full meaning is in the tooltip.
-    label: 'Invalid',
+    // Waiting and Stopped exactly. "Invalid" fit too, but read as "this was
+    // wrong" rather than "this ended before any trade existed".
+    label: 'Retired',
     className: 'bg-gray-700/40 text-gray-500',
-    hint: 'The setup stopped being tradeable before price ever reached the entry — no trade was taken',
+    hint: 'Retired before entry: the setup stopped being tradeable before price ever reached it — no trade existed',
   },
 }
 

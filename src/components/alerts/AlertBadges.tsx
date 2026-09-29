@@ -26,7 +26,7 @@ export interface PinnedBadge {
   key: string
   /** Emoji, matching the marks used in the chat renderers. */
   mark: string
-  /** What happened, in words: "Waiting", "In trade", "Stop taken". */
+  /** What happened, in words: "Waiting", "Entry hit", "Stop taken". */
   label: string
   /** Which plan, when a coin carries more than one: "1W Short". */
   detail?: string

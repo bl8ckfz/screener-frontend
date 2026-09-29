@@ -22,6 +22,7 @@ import { SearchBar } from '@/components/controls'
 import { ShortcutHelp, BackendStatus } from '@/components/ui'
 import { StorageMigration } from '@/components/StorageMigration'
 import { AlertHistoryTable } from '@/components/alerts'
+import { WatchlistErrorNotice } from '@/components/watchlist'
 import { useSelectedDojoSetup } from '@/hooks/useSelectedDojoSetup'
 import { useAuth } from '@/hooks/useAuth'
 import { SettingsModal } from '@/components/settings'
@@ -508,6 +509,8 @@ export function ScreenerApp() {
             onClose={handleCloseChart}
           />
         )}
+
+        <WatchlistErrorNotice />
 
         {/* Settings Modal */}
         <SettingsModal

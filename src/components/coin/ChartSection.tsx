@@ -384,8 +384,8 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, classNam
         <div className="h-[400px] md:h-[550px] flex items-center justify-center">
           <EmptyState
             icon="📊"
-            title="No Coin Selected"
-            description="Click on an alert in the table below to view its chart and timeline"
+            title="Nothing selected yet"
+            description="Pick a coin, an alert or a Dojo zone from the list to see its chart and timeline"
           />
         </div>
       </div>
@@ -408,7 +408,11 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, classNam
         <ErrorState
           message={error}
           description="Failed to load chart data"
-          onRetry={() => setInterval(interval)} // Trigger refetch
+          // Calls the loader directly. Setting the interval to the value it
+          // already holds is a no-op in React, so it never refetched. A retry
+          // inside an active rate-limit backoff is still refused by the
+          // loader, which is what the error message tells the user to expect.
+          onRetry={() => loadChartData()}
         />
       </div>
     )
@@ -469,14 +473,14 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, classNam
       </div>
 
       {/* Chart Controls */}
-      <div className="flex items-center gap-0.5 md:gap-2 px-1 md:px-4 py-0.5 md:py-2 border-b border-gray-700 overflow-x-auto scrollbar-hide">
+      <div className="flex items-center gap-1 md:gap-2 px-1 md:px-4 py-1 md:py-2 border-b border-gray-700 overflow-x-auto scrollbar-hide">
         {/* Interval Selector */}
         <div className="flex items-center gap-0.5">
           {COMMON_INTERVALS.map((int) => (
             <button
               key={int}
               onClick={() => setInterval(int)}
-              className={`px-1.5 md:px-3 py-0 md:py-0.5 text-[10px] md:text-xs font-medium rounded transition-colors ${
+              className={`px-2 md:px-3 py-1.5 md:py-0.5 text-xs font-medium rounded transition-colors ${
                 interval === int
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
@@ -491,7 +495,7 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, classNam
         <div className="flex items-center gap-0.5 md:gap-2 ml-auto">
           <button
             onClick={() => setShowAlerts(!showAlerts)}
-            className={`px-1.5 md:px-3 py-0 md:py-0.5 text-[10px] md:text-xs font-medium rounded transition-colors ${
+            className={`px-2 md:px-3 py-1.5 md:py-0.5 text-xs font-medium rounded transition-colors ${
               showAlerts
                 ? 'bg-green-600 text-white'
                 : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
