@@ -206,7 +206,7 @@ export function AlertBadges({ alertTypes, maxVisible = 3, latestAlertType, pinne
                     }
                   : undefined
               }
-              className={`rounded border bg-gray-800/60 px-1.5 py-0.5 text-[10px] font-medium leading-none transition ${p.tone} ${
+              className={`rounded border bg-gray-800/60 px-1.5 py-0.5 text-[11px] font-medium leading-none transition ${p.tone} ${
                 p.emphasised ? 'ring-1 ring-emerald-300/50' : ''
               } ${p.active ? 'bg-gray-700/80 ring-1 ring-accent' : ''} ${
                 p.onClick ? 'cursor-pointer hover:bg-gray-700/60' : ''
@@ -215,7 +215,7 @@ export function AlertBadges({ alertTypes, maxVisible = 3, latestAlertType, pinne
             >
               {p.mark && <span aria-hidden>{p.mark} </span>}
               {p.label}
-              {p.detail && <span className="text-gray-500"> · {p.detail}</span>}
+              {p.detail && <span className="text-gray-400"> · {p.detail}</span>}
             </div>
           ))}
         </div>

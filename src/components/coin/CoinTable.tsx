@@ -13,21 +13,24 @@ interface CoinTableProps {
   coins: Coin[]
   onCoinClick?: (coin: Coin) => void
   isLoading?: boolean
+  /** Symbol of the coin on the chart, highlighted in the list. */
+  selectedSymbol?: string
 }
  
 interface CoinCardProps {
   coin: Coin
   onClick?: (coin: Coin) => void
+  selected?: boolean
 }
 
-const CoinCard = ({ coin, onClick }: CoinCardProps) => {
+const CoinCard = ({ coin, onClick, selected = false }: CoinCardProps) => {
   const changeColor = coin.priceChangePercent > 0 ? 'text-green-400' : coin.priceChangePercent < 0 ? 'text-red-400' : 'text-gray-300'
   const flash = usePriceFlash(coin.lastPrice)
 
   return (
     <button
       onClick={() => onClick?.(coin)}
-      className={`w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-3 text-left shadow-sm transition hover:border-accent/60 hover:shadow-lg ${flash}`}
+      className={`w-full rounded-lg border ${selected ? 'border-accent' : 'border-gray-700'} bg-gray-800 px-4 py-3 text-left shadow-sm transition hover:border-accent/60 hover:shadow-lg ${flash}`}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
@@ -44,7 +47,7 @@ const CoinCard = ({ coin, onClick }: CoinCardProps) => {
       </div>
       <div className="mt-2 flex items-center justify-between text-xs text-gray-400">
         <span>Vol {formatVolume(coin.quoteVolume)}</span>
-        <span className="text-gray-500">Tap for details</span>
+        <span className="text-gray-400">Tap for chart</span>
       </div>
     </button>
   )
@@ -67,7 +70,7 @@ const CardSkeleton = () => (
   <div className="h-20 w-full animate-pulse rounded-lg border border-gray-800 bg-gray-900" />
 )
 
-export function CoinTable({ coins, onCoinClick, isLoading = false }: CoinTableProps) {
+export function CoinTable({ coins, onCoinClick, isLoading = false, selectedSymbol }: CoinTableProps) {
   const { sort, setSort } = useStore()
   const watchlistSymbols = useStore((state) => state.watchlistSymbols)
 
@@ -177,6 +180,7 @@ export function CoinTable({ coins, onCoinClick, isLoading = false }: CoinTablePr
                   coin={coin}
                   index={index}
                   onClick={onCoinClick}
+                  selected={coin.symbol === selectedSymbol}
                 />
               ))}
 
@@ -200,6 +204,7 @@ export function CoinTable({ coins, onCoinClick, isLoading = false }: CoinTablePr
                   coin={coin}
                   index={watchlistCoins.length + index}
                   onClick={onCoinClick}
+                  selected={coin.symbol === selectedSymbol}
                 />
               ))}
             </>
@@ -208,7 +213,7 @@ export function CoinTable({ coins, onCoinClick, isLoading = false }: CoinTablePr
       </table>
 
       {watchlistCoins.length === 0 && otherCoins.length === 0 && (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-gray-400">
           No coins found for this pair
         </div>
       )}
@@ -242,7 +247,7 @@ export function CoinTable({ coins, onCoinClick, isLoading = false }: CoinTablePr
       ) : (
         <>
           {watchlistCoins.map((coin) => (
-            <CoinCard key={coin.id} coin={coin} onClick={onCoinClick} />
+            <CoinCard key={coin.id} coin={coin} onClick={onCoinClick} selected={coin.symbol === selectedSymbol} />
           ))}
 
           {watchlistCoins.length > 0 && otherCoins.length > 0 && (
@@ -254,11 +259,11 @@ export function CoinTable({ coins, onCoinClick, isLoading = false }: CoinTablePr
           )}
 
           {otherCoins.map((coin) => (
-            <CoinCard key={coin.id} coin={coin} onClick={onCoinClick} />
+            <CoinCard key={coin.id} coin={coin} onClick={onCoinClick} selected={coin.symbol === selectedSymbol} />
           ))}
 
           {watchlistCoins.length === 0 && otherCoins.length === 0 && (
-            <div className="py-10 text-center text-gray-500">No coins found for this pair</div>
+            <div className="py-10 text-center text-gray-400">No coins found for this pair</div>
           )}
         </>
       )}

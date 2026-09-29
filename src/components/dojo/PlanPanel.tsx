@@ -180,7 +180,7 @@ export function PlanPanel({ setup, livePrice, hasPlanDetails, onFocusChart, onCl
                 </span>
               ))
             ) : (
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-gray-400">
                 The levels behind the rating are part of Pro.
               </span>
             )}

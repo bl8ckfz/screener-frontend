@@ -211,7 +211,7 @@ export function AlertHistoryTable({
       {mainStats.map((stat) => renderCard(stat))}
 
       {watchlistStats.length === 0 && mainStats.length === 0 && (
-        <div className="py-8 text-center text-gray-500">No alerts yet</div>
+        <div className="py-8 text-center text-gray-400">No alerts yet</div>
       )}
     </div>
   ) : null
@@ -342,7 +342,7 @@ export function AlertHistoryTable({
                   pinned={dojoChips(livePlans.get(stat.symbol), stat.alerts, onOpenDojoSetup, activeSetupId)}
                 />
               </td>
-              <td className="py-1.5 px-2 text-right text-[10px] text-gray-400">
+              <td className="py-1.5 px-2 text-right text-[11px] text-gray-400">
                 {formatTimeAgo(stat.lastAlertTimestamp)}
               </td>
             </tr>
@@ -420,7 +420,7 @@ export function AlertHistoryTable({
                   pinned={dojoChips(livePlans.get(stat.symbol), stat.alerts, onOpenDojoSetup, activeSetupId)}
                 />
               </td>
-              <td className="py-1.5 px-2 text-right text-[10px] text-gray-400">
+              <td className="py-1.5 px-2 text-right text-[11px] text-gray-400">
                 {formatTimeAgo(stat.lastAlertTimestamp)}
               </td>
             </tr>

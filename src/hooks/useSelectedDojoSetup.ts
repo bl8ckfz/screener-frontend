@@ -69,6 +69,14 @@ export interface SelectedDojoSetup {
    * say the plan is unavailable rather than silently showing the last one.
    */
   isMissing: boolean
+  /**
+   * The fetch failed — a network or server error, not a 404 (which is
+   * isMissing). Distinct because it is worth retrying and a missing plan is
+   * not.
+   */
+  isError: boolean
+  /** Refetch after isError. */
+  retry: () => void
   /** Open a plan already in hand, skipping the fetch. */
   select: (setup: DojoSetup) => void
   /** Open a plan by id, as an alert refers to it. */
@@ -127,6 +135,10 @@ export function useSelectedDojoSetup(enabled: boolean): SelectedDojoSetup {
     // not missing, and saying otherwise would flash "unavailable" at someone
     // whose plan is about to load.
     isMissing: Boolean(setupId) && needsFetch && query.isSuccess && query.data === null,
+    isError: Boolean(setupId) && needsFetch && query.isError,
+    retry: () => {
+      void query.refetch()
+    },
     select,
     selectById,
     clear,

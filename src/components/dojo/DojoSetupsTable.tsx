@@ -149,11 +149,32 @@ const OUTCOME_ORDER: Record<string, number> = {
 /** Rank for the Vol column: acceptance, ordinary, thin, then unknown last. */
 const VOLUME_ORDER: Record<string, number> = { hvn: 0, neutral: 1, lvn: 2 }
 
+/**
+ * How a rating renders. 'badge' is the coloured chip, for the plan panel where
+ * it is one of a few things. 'plain' is text, for table rows: a column of
+ * identical MEDIUM / HVN chips drew the eye away from Status, the column that
+ * actually differs from row to row.
+ */
+export type RatingVariant = 'badge' | 'plain'
+
 /** Volume standing of the zone, or nothing when there is no profile. */
-export function VolumeBadge({ setup }: { setup: Pick<DojoSetup, 'volume_node' | 'volume_poc_ratio'> }) {
-  if (!setup.volume_node) return <span className="text-gray-600">—</span>
+export function VolumeBadge({
+  setup,
+  variant = 'badge',
+}: {
+  setup: Pick<DojoSetup, 'volume_node' | 'volume_poc_ratio'>
+  variant?: RatingVariant
+}) {
+  if (!setup.volume_node) return <span className="text-gray-500">—</span>
   const meta = VOLUME_NODE_META[setup.volume_node]
-  if (!meta) return <span className="text-gray-600">—</span>
+  if (!meta) return <span className="text-gray-500">—</span>
+  if (variant === 'plain') {
+    return (
+      <InfoHint hint={meta.hint}>
+        <span className="text-xs text-gray-300">{meta.short}</span>
+      </InfoHint>
+    )
+  }
   return (
     <span
       title={meta.hint}
@@ -180,9 +201,16 @@ const CONFLUENCE_META: Record<ConfluenceBand, { className: string; hint: string 
 }
 
 /** Confluence as a band. Nothing renders for a row that predates the column. */
-export function ConfluenceBadge({ band }: { band: ConfluenceBand }) {
+export function ConfluenceBadge({ band, variant = 'badge' }: { band: ConfluenceBand; variant?: RatingVariant }) {
   const meta = CONFLUENCE_META[band]
-  if (!meta) return <span className="text-gray-600">—</span>
+  if (!meta) return <span className="text-gray-500">—</span>
+  if (variant === 'plain') {
+    return (
+      <InfoHint hint={meta.hint}>
+        <span className="text-xs capitalize text-gray-300">{band.toLowerCase()}</span>
+      </InfoHint>
+    )
+  }
   return (
     <InfoHint hint={meta.hint}>
       <span className={`px-1.5 py-0.5 rounded text-xs font-semibold ${meta.className}`}>
@@ -272,7 +300,7 @@ function DojoSetupCard({
             ) : (
               <span>{DOJO_OUTCOME_META[setup.outcome].label}</span>
             )}
-            <span className="text-gray-500"> · {age === null ? '—' : age === 0 ? 'today' : `${age}d old`}</span>
+            <span className="text-gray-400"> · {age === null ? '—' : age === 0 ? 'today' : `${age}d old`}</span>
           </div>
         </div>
         <button
@@ -348,8 +376,8 @@ export function TradePlan({
         // "Backed by —" would read as "this zone has no backing", which is the
         // opposite of true: nothing publishes without it.
         <div className="mt-3 pt-3 border-t border-gray-700/50">
-          <p className="text-xs text-gray-500">
-            <span className="text-gray-400">Backed by</span> · the levels behind this zone, its
+          <p className="text-xs text-gray-400">
+            <span className="text-gray-300">Backed by</span> · the levels behind this zone, its
             volume context and the point of control are part of Pro. The plan above — zone, entry,
             stop, targets and the confluence rating — is not affected.
           </p>
@@ -532,7 +560,7 @@ export function DojoSetupsTable({
           // Nothing rather than zeros while it loads. Zeros would read as "no
           // trades", which is a claim about the method rather than about the
           // request still being in flight.
-          <span className="text-gray-500">counting zones…</span>
+          <span className="text-gray-400">counting zones…</span>
         ) : (
           <>
             <span className="text-gray-300">
@@ -542,7 +570,7 @@ export function DojoSetupsTable({
             <span className="text-gray-400">{summary.open} entry hit</span>
             {summary.invalidated > 0 && (
               <span
-                className="text-gray-600"
+                className="text-gray-400"
                 title="Zones retired before price ever reached the entry — the leg re-anchored, the validating gap was mitigated, or structure flipped. Excluded from the hit rate, since no trade was taken."
               >
                 {summary.invalidated} retired
@@ -556,7 +584,7 @@ export function DojoSetupsTable({
                 {summary.wins}/{summary.resolved} hit target ({summary.hit_rate.toFixed(0)}%)
               </span>
             ) : (
-              <span className="text-gray-500" title="No setup has been filled and resolved yet">
+              <span className="text-gray-400" title="No setup has been filled and resolved yet">
                 no resolved trades yet
               </span>
             )}
@@ -650,7 +678,7 @@ export function DojoSetupsTable({
       {visible.length === 0 && setups.length > 0 && !searchQuery.trim() ? (
         <div className="p-6 text-sm text-gray-400">
           <p>No {view === 'live' ? 'live' : view === 'closed' ? 'closed' : ''} zones.</p>
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-gray-400">
             {view === 'live'
               ? 'Nothing is waiting for price or currently running. Closed zones are under the Closed tab.'
               : 'Nothing has resolved or been retired yet.'}
@@ -659,7 +687,7 @@ export function DojoSetupsTable({
       ) : visible.length === 0 && setups.length > 0 ? (
         <div className="p-6 text-sm text-gray-400">
           <p>No zones match “{searchQuery}”.</p>
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-gray-400">
             Zones are published only for symbols the scanner found a setup on,
             so most tickers will have none.
           </p>
@@ -667,7 +695,7 @@ export function DojoSetupsTable({
       ) : setups.length === 0 ? (
         <div className="p-6 text-sm text-gray-400">
           <p>No zones yet.</p>
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-gray-400">
             The scanner rebuilds once a day at 00:02 UTC and only publishes a
             zone when it is FVG-validated, carries at least two independent
             confluences, agrees with structure, and has not been traded into.
@@ -781,12 +809,12 @@ export function DojoSetupsTable({
                     ),
                     confluence: (
                       <td className={`px-2 py-2 text-center ${HIDE.confluence ?? ''}`}>
-                        <ConfluenceBadge band={s.confluence_band} />
+                        <ConfluenceBadge band={s.confluence_band} variant="plain" />
                       </td>
                     ),
                     volume: (
                       <td className={`px-2 py-2 text-center ${HIDE.volume ?? ''}`}>
-                        <VolumeBadge setup={s} />
+                        <VolumeBadge setup={s} variant="plain" />
                       </td>
                     ),
                   }

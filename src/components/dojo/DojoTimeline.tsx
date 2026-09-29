@@ -122,13 +122,13 @@ export function DojoTimeline({ setup }: DojoTimelineProps) {
       detail: setup.entry_hit_at
         ? `Target ${formatDojoPrice(setup.tp1)}, stop ${formatDojoPrice(setup.stop_loss)}.`
         : `The entry is a resting limit at ${formatDojoPrice(setup.entry)}. Price may never reach it, which is neither a win nor a loss.`,
-      tone: 'text-gray-500',
+      tone: 'text-gray-400',
     })
   }
 
   return (
     <div className="mt-3">
-      <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+      <h4 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
         What has happened
       </h4>
 
@@ -141,7 +141,7 @@ export function DojoTimeline({ setup }: DojoTimelineProps) {
             <div className="min-w-0">
               <div className="flex flex-wrap items-baseline gap-x-2">
                 <span className={`font-medium ${step.tone}`}>{step.label}</span>
-                {step.at && <span className="font-mono text-[10px] text-gray-500">{step.at}</span>}
+                {step.at && <span className="font-mono text-[11px] text-gray-400">{step.at}</span>}
               </div>
               {step.detail && <p className="mt-0.5 text-gray-400">{step.detail}</p>}
             </div>
@@ -151,7 +151,7 @@ export function DojoTimeline({ setup }: DojoTimelineProps) {
 
       {/* The limits of the record, stated with it rather than left to be
           assumed. A reader who sees a date will otherwise take it as exact. */}
-      <p className="mt-2 border-t border-gray-700/60 pt-2 text-[10px] leading-relaxed text-gray-600">
+      <p className="mt-2 border-t border-gray-700/60 pt-2 text-[11px] leading-relaxed text-gray-400">
         A running trade is settled from minute candles, usually within minutes of
         the touch; anything missed is settled by a daily pass and dated to the day.
         A candle that touched both the target and the stop is recorded as the stop,

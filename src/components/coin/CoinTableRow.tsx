@@ -15,6 +15,8 @@ interface CoinTableRowProps {
   coin: Coin
   index: number
   onClick?: (coin: Coin) => void
+  /** The coin on the chart, so the row it came from stays findable. */
+  selected?: boolean
 }
 
 const getChangeColor = (value: number) => {
@@ -23,13 +25,16 @@ const getChangeColor = (value: number) => {
   return 'text-neutral'
 }
 
-function CoinTableRowComponent({ coin, index, onClick }: CoinTableRowProps) {
+function CoinTableRowComponent({ coin, index, onClick, selected = false }: CoinTableRowProps) {
   const flash = usePriceFlash(coin.lastPrice)
   
   return (
     <tr
       onClick={() => onClick?.(coin)}
-      className={`border-b border-gray-800 hover:bg-gray-900 cursor-pointer transition-all duration-150 hover:shadow-lg motion-reduce:transform-none hover:scale-[1.01] animate-in fade-in slide-in-from-left-2 ${flash}`}
+      aria-selected={selected}
+      className={`border-b border-gray-800 cursor-pointer ${
+        selected ? 'bg-accent-bg shadow-[inset_3px_0_0_0_#2B95FF]' : 'hover:bg-gray-900'
+      } transition-all duration-150 hover:shadow-lg motion-reduce:transform-none hover:scale-[1.01] animate-in fade-in slide-in-from-left-2 ${flash}`}
       style={{ animationDelay: `${index * 20}ms` }}
     >
       <td className="px-3 py-2.5 w-16">
@@ -68,7 +73,10 @@ export const CoinTableRow = memo(CoinTableRowComponent, (prevProps, nextProps) =
     prevProps.coin.priceChangePercent === nextProps.coin.priceChangePercent &&
     prevProps.coin.quoteVolume === nextProps.coin.quoteVolume &&
     prevProps.coin.indicators.priceToWeightedAvg === nextProps.coin.indicators.priceToWeightedAvg &&
-    prevProps.index === nextProps.index
+    prevProps.index === nextProps.index &&
+    // Without these the highlight never moved: selecting another coin
+    // changes no coin data, so the memo kept the old row.
+    prevProps.selected === nextProps.selected
   )
 })
 

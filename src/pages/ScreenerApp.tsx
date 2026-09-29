@@ -408,6 +408,36 @@ export function ScreenerApp() {
     </div>
   ) : null
 
+  // A plan opened by id (an alert, a shared link) has nothing to show until
+  // its row arrives. The chart used to sit on "Nothing selected yet" in the
+  // meantime, and on a failed fetch it stayed there for good.
+  const planLoadNotice = dojoSelection.isLoading ? (
+    <div role="status" className="mb-2 rounded-lg border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-gray-300">
+      Opening plan…
+    </div>
+  ) : dojoSelection.isError ? (
+    <div role="alert" className="mb-2 rounded-lg border border-error-border bg-error-bg px-4 py-3 text-sm text-error-text">
+      <p className="font-semibold">Couldn’t load that plan.</p>
+      <p className="mt-1 opacity-80">It may be a connection problem. The plan itself is not affected.</p>
+      <div className="mt-2 flex gap-2">
+        <button
+          type="button"
+          onClick={() => dojoSelection.retry()}
+          className="rounded border border-current px-2.5 py-1 text-xs font-medium hover:bg-white/10"
+        >
+          Try again
+        </button>
+        <button
+          type="button"
+          onClick={() => dojoSelection.clear()}
+          className="rounded px-2.5 py-1 text-xs hover:bg-white/10"
+        >
+          Dismiss
+        </button>
+      </div>
+    </div>
+  ) : null
+
   return (
     <>
       <StorageMigration />
@@ -440,6 +470,7 @@ export function ScreenerApp() {
           {/* Left Column - Tabbed View */}
           <div className="lg:col-span-5 space-y-3">
             {drawerEnabled && missingPlanNotice}
+            {drawerEnabled && planLoadNotice}
             <div
               className={
                 mobileSheetEnabled
@@ -517,6 +548,7 @@ export function ScreenerApp() {
                     coins={filteredCoins}
                     onCoinClick={handleCoinClick}
                     isLoading={isLoading}
+                    selectedSymbol={selectedAlert?.coin?.symbol}
                   />
                 )}
                 {activeTab === 'alerts' && (
@@ -546,6 +578,7 @@ export function ScreenerApp() {
           {/* Right Column - Chart */}
           <div className={`lg:col-span-7 ${drawerEnabled ? 'hidden lg:block' : ''}`}>
             {!drawerEnabled && missingPlanNotice}
+            {!drawerEnabled && planLoadNotice}
             <ChartSection 
               selectedCoin={liveCoin}
               dojoSetup={selectedDojoSetup}
