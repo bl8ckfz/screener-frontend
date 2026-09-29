@@ -11,7 +11,7 @@ interface MobileCoinDrawerProps {
   onClose: () => void
 }
 
-// Mobile-only sheet that presents the plan (when one is open), the chart and
+// Sheet for widths below lg (phones and tablets) that presents the plan (when one is open), the chart and
 // the alert timeline — the plan first, since it is what the user tapped for.
 export function MobileCoinDrawer({ open, selectedCoin, dojoSetup = null, onClose }: MobileCoinDrawerProps) {
   useEffect(() => {
@@ -43,7 +43,7 @@ export function MobileCoinDrawer({ open, selectedCoin, dojoSetup = null, onClose
     : null
 
   return (
-    <div className="fixed inset-0 z-50 md:hidden" style={{ maxWidth: '100vw' }}>
+    <div className="fixed inset-0 z-50 lg:hidden" style={{ maxWidth: '100vw' }}>
       <div className="absolute inset-0 bg-black/80" onClick={onClose} aria-label="Close chart drawer" />
       <div className="absolute inset-0 bg-gray-900 animate-in slide-in-from-bottom-6 overflow-hidden" style={{ maxWidth: '100vw' }}>
         {/* Header with drag handle */}

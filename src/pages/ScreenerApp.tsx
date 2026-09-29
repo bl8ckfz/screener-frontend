@@ -109,6 +109,12 @@ export function ScreenerApp() {
   const dojoSelection = useSelectedDojoSetup(isAuthenticated)
   const selectedDojoSetup = dojoSelection.setup
   const [isMobile, setIsMobile] = useState(false)
+  // Below the lg breakpoint the grid is a single column, so the chart would
+  // render underneath the whole list — selecting a row between 769px and
+  // 1023px updated a chart the user could not see. Those widths use the
+  // drawer too. Kept separate from isMobile, which also sets the phone-only
+  // sticky offsets.
+  const [isNarrow, setIsNarrow] = useState(false)
   
   const searchInputRef = useRef<HTMLInputElement>(null)
 
@@ -121,6 +127,14 @@ export function ScreenerApp() {
     return () => mql.removeEventListener('change', update)
   }, [])
   
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 1023px)')
+    const update = () => setIsNarrow(mql.matches)
+    update()
+    mql.addEventListener('change', update)
+    return () => mql.removeEventListener('change', update)
+  }, [])
+
   // Filter coins by sentiment and search query
   const filteredCoins = useMemo(() => {
     if (!coins) return []
@@ -169,6 +183,7 @@ export function ScreenerApp() {
   }, [alertStats, searchQuery])
 
   const mobileSheetEnabled = FEATURE_FLAGS.mobileCardView && isMobile
+  const drawerEnabled = FEATURE_FLAGS.mobileCardView && isNarrow
 
   // Keyboard shortcuts
   useKeyboardShortcuts([
@@ -335,6 +350,30 @@ export function ScreenerApp() {
     return updated || selectedAlert.coin
   }, [selectedAlert?.coin, coins])
 
+  // A plan that could not be found is SAID, never substituted. Showing
+  // another zone on the same symbol would be a different thesis with
+  // different levels, presented as the one that was asked for.
+  //
+  // Rendered above the list when the chart column is hidden (the drawer
+  // widths), since otherwise it would sit in a column nobody can see.
+  const missingPlanNotice = dojoSelection.isMissing ? (
+    <div className="mb-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+      <p className="font-semibold">That plan is no longer available.</p>
+      <p className="mt-1 text-amber-200/80">
+        The alert refers to a setup that is not in the current records. Nothing
+        else is shown in its place, because another zone on the same symbol
+        would be a different trade with different levels.
+      </p>
+      <button
+        type="button"
+        onClick={() => dojoSelection.clear()}
+        className="mt-2 rounded border border-amber-400/40 px-2 py-1 text-xs font-medium hover:bg-amber-500/20"
+      >
+        Dismiss
+      </button>
+    </div>
+  ) : null
+
   return (
     <>
       <StorageMigration />
@@ -366,6 +405,7 @@ export function ScreenerApp() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
           {/* Left Column - Tabbed View */}
           <div className="lg:col-span-5 space-y-3">
+            {drawerEnabled && missingPlanNotice}
             <div
               className={
                 mobileSheetEnabled
@@ -470,28 +510,8 @@ export function ScreenerApp() {
           </div>
 
           {/* Right Column - Chart */}
-          <div className={`lg:col-span-7 ${mobileSheetEnabled ? 'hidden md:block' : ''}`}>
-            {/* A plan that could not be found is SAID, never substituted.
-                Showing another zone on the same symbol would be a different
-                thesis with different levels, presented as the one that was
-                asked for. */}
-            {dojoSelection.isMissing && (
-              <div className="mb-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-                <p className="font-semibold">That plan is no longer available.</p>
-                <p className="mt-1 text-amber-200/80">
-                  The alert refers to a setup that is not in the current records. Nothing
-                  else is shown in its place, because another zone on the same symbol
-                  would be a different trade with different levels.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => dojoSelection.clear()}
-                  className="mt-2 rounded border border-amber-400/40 px-2 py-1 text-xs font-medium hover:bg-amber-500/20"
-                >
-                  Dismiss
-                </button>
-              </div>
-            )}
+          <div className={`lg:col-span-7 ${drawerEnabled ? 'hidden lg:block' : ''}`}>
+            {!drawerEnabled && missingPlanNotice}
             <ChartSection 
               selectedCoin={liveCoin}
               dojoSetup={selectedDojoSetup}
@@ -501,7 +521,7 @@ export function ScreenerApp() {
         </div>
 
         {/* Mobile Chart Drawer */}
-        {mobileSheetEnabled && liveCoin && (
+        {drawerEnabled && liveCoin && (
           <MobileCoinDrawer
             open={!!liveCoin}
             selectedCoin={liveCoin}

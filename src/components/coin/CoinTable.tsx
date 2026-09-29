@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { Coin } from '@/types/coin'
+import type { Coin, CoinSort } from '@/types/coin'
 import { useStore } from '@/hooks/useStore'
 import { usePriceFlash } from '@/hooks'
 import { sortCoins } from '@/utils/sort'
@@ -49,6 +49,19 @@ const CoinCard = ({ coin, onClick }: CoinCardProps) => {
     </button>
   )
 }
+
+/**
+ * Sort choices for the card layout. The table sorts by clicking its headers,
+ * and the cards have none — so phones used to get whatever order was last
+ * chosen on a desktop, with no way to change it.
+ */
+const CARD_SORTS: Array<{ id: string; label: string; sort: CoinSort }> = [
+  { id: 'volume', label: 'Highest volume', sort: { field: 'quoteVolume', direction: 'desc' } },
+  { id: 'gainers', label: 'Top gainers', sort: { field: 'priceChangePercent', direction: 'desc' } },
+  { id: 'losers', label: 'Top losers', sort: { field: 'priceChangePercent', direction: 'asc' } },
+  { id: 'pwa', label: 'Highest P/WA', sort: { field: 'priceToWeightedAvg', direction: 'desc' } },
+  { id: 'symbol', label: 'Symbol A–Z', sort: { field: 'symbol', direction: 'asc' } },
+]
 
 const CardSkeleton = () => (
   <div className="h-20 w-full animate-pulse rounded-lg border border-gray-800 bg-gray-900" />
@@ -202,8 +215,28 @@ export function CoinTable({ coins, onCoinClick, isLoading = false }: CoinTablePr
     </div>
   )
 
+  const cardSortId =
+    CARD_SORTS.find((o) => o.sort.field === sort.field && o.sort.direction === sort.direction)?.id ?? ''
+
   const cardContent = showCards ? (
     <div className="space-y-2 md:hidden">
+      <div className="flex items-center justify-end gap-2 px-1 pt-1">
+        <label htmlFor="coin-card-sort" className="text-xs text-gray-400">Sort</label>
+        <select
+          id="coin-card-sort"
+          value={cardSortId}
+          onChange={(e) => {
+            const opt = CARD_SORTS.find((o) => o.id === e.target.value)
+            if (opt) setSort(opt.sort)
+          }}
+          className="h-9 rounded border border-gray-600 bg-gray-800 px-2 text-sm text-gray-200"
+        >
+          {!cardSortId && <option value="">Custom</option>}
+          {CARD_SORTS.map((o) => (
+            <option key={o.id} value={o.id}>{o.label}</option>
+          ))}
+        </select>
+      </div>
       {isLoading ? (
         Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)
       ) : (

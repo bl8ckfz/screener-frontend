@@ -15,6 +15,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { DojoTimeline } from './DojoTimeline'
 import { planRows } from './planModel'
 import { InfoHint } from '@/components/ui/InfoHint'
+import { FEATURE_FLAGS } from '@/config'
 import { useAuth } from '@/hooks/useAuth'
 import { useDojoSetups, type DojoSetupFilters } from '@/hooks/useDojoSetups'
 import {
@@ -205,6 +206,84 @@ export function OutcomeBadge({ setup }: { setup: Pick<DojoSetup, 'outcome' | 'in
         {meta.label}
       </span>
     </InfoHint>
+  )
+}
+
+/**
+ * Sort choices for the phone layout, which has no column headers to click.
+ * Each is a field plus the direction that reads naturally for it.
+ */
+const MOBILE_SORTS: Array<{ id: string; label: string; field: SortField; direction: SortDirection }> = [
+  { id: 'newest', label: 'Newest first', field: 'age', direction: 'asc' },
+  { id: 'closest', label: 'Closest to entry', field: 'distance', direction: 'asc' },
+  { id: 'status', label: 'Status', field: 'status', direction: 'asc' },
+  { id: 'symbol', label: 'Symbol A–Z', field: 'symbol', direction: 'asc' },
+  { id: 'confluence', label: 'Strongest confluence', field: 'confluence', direction: 'desc' },
+]
+
+/**
+ * One plan as a card, for phones.
+ *
+ * The table's answer to a narrow screen was hiding columns, but Status sat
+ * last and was the first thing a phone lost to horizontal scroll. A card
+ * keeps status and distance always in view, and says outright that tapping
+ * it opens the plan rather than leaving the row to look clickable.
+ */
+function DojoSetupCard({
+  setup,
+  livePrice,
+  selected,
+  onSelect,
+}: {
+  setup: DojoSetup
+  livePrice?: number
+  selected: boolean
+  onSelect?: (setup: DojoSetup) => void
+}) {
+  const dist = distanceToEntry(setup, livePrice)
+  const age = daysSince(setup.fired_at)
+  const isLong = setup.direction === 'long'
+  return (
+    <div
+      className={`rounded-lg border bg-gray-800 px-3 py-2.5 ${
+        selected ? 'border-accent' : 'border-gray-700'
+      }`}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="truncate font-mono text-sm font-semibold text-white">{setup.symbol}</span>
+          <span className={`text-xs font-medium ${isLong ? 'text-green-400' : 'text-red-400'}`}>
+            {isLong ? 'Long' : 'Short'}
+          </span>
+          <span className="text-xs uppercase text-gray-400">{setup.timeframe}</span>
+        </div>
+        <OutcomeBadge setup={setup} />
+      </div>
+      <div className="mt-2 flex items-end justify-between gap-2">
+        <div className="text-xs text-gray-400">
+          <div>
+            Entry <span className="font-mono text-gray-100">{formatDojoPrice(setup.entry)}</span>
+          </div>
+          <div className="mt-0.5">
+            {setup.outcome === 'unfilled' && dist !== null ? (
+              <span className={distanceIsLive(livePrice) ? 'text-gray-200' : 'italic'}>
+                {Math.abs(dist).toFixed(1)}% to entry
+              </span>
+            ) : (
+              <span>{DOJO_OUTCOME_META[setup.outcome].label}</span>
+            )}
+            <span className="text-gray-500"> · {age === null ? '—' : age === 0 ? 'today' : `${age}d old`}</span>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => onSelect?.(setup)}
+          className="h-9 flex-shrink-0 rounded border border-gray-600 px-3 text-xs font-medium text-gray-100 hover:bg-gray-700"
+        >
+          View plan
+        </button>
+      </div>
+    </div>
   )
 }
 
@@ -408,6 +487,7 @@ export function DojoSetupsTable({
   const { setups, summary, isLoading, isError, isAuthenticated } = useDojoSetups(filters)
   const { hasPlanDetails } = useAuth()
   const columns = useMemo(() => columnsFor(hasPlanDetails), [hasPlanDetails])
+  const showCards = FEATURE_FLAGS.mobileCardView
 
   const toggleSort = (field: SortField) => {
     if (field === sortField) {
@@ -530,6 +610,26 @@ export function DojoSetupsTable({
             {tf}
           </button>
         ))}
+        {showCards && (
+          <select
+            aria-label="Sort zones"
+            value={MOBILE_SORTS.find((o) => o.field === sortField && o.direction === sortDirection)?.id ?? ''}
+            onChange={(e) => {
+              const opt = MOBILE_SORTS.find((o) => o.id === e.target.value)
+              if (!opt) return
+              setSortField(opt.field)
+              setSortDirection(opt.direction)
+            }}
+            className="ml-auto h-8 rounded border border-gray-600 bg-gray-800 px-2 text-xs text-gray-200 md:hidden"
+          >
+            {!MOBILE_SORTS.some((o) => o.field === sortField && o.direction === sortDirection) && (
+              <option value="">Custom sort</option>
+            )}
+            {MOBILE_SORTS.map((o) => (
+              <option key={o.id} value={o.id}>{o.label}</option>
+            ))}
+          </select>
+        )}
         {(['long', 'short'] as const).map((d) => (
           <button
             key={d}
@@ -575,137 +675,152 @@ export function DojoSetupsTable({
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            {/* Styled to match CoinTable and AlertHistoryTable: sticky, and
-                bg-gray-900 repeated on each th because a sticky thead does not
-                paint its own background over the scrolling rows. */}
-            <thead className="bg-gray-900 sticky top-0 z-10">
-              <tr className="border-b border-gray-700">
-                {columns.map((c) => {
-                  const active = sortField === c.field
-                  return (
-                    <th
-                      key={c.field}
-                      onClick={() => toggleSort(c.field)}
-                      title={c.title}
-                      className={`px-2 py-3 text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none whitespace-nowrap bg-gray-900 ${
-                        c.align === 'right' ? 'text-right' : c.align === 'center' ? 'text-center' : 'text-left'
-                      } ${c.hide ?? ''}`}
-                    >
-                      <div
-                        className={`flex items-center gap-1 ${
-                          c.align === 'right' ? 'justify-end' : c.align === 'center' ? 'justify-center' : ''
-                        }`}
+        <>
+          {showCards && (
+            <div className="space-y-2 p-2 md:hidden">
+              {visible.map((s) => (
+                <DojoSetupCard
+                  key={s.id}
+                  setup={s}
+                  livePrice={livePrices?.[s.symbol]}
+                  selected={selectedId === s.id}
+                  onSelect={onSetupSelect}
+                />
+              ))}
+            </div>
+          )}
+          <div className={showCards ? 'hidden overflow-x-auto md:block' : 'overflow-x-auto'}>
+            <table className="w-full text-sm">
+              {/* Styled to match CoinTable and AlertHistoryTable: sticky, and
+                  bg-gray-900 repeated on each th because a sticky thead does not
+                  paint its own background over the scrolling rows. */}
+              <thead className="bg-gray-900 sticky top-0 z-10">
+                <tr className="border-b border-gray-700">
+                  {columns.map((c) => {
+                    const active = sortField === c.field
+                    return (
+                      <th
+                        key={c.field}
+                        onClick={() => toggleSort(c.field)}
+                        title={c.title}
+                        className={`px-2 py-3 text-sm font-semibold text-gray-400 cursor-pointer hover:text-gray-200 transition-colors select-none whitespace-nowrap bg-gray-900 ${
+                          c.align === 'right' ? 'text-right' : c.align === 'center' ? 'text-center' : 'text-left'
+                        } ${c.hide ?? ''}`}
                       >
-                        {c.label}
-                        {active && (
-                          <span className="text-accent">{sortDirection === 'asc' ? '↑' : '↓'}</span>
-                        )}
-                      </div>
-                    </th>
+                        <div
+                          className={`flex items-center gap-1 ${
+                            c.align === 'right' ? 'justify-end' : c.align === 'center' ? 'justify-center' : ''
+                          }`}
+                        >
+                          {c.label}
+                          {active && (
+                            <span className="text-accent">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                          )}
+                        </div>
+                      </th>
+                    )
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((s) => {
+                  const livePrice = livePrices?.[s.symbol]
+                  const dist = distanceToEntry(s, livePrice)
+                  const age = daysSince(s.fired_at)
+                  const isSelected = selectedId === s.id
+                  // One renderer per column, looked up by field and emitted in
+                  // the order of `columns` — so reordering COLUMNS reorders the
+                  // cells too, and a header can never sit over another
+                  // column's data.
+                  const cells: Record<SortField, ReactNode> = {
+                    symbol: (
+                      <td className="px-2 py-2 font-medium text-white whitespace-nowrap">{s.symbol}</td>
+                    ),
+                    status: (
+                      <td className="px-2 py-2">
+                        <OutcomeBadge setup={s} />
+                      </td>
+                    ),
+                    distance: (
+                      <td
+                        className={`px-2 py-2 text-right font-mono ${
+                          distanceIsLive(livePrice) ? 'text-gray-200' : 'text-gray-400 italic'
+                        }`}
+                        title={
+                          distanceIsLive(livePrice)
+                            ? 'Measured from the current price'
+                            : 'No live price for this symbol — measured from the close when the zone armed'
+                        }
+                      >
+                        {/* Only meaningful while the entry is still ahead. */}
+                        {dist === null || s.outcome !== 'unfilled' ? '—' : `${Math.abs(dist).toFixed(1)}%`}
+                      </td>
+                    ),
+                    direction: (
+                      <td className={`px-2 py-2 capitalize font-medium ${
+                        s.direction === 'long' ? 'text-green-400' : 'text-red-400'
+                      }`}>
+                        {s.direction}
+                      </td>
+                    ),
+                    timeframe: <td className="px-2 py-2 uppercase text-gray-300">{s.timeframe}</td>,
+                    entry: (
+                      <td className="px-2 py-2 text-right font-mono text-gray-100">
+                        {formatDojoPrice(s.entry)}
+                      </td>
+                    ),
+                    age: (
+                      <td className="px-2 py-2 text-right font-mono text-gray-400">
+                        {age === null ? '—' : age === 0 ? 'today' : `${age}d`}
+                      </td>
+                    ),
+                    rr: (
+                      <td className={`px-2 py-2 text-right font-mono text-gray-100 ${HIDE.rr ?? ''}`}>
+                        {s.rr.toFixed(2)}
+                      </td>
+                    ),
+                    confluence: (
+                      <td className={`px-2 py-2 text-center ${HIDE.confluence ?? ''}`}>
+                        <ConfluenceBadge band={s.confluence_band} />
+                      </td>
+                    ),
+                    volume: (
+                      <td className={`px-2 py-2 text-center ${HIDE.volume ?? ''}`}>
+                        <VolumeBadge setup={s} />
+                      </td>
+                    ),
+                  }
+                  return (
+                    <tr
+                      key={s.id}
+                      // The plan opens in the panel beside the chart (or the
+                      // drawer on a phone), so the row only selects. It used to
+                      // expand inline too, which showed the same plan twice.
+                      onClick={() => onSetupSelect?.(s)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          onSetupSelect?.(s)
+                        }
+                      }}
+                      tabIndex={0}
+                      aria-selected={isSelected}
+                      className={`border-b border-gray-700/50 cursor-pointer transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-accent ${
+                        isSelected
+                          ? 'bg-accent-bg shadow-[inset_3px_0_0_0_#2B95FF]'
+                          : 'hover:bg-gray-700/30'
+                      }`}
+                    >
+                      {columns.map((c) => (
+                        <Cell key={c.field}>{cells[c.field]}</Cell>
+                      ))}
+                    </tr>
                   )
                 })}
-              </tr>
-            </thead>
-            <tbody>
-              {visible.map((s) => {
-                const livePrice = livePrices?.[s.symbol]
-                const dist = distanceToEntry(s, livePrice)
-                const age = daysSince(s.fired_at)
-                const isSelected = selectedId === s.id
-                // One renderer per column, looked up by field and emitted in
-                // the order of `columns` — so reordering COLUMNS reorders the
-                // cells too, and a header can never sit over another
-                // column's data.
-                const cells: Record<SortField, ReactNode> = {
-                  symbol: (
-                    <td className="px-2 py-2 font-medium text-white whitespace-nowrap">{s.symbol}</td>
-                  ),
-                  status: (
-                    <td className="px-2 py-2">
-                      <OutcomeBadge setup={s} />
-                    </td>
-                  ),
-                  distance: (
-                    <td
-                      className={`px-2 py-2 text-right font-mono ${
-                        distanceIsLive(livePrice) ? 'text-gray-200' : 'text-gray-400 italic'
-                      }`}
-                      title={
-                        distanceIsLive(livePrice)
-                          ? 'Measured from the current price'
-                          : 'No live price for this symbol — measured from the close when the zone armed'
-                      }
-                    >
-                      {/* Only meaningful while the entry is still ahead. */}
-                      {dist === null || s.outcome !== 'unfilled' ? '—' : `${Math.abs(dist).toFixed(1)}%`}
-                    </td>
-                  ),
-                  direction: (
-                    <td className={`px-2 py-2 capitalize font-medium ${
-                      s.direction === 'long' ? 'text-green-400' : 'text-red-400'
-                    }`}>
-                      {s.direction}
-                    </td>
-                  ),
-                  timeframe: <td className="px-2 py-2 uppercase text-gray-300">{s.timeframe}</td>,
-                  entry: (
-                    <td className="px-2 py-2 text-right font-mono text-gray-100">
-                      {formatDojoPrice(s.entry)}
-                    </td>
-                  ),
-                  age: (
-                    <td className="px-2 py-2 text-right font-mono text-gray-400">
-                      {age === null ? '—' : age === 0 ? 'today' : `${age}d`}
-                    </td>
-                  ),
-                  rr: (
-                    <td className={`px-2 py-2 text-right font-mono text-gray-100 ${HIDE.rr ?? ''}`}>
-                      {s.rr.toFixed(2)}
-                    </td>
-                  ),
-                  confluence: (
-                    <td className={`px-2 py-2 text-center ${HIDE.confluence ?? ''}`}>
-                      <ConfluenceBadge band={s.confluence_band} />
-                    </td>
-                  ),
-                  volume: (
-                    <td className={`px-2 py-2 text-center ${HIDE.volume ?? ''}`}>
-                      <VolumeBadge setup={s} />
-                    </td>
-                  ),
-                }
-                return (
-                  <tr
-                    key={s.id}
-                    // The plan opens in the panel beside the chart (or the
-                    // drawer on a phone), so the row only selects. It used to
-                    // expand inline too, which showed the same plan twice.
-                    onClick={() => onSetupSelect?.(s)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        onSetupSelect?.(s)
-                      }
-                    }}
-                    tabIndex={0}
-                    aria-selected={isSelected}
-                    className={`border-b border-gray-700/50 cursor-pointer transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-accent ${
-                      isSelected
-                        ? 'bg-accent-bg shadow-[inset_3px_0_0_0_#2B95FF]'
-                        : 'hover:bg-gray-700/30'
-                    }`}
-                  >
-                    {columns.map((c) => (
-                      <Cell key={c.field}>{cells[c.field]}</Cell>
-                    ))}
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   )

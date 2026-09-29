@@ -114,14 +114,16 @@ export function DemoZonesTable({
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="border-b border-gray-800 text-left text-xs text-gray-500">
+            {/* Status second, as in the app: it was last, and the first
+                thing a phone lost to horizontal scroll. */}
             <th className="px-3 py-2 font-medium">Symbol</th>
-            <th className="px-3 py-2 font-medium">TF</th>
+            <th className="px-3 py-2 font-medium">Status</th>
+            <th className="hidden px-3 py-2 font-medium sm:table-cell">TF</th>
             <th className="px-3 py-2 font-medium">Side</th>
             <th className="px-3 py-2 text-right font-medium">Entry</th>
             <th className="hidden px-3 py-2 text-right font-medium sm:table-cell">R:R</th>
             <th className="hidden px-3 py-2 text-center font-medium lg:table-cell">Confluence</th>
             <th className="hidden px-3 py-2 text-right font-medium sm:table-cell">Age</th>
-            <th className="px-3 py-2 font-medium">Status</th>
           </tr>
         </thead>
         <tbody>
@@ -147,11 +149,21 @@ export function DemoZonesTable({
                       </span>
                     )}
                   </td>
-                  <td className="px-3 py-2.5 font-mono text-gray-400">{zone.timeframe}</td>
                   <td className="px-3 py-2.5">
+                    <OutcomeBadge
+                      setup={{
+                        outcome: zone.outcome,
+                        invalidation_reason: zone.invalidation_reason,
+                      }}
+                    />
+                  </td>
+                  <td className="hidden px-3 py-2.5 font-mono text-gray-400 sm:table-cell">{zone.timeframe}</td>
+                  <td className="px-3 py-2.5 whitespace-nowrap">
                     <span className={zone.direction === 'long' ? 'text-emerald-400' : 'text-red-400'}>
                       {zone.direction === 'long' ? 'Long' : 'Short'}
                     </span>
+                    {/* TF has no column of its own on a phone. */}
+                    <span className="ml-1 font-mono text-xs text-gray-400 sm:hidden">{zone.timeframe}</span>
                   </td>
                   <td className="px-3 py-2.5 text-right">
                     <EntryCell zone={zone} />
@@ -164,14 +176,6 @@ export function DemoZonesTable({
                   </td>
                   <td className="hidden px-3 py-2.5 text-right font-mono text-gray-400 sm:table-cell">
                     {age === null ? '—' : `${age}d`}
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <OutcomeBadge
-                      setup={{
-                        outcome: zone.outcome,
-                        invalidation_reason: zone.invalidation_reason,
-                      }}
-                    />
                   </td>
                 </tr>
 
