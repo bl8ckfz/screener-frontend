@@ -142,6 +142,17 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, hideHead
   const missedWhileHiddenRef = useRef(false)
   const driftTimerRef = useRef<number | null>(null)
   const rateLimitedUntilRef = useRef<number>(0)
+  // When the rate-limit wait ends, as state so the error can count down to it
+  // and an effect can retry AT it.
+  //
+  // The wait used to be enforced but never ended by anything: the loader
+  // refused requests until the deadline, then nothing asked again until the
+  // next scheduled fetch. On 1m that is the next candle, seconds away; on 1h
+  // and 4h it was the five-minute resync, so a single refused request left
+  // "will retry in 60s" on screen for minutes after the backend would have
+  // answered. The retry the message promised never happened.
+  const [retryAt, setRetryAt] = useState<number | null>(null)
+  const [now, setNow] = useState(() => Date.now())
 
   // Get alerts for current coin from global store (WebSocket alerts)
   // NO HTTP POLLING - using real-time WebSocket data
@@ -288,13 +299,17 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, hideHead
         const limit = options?.limit ?? getLimitForInterval(interval)
         const { candles, source } = await fetchKlines(selectedCoin.fullSymbol, interval, limit)
         rateLimitedUntilRef.current = 0
+        setRetryAt(null)
         setChartData(candles)
         setLoadedFor(`${selectedCoin.fullSymbol}:${interval}`)
         setIsStored(source === 'stored')
       } catch (err) {
         if (err instanceof RateLimitError) {
-          rateLimitedUntilRef.current = Date.now() + err.retryAfterMs
-          setError('Rate limited — chart will retry in 60s')
+          const until = Date.now() + err.retryAfterMs
+          rateLimitedUntilRef.current = until
+          setRetryAt(until)
+          // Worded by the render below, which knows how long is left.
+          setError('rate_limited')
         } else {
           setError(err instanceof Error ? err.message : 'Failed to load chart data')
         }
@@ -305,6 +320,38 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, hideHead
     },
     [interval, selectedCoin]
   )
+
+  // The retry the rate-limit message promises.
+  //
+  // Read through a ref so the timer calls the CURRENT loader: the user may
+  // switch coin or interval while waiting, and the retry should fetch what is
+  // on screen then, not what was when the wait began.
+  const loadChartDataRef = useRef(loadChartData)
+  loadChartDataRef.current = loadChartData
+
+  useEffect(() => {
+    if (retryAt === null) return
+    // A little past the deadline, jittered, so every client refused in the
+    // same burst does not come back in the same second and cause the next.
+    const delay = Math.max(0, retryAt - Date.now()) + 250 + Math.random() * 1500
+    const id = window.setTimeout(() => {
+      if (visibilityRef.current) {
+        loadChartDataRef.current()
+      } else {
+        // Picked up by the visibility handler when the tab returns.
+        missedWhileHiddenRef.current = true
+      }
+    }, delay)
+    return () => window.clearTimeout(id)
+  }, [retryAt])
+
+  // Tick the countdown once a second, only while there is one to show.
+  useEffect(() => {
+    if (retryAt === null || error !== 'rate_limited') return
+    setNow(Date.now())
+    const id = window.setInterval(() => setNow(Date.now()), 1000)
+    return () => window.clearInterval(id)
+  }, [retryAt, error])
 
   // Initial load + interval/coin change
   useEffect(() => {
@@ -457,15 +504,29 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, hideHead
       <div className={`bg-gray-800 rounded-lg ${className}`}>
         {planPanel}
         <div className="p-4">
-          <ErrorState
-            message={error}
-            description="Failed to load chart data"
-            // Calls the loader directly. Setting the interval to the value it
-            // already holds is a no-op in React, so it never refetched. A retry
-            // inside an active rate-limit backoff is still refused by the
-            // loader, which is what the error message tells the user to expect.
-            onRetry={() => loadChartData()}
-          />
+          {error === 'rate_limited' ? (
+            // No button: the chart reloads by itself when the wait ends, and a
+            // button that does nothing until then (the loader refuses early
+            // requests) only teaches the user that retrying is broken.
+            <ErrorState
+              icon="⏳"
+              message={
+                retryAt !== null && retryAt > now
+                  ? `Busy right now — retrying in ${Math.ceil((retryAt - now) / 1000)}s`
+                  : 'Retrying…'
+              }
+              description="Chart requests are briefly held back to stay inside the exchange's limits. This reloads on its own."
+              showRetry={false}
+            />
+          ) : (
+            <ErrorState
+              message={error}
+              description="Failed to load chart data"
+              // Calls the loader directly. Setting the interval to the value
+              // it already holds is a no-op in React, so it never refetched.
+              onRetry={() => loadChartData()}
+            />
+          )}
         </div>
       </div>
     )
