@@ -109,7 +109,9 @@ export const COLUMNS: Array<{
   {
     field: 'confluence', label: 'Confluence', align: 'center',
     title: 'How much independent agreement backs this zone, relative to the most its timeframe can carry',
-    hide: 'hidden xl:table-cell',
+    // From lg, as it was before the column reorder: at xl it vanished on
+    // ordinary laptop widths, and customers use it to scan the list.
+    hide: 'hidden lg:table-cell',
   },
   {
     field: 'volume', label: 'Volume', align: 'center',
@@ -150,10 +152,10 @@ const OUTCOME_ORDER: Record<string, number> = {
 const VOLUME_ORDER: Record<string, number> = { hvn: 0, neutral: 1, lvn: 2 }
 
 /**
- * How a rating renders. 'badge' is the coloured chip, for the plan panel where
- * it is one of a few things. 'plain' is text, for table rows: a column of
- * identical MEDIUM / HVN chips drew the eye away from Status, the column that
- * actually differs from row to row.
+ * How the volume rating renders. 'badge' is the coloured chip, for the plan
+ * panel where it is one of a few things. 'plain' is text, for table rows,
+ * where a column of identical HVN chips drew the eye away from Status.
+ * Confluence deliberately has no plain form — see ConfluenceBadge.
  */
 export type RatingVariant = 'badge' | 'plain'
 
@@ -201,16 +203,16 @@ const CONFLUENCE_META: Record<ConfluenceBand, { className: string; hint: string 
 }
 
 /** Confluence as a band. Nothing renders for a row that predates the column. */
-export function ConfluenceBadge({ band, variant = 'badge' }: { band: ConfluenceBand; variant?: RatingVariant }) {
+/**
+ * Confluence as a coloured band — green HIGH, amber MEDIUM, grey LOW.
+ *
+ * Always the chip, including in table rows. Phase 5 rendered it as plain
+ * grey text there to quiet the rows, and customers read that as the rating
+ * being gone: the colour IS the at-a-glance signal they scan the list by.
+ */
+export function ConfluenceBadge({ band }: { band: ConfluenceBand }) {
   const meta = CONFLUENCE_META[band]
   if (!meta) return <span className="text-gray-500">—</span>
-  if (variant === 'plain') {
-    return (
-      <InfoHint hint={meta.hint}>
-        <span className="text-xs capitalize text-gray-300">{band.toLowerCase()}</span>
-      </InfoHint>
-    )
-  }
   return (
     <InfoHint hint={meta.hint}>
       <span className={`px-1.5 py-0.5 rounded text-xs font-semibold ${meta.className}`}>
@@ -809,7 +811,7 @@ export function DojoSetupsTable({
                     ),
                     confluence: (
                       <td className={`px-2 py-2 text-center ${HIDE.confluence ?? ''}`}>
-                        <ConfluenceBadge band={s.confluence_band} variant="plain" />
+                        <ConfluenceBadge band={s.confluence_band} />
                       </td>
                     ),
                     volume: (

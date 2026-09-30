@@ -186,7 +186,7 @@ export function DemoZonesTable({
                     {zone.rr.toFixed(2)}
                   </td>
                   <td className="hidden px-3 py-2.5 text-center lg:table-cell">
-                    <ConfluenceBadge band={zone.confluence_band} variant="plain" />
+                    <ConfluenceBadge band={zone.confluence_band} />
                   </td>
                   <td className="hidden px-3 py-2.5 text-right font-mono text-gray-400 sm:table-cell">
                     {age === null ? '—' : `${age}d`}
