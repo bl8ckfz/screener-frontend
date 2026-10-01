@@ -438,6 +438,10 @@ export function ScreenerApp() {
     </div>
   ) : null
 
+  // Whether the chart column has anything in it: a coin or plan on the chart,
+  // or a notice about a plan being opened. Otherwise the list gets the width.
+  const chartPaneOpen = Boolean(liveCoin || missingPlanNotice || planLoadNotice)
+
   return (
     <>
       <StorageMigration />
@@ -465,10 +469,15 @@ export function ScreenerApp() {
           </div>
         </div>
 
-        {/* Two Column Layout */}
+        {/* Two Column Layout — but only while there is something to show in
+            the second column. The chart column used to stay reserved after
+            its X was pressed, leaving an empty "Nothing selected" box over
+            more than half the screen and squeezing the list into the rest;
+            on a small monitor that cost most of the table's columns. With
+            nothing open the list takes the full width. */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
           {/* Left Column - Tabbed View */}
-          <div className="lg:col-span-5 space-y-3">
+          <div className={`${chartPaneOpen ? 'lg:col-span-5' : 'lg:col-span-12'} space-y-3`}>
             {drawerEnabled && missingPlanNotice}
             {drawerEnabled && planLoadNotice}
             <div
@@ -576,7 +585,11 @@ export function ScreenerApp() {
           </div>
 
           {/* Right Column - Chart */}
-          <div className={`lg:col-span-7 ${drawerEnabled ? 'hidden lg:block' : ''}`}>
+          <div
+            className={
+              !chartPaneOpen ? 'hidden' : `lg:col-span-7 ${drawerEnabled ? 'hidden lg:block' : ''}`
+            }
+          >
             {!drawerEnabled && missingPlanNotice}
             {!drawerEnabled && planLoadNotice}
             <ChartSection 
