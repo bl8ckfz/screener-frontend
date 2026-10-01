@@ -52,8 +52,11 @@ export const DOJO_INVALIDATION_HINT: Record<DojoInvalidationReason, string> = {
     'The fair value gap that validated this zone has been filled — FVG validation was required to publish it',
   structure_flipped:
     'Market structure now disagrees with the direction, which is what the arming gate exists to refuse',
+  // Nearly always the pullback finding its low (or a rally its high) and
+  // turning before it reached the zone. "No usable leg" named the mechanism,
+  // which readers took for a data problem.
   no_current_leg:
-    'This symbol no longer produces a usable leg in this direction',
+    'A new swing formed, so the pullback this zone was waiting for has ended — usually by turning before it reached the zone',
   expired:
     'Structurally intact but old enough that nobody is realistically still waiting on it',
 }
