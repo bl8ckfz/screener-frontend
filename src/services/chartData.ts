@@ -26,10 +26,42 @@ import { authService } from './authService'
 
 export class RateLimitError extends Error {
   public retryAfterMs: number
-  constructor(retryAfterMs = 60_000) {
-    super('Rate limited by exchange API. Retrying shortly.')
+  constructor(retryAfterMs = 60_000, message = 'Rate limited by exchange API. Retrying shortly.') {
+    super(message)
     this.name = 'RateLimitError'
     this.retryAfterMs = retryAfterMs
+  }
+}
+
+/**
+ * The exchange is refusing our server outright (Binance's geo-block), as
+ * opposed to rate-limiting it.
+ *
+ * A RateLimitError so every caller keeps its wait-and-retry behaviour, but
+ * worded on its own: calling a geo-block "rate limited" would be wrong, and
+ * the raw "API error: 451" it replaces meant nothing to users.
+ */
+export class ExchangeUnavailableError extends RateLimitError {
+  constructor(retryAfterMs = 60_000) {
+    super(retryAfterMs, 'Exchange data temporarily unavailable. Retrying shortly.')
+    this.name = 'ExchangeUnavailableError'
+  }
+}
+
+/** Retry-After in milliseconds, or undefined when absent or unusable. */
+function retryAfterMs(response: Response): number | undefined {
+  const header = response.headers.get('Retry-After')
+  const seconds = header ? parseInt(header, 10) : NaN
+  return Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : undefined
+}
+
+/** The `error` code of our gateway's JSON error body, if there is one. */
+async function gatewayErrorCode(response: Response): Promise<string | undefined> {
+  try {
+    const body = await response.json()
+    return typeof body?.error === 'string' ? body.error : undefined
+  } catch {
+    return undefined
   }
 }
 
@@ -88,16 +120,23 @@ export async function fetchKlines(
     const response = await fetch(url, { headers })
 
     if (!response.ok) {
-      // 503 is our own gateway saying it is currently banned upstream; 418
-      // and 429 come straight from the exchange. All three mean "stop asking
-      // for a while", and all three may carry Retry-After — honouring it
-      // beats guessing, since guessing short resumes into an active ban.
+      // 451 is the exchange geo-blocking whoever asked. Our gateway now
+      // answers that with a 503 coded upstream_unavailable instead, but a 451
+      // can still arrive straight from the exchange. 403 is deliberately not
+      // here: our gateway also uses it for "subscription required".
+      if (response.status === 451) {
+        throw new ExchangeUnavailableError(retryAfterMs(response))
+      }
+      // 503 is otherwise our own gateway saying it is currently banned
+      // upstream; 418 and 429 come straight from the exchange. All three mean
+      // "stop asking for a while", and all three may carry Retry-After —
+      // honouring it beats guessing, since guessing short resumes into an
+      // active ban.
       if (response.status === 418 || response.status === 429 || response.status === 503) {
-        const header = response.headers.get('Retry-After')
-        const seconds = header ? parseInt(header, 10) : NaN
-        throw new RateLimitError(
-          Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : undefined
-        )
+        if (response.status === 503 && (await gatewayErrorCode(response)) === 'upstream_unavailable') {
+          throw new ExchangeUnavailableError(retryAfterMs(response))
+        }
+        throw new RateLimitError(retryAfterMs(response))
       }
       const apiSource = USE_BACKEND_API && BACKEND_API_BASE ? 'Backend' : 'Binance'
       throw new Error(`${apiSource} API error: ${response.status} ${response.statusText}`)

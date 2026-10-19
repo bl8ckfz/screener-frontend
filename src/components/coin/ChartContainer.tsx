@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { TradingChart } from './TradingChart'
-import { fetchKlines, RateLimitError, type KlineInterval, COMMON_INTERVALS, INTERVAL_LABELS } from '@/services/chartData'
+import { fetchKlines, ExchangeUnavailableError, RateLimitError, type KlineInterval, COMMON_INTERVALS, INTERVAL_LABELS } from '@/services/chartData'
 import { alertHistoryService } from '@/services/alertHistoryService'
 import { alertHistory } from '@/services/alertHistory'
 import type { Coin } from '@/types/coin'
@@ -136,7 +136,11 @@ export function ChartContainer({ coin, className = '' }: ChartContainerProps) {
         if (!isCancelled) {
           if (err instanceof RateLimitError) {
             rateLimitedUntilRef.current = Date.now() + err.retryAfterMs
-            setError('Rate limited — chart will retry in 60s')
+            setError(
+              err instanceof ExchangeUnavailableError
+                ? 'Exchange data temporarily unavailable — chart will retry in 60s'
+                : 'Rate limited — chart will retry in 60s'
+            )
           } else {
             setError(err instanceof Error ? err.message : 'Failed to load chart data')
           }

@@ -4,7 +4,7 @@ import { TradingChart } from './TradingChart'
 import { AlertTimelineChart } from './AlertTimelineChart'
 // import { AlertHeatmapTimeline } from '@/components/alerts'
 import { ExternalLinks } from './ExternalLinks'
-import { fetchKlines, RateLimitError, type KlineInterval, COMMON_INTERVALS, INTERVAL_LABELS } from '@/services/chartData'
+import { fetchKlines, ExchangeUnavailableError, RateLimitError, type KlineInterval, COMMON_INTERVALS, INTERVAL_LABELS } from '@/services/chartData'
 import { alertHistoryService } from '@/services/alertHistoryService'
 import { alertHistory } from '@/services/alertHistory'
 import { USE_BACKEND_API } from '@/services/backendApi'
@@ -71,6 +71,11 @@ const MAX_CHART_HEIGHT = 800
 
 function clampTradingH(h: number) {
   return Math.min(Math.max(h, MIN_CHART_HEIGHT), MAX_CHART_HEIGHT)
+}
+
+/** The error states in which the chart waits and reloads by itself. */
+function isWaiting(error: string | null): boolean {
+  return error === 'rate_limited' || error === 'exchange_unavailable'
 }
 
 export function ChartSection({ selectedCoin, dojoSetup = null, onClose, hideHeader = false, className = '' }: ChartSectionProps) {
@@ -309,7 +314,7 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, hideHead
           rateLimitedUntilRef.current = until
           setRetryAt(until)
           // Worded by the render below, which knows how long is left.
-          setError('rate_limited')
+          setError(err instanceof ExchangeUnavailableError ? 'exchange_unavailable' : 'rate_limited')
         } else {
           setError(err instanceof Error ? err.message : 'Failed to load chart data')
         }
@@ -347,7 +352,7 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, hideHead
 
   // Tick the countdown once a second, only while there is one to show.
   useEffect(() => {
-    if (retryAt === null || error !== 'rate_limited') return
+    if (retryAt === null || !isWaiting(error)) return
     setNow(Date.now())
     const id = window.setInterval(() => setNow(Date.now()), 1000)
     return () => window.clearInterval(id)
@@ -504,7 +509,7 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, hideHead
       <div className={`bg-gray-800 rounded-lg ${className}`}>
         {planPanel}
         <div className="p-4">
-          {error === 'rate_limited' ? (
+          {isWaiting(error) ? (
             // No button: the chart reloads by itself when the wait ends, and a
             // button that does nothing until then (the loader refuses early
             // requests) only teaches the user that retrying is broken.
@@ -512,10 +517,14 @@ export function ChartSection({ selectedCoin, dojoSetup = null, onClose, hideHead
               icon="⏳"
               message={
                 retryAt !== null && retryAt > now
-                  ? `Busy right now — retrying in ${Math.ceil((retryAt - now) / 1000)}s`
+                  ? `${error === 'exchange_unavailable' ? 'Exchange data temporarily unavailable' : 'Busy right now'} — retrying in ${Math.ceil((retryAt - now) / 1000)}s`
                   : 'Retrying…'
               }
-              description="Chart requests are briefly held back to stay inside the exchange's limits. This reloads on its own."
+              description={
+                error === 'exchange_unavailable'
+                  ? "The exchange isn't answering our server right now. This reloads on its own."
+                  : "Chart requests are briefly held back to stay inside the exchange's limits. This reloads on its own."
+              }
               showRetry={false}
             />
           ) : (
