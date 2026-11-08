@@ -20,7 +20,7 @@ describe('plan pricing', () => {
 
   it('pins the other plans too, so a silent edit shows up here', () => {
     expect(planPrice('screener_monthly')).toBe('$39.99')
-    expect(planPrice('screener_yearly')).toBe('$439.99')
+    expect(planPrice('screener_yearly')).toBe('$399.90')
     expect(planPrice('bundle_monthly')).toBe('$54.99')
     expect(planPrice('bundle_yearly')).toBe('$604.99')
   })
@@ -31,7 +31,7 @@ describe('plan pricing', () => {
   // wrong $59/$599 pair.
   it('derives every yearly saving from the prices themselves', () => {
     expect(yearlySaving('tv_monthly', 'tv_yearly')).toBe('$19.89')
-    expect(yearlySaving('screener_monthly', 'screener_yearly')).toBe('$39.89')
+    expect(yearlySaving('screener_monthly', 'screener_yearly')).toBe('$79.98')
     expect(yearlySaving('bundle_monthly', 'bundle_yearly')).toBe('$54.89')
   })
 
@@ -45,6 +45,14 @@ describe('plan pricing', () => {
       const saved = PLAN_PRICES[m].amount * 12 - PLAN_PRICES[y].amount
       expect(saved, `${y} should be cheaper than 12x ${m}`).toBeGreaterThan(0)
     }
+  })
+
+  // ExpiredPage sells the screener yearly plan as "2 months free". The old
+  // "1 month free" was off by ten cents ($39.89 against a $39.99 month); the
+  // claim has to be exactly true, so it is checked against the prices.
+  it('makes "2 months free" literally true for the screener yearly plan', () => {
+    const saved = PLAN_PRICES.screener_monthly.amount * 12 - PLAN_PRICES.screener_yearly.amount
+    expect(Math.round(saved * 100)).toBe(Math.round(PLAN_PRICES.screener_monthly.amount * 2 * 100))
   })
 
   it('labels each plan with the right period', () => {

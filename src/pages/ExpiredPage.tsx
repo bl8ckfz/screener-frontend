@@ -52,7 +52,7 @@ const PLANS: PlanCard[] = [
     description: 'Dojo zones, momentum alerts and the live dashboard',
     features: [
       'Everything in monthly',
-      '1 month free',
+      '2 months free',
     ],
     highlight: true,
   },

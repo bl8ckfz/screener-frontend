@@ -14,6 +14,12 @@
  * are what the backend maps to them in planIDForSlug.
  *
  * Last verified against Whop: 2026-08-27
+ *
+ * Except screener_yearly: 399.90 from 2026-11-08 ("2 months free", exactly 10
+ * × monthly), replacing 439.99. It is a NEW Whop plan in the same Screener
+ * product, so existing yearly members keep their price. Until that plan exists
+ * and WHOP_PLAN_SCREENER_YEARLY / VITE_WHOP_CHECKOUT_SCREENER_YEARLY point at
+ * it, this figure is not what checkout charges — do not deploy it before then.
  */
 
 export type PlanSlug =
@@ -32,7 +38,7 @@ export interface PlanPrice {
 
 export const PLAN_PRICES: Record<PlanSlug, PlanPrice> = {
   screener_monthly: { amount: 39.99, period: 'month' },
-  screener_yearly: { amount: 439.99, period: 'year' },
+  screener_yearly: { amount: 399.9, period: 'year' },
   tv_monthly: { amount: 19.99, period: 'month' },
   tv_yearly: { amount: 219.99, period: 'year' },
   bundle_monthly: { amount: 54.99, period: 'month' },
