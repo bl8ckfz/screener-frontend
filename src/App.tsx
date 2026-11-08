@@ -13,6 +13,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { SubscriptionGuard } from '@/components/auth/SubscriptionGuard'
 import { LandingPage } from '@/pages/LandingPage'
+import { StartPage } from '@/pages/StartPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { SignupPage } from '@/pages/SignupPage'
 import { InvitePage } from '@/pages/InvitePage'
@@ -62,6 +63,7 @@ function App() {
       <Routes>
         {/* Public routes */}
         <Route path="/" element={<LandingPage />} />
+        <Route path="/start" element={<StartPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/invite/:code" element={<InvitePage />} />
