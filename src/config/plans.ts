@@ -16,10 +16,10 @@
  * Last verified against Whop: 2026-08-27
  *
  * Except screener_yearly: 399.90 from 2026-11-08 ("2 months free", exactly 10
- * × monthly), replacing 439.99. It is a NEW Whop plan in the same Screener
- * product, so existing yearly members keep their price. Until that plan exists
- * and WHOP_PLAN_SCREENER_YEARLY / VITE_WHOP_CHECKOUT_SCREENER_YEARLY point at
- * it, this figure is not what checkout charges — do not deploy it before then.
+ * × monthly), replacing 439.99. The price was changed on the EXISTING Whop
+ * plan, so the plan id and checkout link are unchanged; the one yearly member
+ * at the time was handled on Whop by hand. Deploy this only once the Whop
+ * plan itself shows 399.90, or the page quotes a price checkout won't charge.
  */
 
 export type PlanSlug =
