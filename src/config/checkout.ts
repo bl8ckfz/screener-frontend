@@ -14,6 +14,8 @@
  * account stays locked, and nobody finds out until they complain.
  */
 
+import { utmParams } from '@/services/attribution'
+
 /** Where an anonymous visitor goes to buy. Configured per environment. */
 const CHECKOUT_URLS: Record<CheckoutPlan, string | undefined> = {
   screener_monthly: import.meta.env.VITE_WHOP_CHECKOUT_SCREENER_MONTHLY,
@@ -27,7 +29,7 @@ export type CheckoutPlan = 'screener_monthly' | 'screener_yearly'
  * of the page is doing the selling. The locked zone row and the pricing table
  * are very different intents and it is worth being able to tell them apart.
  */
-export type CheckoutSource = 'hero' | 'locked_zone' | 'trade_story' | 'pricing' | 'footer'
+export type CheckoutSource = 'hero' | 'locked_zone' | 'trade_story' | 'pricing' | 'footer' | 'start'
 
 /**
  * Build the checkout URL, or fall back to signup.
@@ -35,13 +37,18 @@ export type CheckoutSource = 'hero' | 'locked_zone' | 'trade_story' | 'pricing' 
  * The fallback matters: if the env var is unset in some environment, a CTA
  * that goes nowhere is worse than one that goes to registration, where the
  * user can still reach billing.
+ *
+ * Campaign tags from the visitor's ad click go along too, so Whop's dashboard
+ * can say which ad sold — the one record that survives a buyer who checks out
+ * and then registers on another device.
  */
 export function checkoutUrl(plan: CheckoutPlan, source: CheckoutSource): string {
   const base = CHECKOUT_URLS[plan]
   if (!base) return '/signup'
 
+  const query = new URLSearchParams([['source', source], ...utmParams()])
   const sep = base.includes('?') ? '&' : '?'
-  return `${base}${sep}source=${source}`
+  return `${base}${sep}${query.toString()}`
 }
 
 /** Whether real checkout links are configured in this environment. */

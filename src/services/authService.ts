@@ -9,6 +9,7 @@
  */
 
 import axios from 'axios'
+import { getAttribution } from '@/services/attribution'
 
 const API_URL = import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:8080'
 
@@ -71,8 +72,12 @@ export const authService = {
     inviteCode?: string,
   ): Promise<{ verificationRequired: true }> {
     try {
-      const body: Record<string, string> = { email, password }
+      const body: Record<string, unknown> = { email, password }
       if (inviteCode) body.invite_code = inviteCode
+      // Which ad link brought them, if any. Read here rather than passed in so
+      // every registration path carries it, the invite page included.
+      const attribution = getAttribution()
+      if (attribution) body.attribution = attribution
 
       await axios.post(`${API_URL}/auth/register`, body)
 

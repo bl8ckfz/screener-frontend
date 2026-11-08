@@ -30,7 +30,7 @@ export function PrivacyPage() {
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-12 space-y-8">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Privacy Policy</h1>
-          <p className="text-sm text-gray-500">Last updated: March 12, 2026</p>
+          <p className="text-sm text-gray-500">Last updated: November 8, 2026</p>
         </div>
 
         <section className="space-y-4">
@@ -61,6 +61,7 @@ export function PrivacyPage() {
             <li>Watchlist selections</li>
             <li>Webhook URLs you configure for Discord or Telegram notifications</li>
             <li>Basic analytics data (page views, feature usage) to improve the Service</li>
+            <li>The campaign link that brought you to the site, if you arrived through one of our ads or posts (for example “utm_source=x”), saved with your account when you sign up</li>
           </ul>
 
           <h3 className="text-lg font-medium text-gray-200">1.4 Technical Data</h3>
@@ -153,6 +154,9 @@ export function PrivacyPage() {
           <h2 className="text-xl font-semibold text-white">7. Cookies & Local Storage</h2>
           <p>
             Coin Sniffer uses browser local storage to persist your preferences (selected currency pair, sort settings, alert configuration). We do not use third-party tracking cookies.
+          </p>
+          <p>
+            If you arrive through one of our campaign links, its campaign tags are kept in local storage for up to 30 days, passed to Whop with your checkout, and saved with your account if you register — so we can tell which campaigns work. They are not shared with advertising networks.
           </p>
           <p>
             Authentication tokens (JWT) are stored in local storage for session management. These are automatically cleared when you sign out.
