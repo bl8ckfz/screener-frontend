@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Hand-written while the public site is this small. /start is left out on
+     purpose: it is the ad landing page, the same content as / under another
+     hero, and listing both would offer the same page twice. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://www.coin-sniffer.com/</loc></url>
+  <url><loc>https://www.coin-sniffer.com/terms</loc></url>
+  <url><loc>https://www.coin-sniffer.com/privacy</loc></url>
+</urlset>

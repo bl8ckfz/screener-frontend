@@ -8,9 +8,10 @@
  *
  * Signed-in users never see any of this; they are redirected to the app.
  */
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { trackFunnel } from '@/services/funnel'
 import { LandingHeader, LandingFooter } from '@/components/landing/LandingChrome'
 import { DemoPanel } from '@/components/landing/DemoPanel'
 import { TradeStory } from '@/components/landing/TradeStory'
@@ -38,6 +39,20 @@ export function LandingLayout({ children }: { children: ReactNode }) {
       navigate('/app', { replace: true })
     }
   }, [isAuthenticated, loading, navigate])
+
+  // The top of the funnel: one count per anonymous visit to `/` or `/start`.
+  // Waits for auth to settle so a signed-in user's redirect is not counted.
+  const counted = useRef(false)
+  useEffect(() => {
+    if (loading || isAuthenticated || counted.current) return
+    counted.current = true
+    trackFunnel('landing_view')
+  }, [isAuthenticated, loading])
+
+  const selectZone = (zone: PublicZone) => {
+    trackFunnel('demo_zone_select')
+    setSelectedZone(zone)
+  }
 
   if (loading) {
     return (
@@ -67,11 +82,11 @@ export function LandingLayout({ children }: { children: ReactNode }) {
       */}
       {!isAuthenticated && (
         <section className="mx-auto max-w-6xl px-4 pb-8 sm:px-6">
-          <DemoPanel selected={selectedZone} onSelect={setSelectedZone} />
+          <DemoPanel selected={selectedZone} onSelect={selectZone} />
         </section>
       )}
 
-      <TradeStory selected={selectedZone} onSelect={setSelectedZone} />
+      <TradeStory selected={selectedZone} onSelect={selectZone} />
       <TrackRecord />
       <WhatElse />
       <Pricing />

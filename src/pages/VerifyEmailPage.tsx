@@ -13,6 +13,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { trackFunnel } from '@/services/funnel'
 
 export function VerifyEmailPage() {
   const [searchParams] = useSearchParams()
@@ -33,6 +34,7 @@ export function VerifyEmailPage() {
 
     verifyEmail(token)
       .then(() => {
+        trackFunnel('signup_verified')
         setDone(true)
         setTimeout(() => navigate('/app', { replace: true }), 1500)
       })

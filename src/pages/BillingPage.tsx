@@ -9,6 +9,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { authService, type BillingInfo } from '@/services/authService'
+import { trackFunnel } from '@/services/funnel'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Logo } from '@/components/ui'
 
@@ -83,6 +84,7 @@ export function BillingPage() {
   async function handleCheckout(plan: string) {
     if (checkoutLoading) return
     setCheckoutLoading(plan)
+    trackFunnel('checkout_start', { plan, source: 'billing' })
     try {
       const { checkout_url } = await authService.createCheckout(plan)
       window.location.href = checkout_url

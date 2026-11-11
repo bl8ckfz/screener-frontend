@@ -10,7 +10,7 @@
  */
 import { useSearchParams } from 'react-router-dom'
 import { LandingLayout } from '@/components/landing/LandingLayout'
-import { checkoutUrl } from '@/config/checkout'
+import { checkoutLink } from '@/config/checkout'
 import { TRIAL } from '@/config/access'
 import { START_HEROES, START_STEPS, startAngle } from '@/config/startHeroes'
 
@@ -28,7 +28,7 @@ export function StartPage() {
 
         <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-3">
           <a
-            href={checkoutUrl('screener_monthly', 'start')}
+            {...checkoutLink('screener_monthly', 'start')}
             className="rounded bg-[#f5a623] px-5 py-2.5 text-sm font-medium text-black transition-colors hover:bg-[#ffb83d] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5a623]"
           >
             {TRIAL.cta}

@@ -12,6 +12,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { authService } from '@/services/authService'
+import { trackFunnel } from '@/services/funnel'
 import { Logo } from '@/components/ui'
 
 type InviteState = 'loading' | 'valid' | 'invalid' | 'error'
@@ -77,6 +78,7 @@ export function InvitePage() {
 
     try {
       await register(email, password, code)
+      trackFunnel('signup_submit', { source: 'invite' })
       // Registration no longer signs anyone in — the address has to be
       // confirmed first — so sending them to /app would bounce straight back.
       setSent(true)

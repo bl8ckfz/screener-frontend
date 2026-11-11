@@ -8,6 +8,7 @@
 import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { authService } from '@/services/authService'
+import { trackFunnel } from '@/services/funnel'
 import { planPrice, planPeriod, yearlySaving } from '@/config/plans'
 import { INCLUDED, PRO, TRIAL } from '@/config/access'
 import { Logo } from '@/components/ui'
@@ -73,6 +74,7 @@ export function ExpiredPage() {
     setCheckoutState('loading')
     setLoadingPlan(planSlug)
     setErrorMsg('')
+    trackFunnel('checkout_start', { plan: planSlug, source: 'expired' })
 
     try {
       const { checkout_url } = await authService.createCheckout(planSlug)

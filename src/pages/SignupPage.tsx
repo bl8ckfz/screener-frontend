@@ -10,6 +10,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { Logo } from '@/components/ui'
 import { TRIAL_DAYS } from '@/config/access'
+import { trackFunnel } from '@/services/funnel'
 
 export function SignupPage() {
   const [email, setEmail] = useState('')
@@ -42,6 +43,7 @@ export function SignupPage() {
 
     try {
       await register(email, password)
+      trackFunnel('signup_submit', { source: 'signup' })
       // No redirect to /app: registration does not sign anyone in any more.
       // The account cannot be used until the address is confirmed, so sending
       // them to the app would only bounce them straight back out.

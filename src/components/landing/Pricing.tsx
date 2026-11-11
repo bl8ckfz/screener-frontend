@@ -9,7 +9,7 @@
  * changed hands.
  */
 import { planPrice, planPeriod, yearlySaving } from '@/config/plans'
-import { checkoutUrl } from '@/config/checkout'
+import { checkoutLink } from '@/config/checkout'
 import { INCLUDED, PRO, TRIAL, TRIAL_DAYS } from '@/config/access'
 
 export function Pricing() {
@@ -31,7 +31,7 @@ export function Pricing() {
               <span className="text-gray-500">{planPeriod('screener_monthly')}</span>
             </p>
             <a
-              href={checkoutUrl('screener_monthly', 'pricing')}
+              {...checkoutLink('screener_monthly', 'pricing')}
               className="mt-6 block rounded bg-[#f5a623] px-4 py-2.5 text-center text-sm font-medium text-black transition-colors hover:bg-[#ffb83d] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5a623]"
             >
               {TRIAL.cta}
@@ -50,7 +50,7 @@ export function Pricing() {
               <span className="text-gray-500">{planPeriod('screener_yearly')}</span>
             </p>
             <a
-              href={checkoutUrl('screener_yearly', 'pricing')}
+              {...checkoutLink('screener_yearly', 'pricing')}
               className="mt-6 block rounded bg-[#f5a623] px-4 py-2.5 text-center text-sm font-medium text-black transition-colors hover:bg-[#ffb83d] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5a623]"
             >
               {TRIAL.cta}

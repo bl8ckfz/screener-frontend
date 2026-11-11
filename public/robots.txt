@@ -1,0 +1,14 @@
+# Public pages are open; the app and account screens are not worth crawling
+# (they redirect to sign-in) and a few carry single-use tokens in the URL.
+User-agent: *
+Allow: /
+Disallow: /app
+Disallow: /billing
+Disallow: /login
+Disallow: /signup
+Disallow: /invite/
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /verify-email
+
+Sitemap: https://www.coin-sniffer.com/sitemap.xml

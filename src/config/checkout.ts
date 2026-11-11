@@ -15,6 +15,7 @@
  */
 
 import { utmParams } from '@/services/attribution'
+import { trackFunnel } from '@/services/funnel'
 
 /** Where an anonymous visitor goes to buy. Configured per environment. */
 const CHECKOUT_URLS: Record<CheckoutPlan, string | undefined> = {
@@ -49,6 +50,21 @@ export function checkoutUrl(plan: CheckoutPlan, source: CheckoutSource): string 
   const query = new URLSearchParams([['source', source], ...utmParams()])
   const sep = base.includes('?') ? '&' : '?'
   return `${base}${sep}${query.toString()}`
+}
+
+/**
+ * The props for a checkout `<a>`: where it goes, and a click handler that
+ * counts the click before the page is left. Spread onto the link, so no CTA
+ * can be added with the URL and without the count.
+ */
+export function checkoutLink(
+  plan: CheckoutPlan,
+  source: CheckoutSource,
+): { href: string; onClick: () => void } {
+  return {
+    href: checkoutUrl(plan, source),
+    onClick: () => trackFunnel('cta_click', { plan, source }),
+  }
 }
 
 /** Whether real checkout links are configured in this environment. */

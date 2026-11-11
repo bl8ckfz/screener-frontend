@@ -19,7 +19,7 @@ import {
 } from '@/components/dojo/DojoSetupsTable'
 import { formatDojoPrice, daysSince } from '@/types/dojo'
 import { isUnlocked, toDojoSetup, type PublicZone } from '@/types/publicDemo'
-import { checkoutUrl } from '@/config/checkout'
+import { checkoutLink } from '@/config/checkout'
 
 interface DemoZonesTableProps {
   zones: PublicZone[]
@@ -79,7 +79,7 @@ function LockedPlan({ zone }: { zone: PublicZone }) {
       </p>
 
       <a
-        href={checkoutUrl('screener_monthly', 'locked_zone')}
+        {...checkoutLink('screener_monthly', 'locked_zone')}
         className="inline-block rounded bg-[#f5a623] px-3 py-1.5 text-sm font-medium text-black transition-colors hover:bg-[#ffb83d] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5a623]"
       >
         Unlock the levels
