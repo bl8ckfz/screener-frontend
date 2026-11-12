@@ -70,10 +70,14 @@ export const authService = {
     email: string,
     password: string,
     inviteCode?: string,
+    digest?: boolean,
   ): Promise<{ verificationRequired: true }> {
     try {
       const body: Record<string, unknown> = { email, password }
       if (inviteCode) body.invite_code = inviteCode
+      // Sent only when the box was ticked: absent means "no email", and the
+      // backend must never read a missing field as consent.
+      if (digest) body.digest = true
       // Which ad link brought them, if any. Read here rather than passed in so
       // every registration path carries it, the invite page included.
       const attribution = getAttribution()

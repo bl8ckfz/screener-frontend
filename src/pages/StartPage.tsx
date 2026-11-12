@@ -10,6 +10,7 @@
  */
 import { useSearchParams } from 'react-router-dom'
 import { LandingLayout } from '@/components/landing/LandingLayout'
+import { FreeSignupLink } from '@/components/landing/FreeSignupLink'
 import { checkoutLink } from '@/config/checkout'
 import { TRIAL } from '@/config/access'
 import { START_HEROES, START_STEPS, startAngle } from '@/config/startHeroes'
@@ -33,8 +34,11 @@ export function StartPage() {
           >
             {TRIAL.cta}
           </a>
-          <span className="text-sm text-gray-400">{TRIAL.short}</span>
+          <FreeSignupLink source="start_free" />
         </div>
+        <p className="mt-3 max-w-xl text-sm text-gray-400">
+          Trial: {TRIAL.short}. Free account: email only, no card.
+        </p>
         {/* The same-email rule is the step that fails silently after money has
             changed hands, so it sits next to the button, not only in Pricing. */}
         <p className="mt-3 max-w-xl text-sm text-gray-400">

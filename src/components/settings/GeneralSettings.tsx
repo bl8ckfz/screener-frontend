@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '@/hooks/useStore'
 import { authService } from '@/services/authService'
+import { DigestSwitch } from '@/components/free/DigestSwitch'
 
 /**
  * GeneralSettings Component
@@ -233,6 +234,14 @@ export function GeneralSettings() {
             {pwLoading ? 'Saving…' : 'Change password'}
           </button>
         </form>
+      </div>
+
+      {/* Daily email */}
+      <div className="bg-gray-800 rounded-lg p-6 space-y-4">
+        <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
+          Email
+        </h4>
+        <DigestSwitch description="New zones with their entry, stop and targets, and the plans that ended, once a day. Sent only on days with something to report; one click in any email stops it." />
       </div>
 
       {/* About Section */}

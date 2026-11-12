@@ -30,7 +30,7 @@ export function TermsPage() {
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-12 space-y-8">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Terms of Service</h1>
-          <p className="text-sm text-gray-500">Last updated: March 12, 2026</p>
+          <p className="text-sm text-gray-500">Last updated: November 12, 2026</p>
         </div>
 
         <section className="space-y-4">
@@ -97,6 +97,9 @@ export function TermsPage() {
           <h2 className="text-xl font-semibold text-white">6. Subscriptions & Billing</h2>
           <p>
             The Service is offered on a subscription basis with monthly and yearly billing cycles. Free trials, if offered, automatically convert to paid subscriptions unless canceled before the trial period ends.
+          </p>
+          <p>
+            An account without a subscription is a free account. It can view the zones the scanner has published with their price levels withheld, one zone per week with its levels, and the record of zones that have ended. It does not include the levels of other zones in play, the momentum alerts, or the live dashboard. We may change or withdraw what a free account includes at any time.
           </p>
           <ul className="list-disc list-inside space-y-1 text-gray-400">
             <li>Payments are processed by Whop, our third-party billing provider</li>

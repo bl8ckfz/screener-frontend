@@ -29,7 +29,7 @@ interface AuthContextType {
   trialDaysRemaining: number | null
   // Actions
   login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string, inviteCode?: string) => Promise<void>
+  register: (email: string, password: string, inviteCode?: string, digest?: boolean) => Promise<void>
   verifyEmail: (token: string) => Promise<void>
   logout: () => void
   refreshToken: () => Promise<void>
@@ -206,8 +206,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Registration no longer signs anyone in: the account cannot be used until
   // the address is confirmed, so there is no user to set here. The caller
   // shows a "check your inbox" state instead.
-  const register = async (email: string, password: string, inviteCode?: string) => {
-    await authService.register(email, password, inviteCode)
+  const register = async (email: string, password: string, inviteCode?: string, digest?: boolean) => {
+    await authService.register(email, password, inviteCode, digest)
   }
 
   // Confirming the address DOES sign in — ownership has just been proven, and

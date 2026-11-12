@@ -1,15 +1,16 @@
 /**
  * Signup Page
  * 
- * Open registration form. After signup, user is redirected to /app
- * where SubscriptionGuard shows the pricing/trial page.
+ * Open registration form. The account it creates is a free one: once the
+ * email is confirmed it opens the free view (FreeApp), and the trial is an
+ * upgrade from there rather than the only way in.
  */
 
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { Logo } from '@/components/ui'
-import { TRIAL_DAYS } from '@/config/access'
+import { FREE, TRIAL_DAYS } from '@/config/access'
 import { trackFunnel } from '@/services/funnel'
 
 export function SignupPage() {
@@ -20,6 +21,9 @@ export function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
+  // Unticked by default, and separate from the terms box: agreeing to the
+  // terms is not asking for email.
+  const [wantsDigest, setWantsDigest] = useState(false)
   const { register, isAuthenticated, loading: authLoading } = useAuth()
   const navigate = useNavigate()
 
@@ -42,7 +46,7 @@ export function SignupPage() {
     setLoading(true)
 
     try {
-      await register(email, password)
+      await register(email, password, undefined, wantsDigest)
       trackFunnel('signup_submit', { source: 'signup' })
       // No redirect to /app: registration does not sign anyone in any more.
       // The account cannot be used until the address is confirmed, so sending
@@ -103,13 +107,21 @@ export function SignupPage() {
       {/* Centered Form */}
       <div className="flex-1 flex items-center justify-center px-4">
         <div className="w-full max-w-md">
-          <h1 className="text-3xl font-bold text-white mb-2">Create your account</h1>
-          {/* Registering grants nothing by itself — access starts at the Whop
-              checkout. So say what happens next rather than promising a trial
-              this step does not start, and tell a buyer who already paid how
-              their purchase finds them. */}
-          <p className="text-gray-400 mb-2">
-            Next you’ll choose a plan and start your {TRIAL_DAYS}-day free trial.
+          <h1 className="text-3xl font-bold text-white mb-2">Create your free account</h1>
+          {/* Say what the account gives by itself, since it now gives
+              something; the trial is the next step up, not a condition. And
+              tell a buyer who already paid how their purchase finds them. */}
+          <p className="text-gray-400 mb-3">{FREE.short}. It includes:</p>
+          <ul className="mb-3 space-y-1.5">
+            {FREE.items.map((item) => (
+              <li key={item} className="flex gap-2 text-sm leading-relaxed text-gray-400">
+                <span className="text-[#f5a623]" aria-hidden>✓</span>
+                {item}
+              </li>
+            ))}
+          </ul>
+          <p className="text-sm text-gray-400 mb-2">
+            The {TRIAL_DAYS}-day free trial of the full product is one click away once you’re in.
           </p>
           <p className="text-sm text-gray-400 mb-8">
             Already checked out on Whop? Sign up with the same email and your access unlocks
@@ -181,6 +193,18 @@ export function SignupPage() {
                 <Link to="/terms" target="_blank" className="text-blue-400 hover:text-blue-300 underline">Terms of Service</Link>
                 {' '}and{' '}
                 <Link to="/privacy" target="_blank" className="text-blue-400 hover:text-blue-300 underline">Privacy Policy</Link>
+              </span>
+            </label>
+
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={wantsDigest}
+                onChange={(e) => setWantsDigest(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-gray-600 bg-gray-800 text-blue-600 focus:ring-blue-500 focus:ring-offset-0"
+              />
+              <span className="text-sm text-gray-400">
+                Email me the daily scan. Optional; one click in any email stops it.
               </span>
             </label>
 

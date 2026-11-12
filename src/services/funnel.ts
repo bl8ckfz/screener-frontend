@@ -29,6 +29,8 @@ export type FunnelEvent =
   | 'checkout_start'
   | 'signup_submit'
   | 'signup_verified'
+  /** A free account clicking through to the plans. */
+  | 'upgrade_click'
 
 export interface FunnelProps {
   /** Where on the page it happened: a CheckoutSource, or the screen's name. */

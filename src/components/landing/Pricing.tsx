@@ -10,7 +10,8 @@
  */
 import { planPrice, planPeriod, yearlySaving } from '@/config/plans'
 import { checkoutLink } from '@/config/checkout'
-import { INCLUDED, PRO, TRIAL, TRIAL_DAYS } from '@/config/access'
+import { FreeSignupLink } from './FreeSignupLink'
+import { FREE, INCLUDED, PRO, TRIAL, TRIAL_DAYS } from '@/config/access'
 
 export function Pricing() {
   return (
@@ -20,10 +21,35 @@ export function Pricing() {
           Pricing
         </h2>
         <p className="mt-3 max-w-prose text-gray-400">
-          One plan, billed monthly or yearly, with a {TRIAL_DAYS}-day free trial.
+          One plan, billed monthly or yearly, with a {TRIAL_DAYS}-day free trial. Or start
+          with a free account and decide later.
         </p>
 
-        <div className="mt-10 grid gap-4 sm:grid-cols-2">
+        {/* Free first: it is the answer to "what does it cost to look?", and a
+            price table without it reads as if the only way in were a card. */}
+        <div className="mt-10 rounded-lg border border-gray-800 p-6">
+          <div className="flex flex-wrap items-start justify-between gap-6">
+            <div className="max-w-xl">
+              <h3 className="text-sm text-gray-400">Free account</h3>
+              <p className="mt-2">
+                <span className="font-mono text-4xl text-white">$0</span>
+                <span className="ml-2 text-gray-500">email only, no card</span>
+              </p>
+              <ul className="mt-4 space-y-2">
+                {FREE.items.map((item) => (
+                  <li key={item} className="flex gap-2 text-sm leading-relaxed text-gray-400">
+                    <span className="text-[#f5a623]" aria-hidden>✓</span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-sm leading-relaxed text-gray-500">{FREE.without}</p>
+            </div>
+            <FreeSignupLink source="pricing_free" />
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div className="rounded-lg border border-gray-800 p-6">
             <h3 className="text-sm text-gray-400">Monthly</h3>
             <p className="mt-2">

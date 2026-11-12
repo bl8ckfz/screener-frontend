@@ -31,6 +31,28 @@ export const TRIAL = {
   terms: `Every plan starts with ${TRIAL_DAYS} days free. Checkout runs on Whop and takes your card up front; nothing is charged until the trial ends, and cancelling before then costs nothing. After that the plan renews at its listed price until you cancel.`,
 } as const
 
+/**
+ * What a free account includes — an email address, no card.
+ *
+ * Signing up used to grant nothing at all; this is what it grants now. The
+ * weekly sample is the only live plan a free account sees, and the server
+ * picks it (one waiting zone a week), so the wording must not promise more.
+ */
+export const FREE = {
+  /** For a CTA button. */
+  cta: 'Create a free account',
+  /** One line under a CTA. */
+  short: 'Free · email only, no card',
+  items: [
+    'Every new zone the day it publishes: coin, timeframe, direction, R:R and rating',
+    'One live zone a week with its full plan: entry, stop and three targets',
+    'The full record of finished zones, with their plans and how each ended',
+    'The daily scan by email, if you want it',
+  ] as readonly string[],
+  /** What it leaves out, said plainly next to what it includes. */
+  without: 'Entry, stop and targets for the other live zones, and the momentum alerts, are part of a subscription.',
+} as const
+
 /** What every subscription (and the trial) includes. */
 export const INCLUDED: readonly string[] = [
   'Every Dojo zone as it publishes, with its entry, stop and three targets',

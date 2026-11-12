@@ -11,6 +11,7 @@
  * shared with the ad landing page.
  */
 import { LandingLayout } from '@/components/landing/LandingLayout'
+import { FreeSignupLink } from '@/components/landing/FreeSignupLink'
 import { checkoutLink } from '@/config/checkout'
 import { TRIAL } from '@/config/access'
 
@@ -37,8 +38,12 @@ export function LandingPage() {
           >
             {TRIAL.cta}
           </a>
-          <span className="text-sm text-gray-400">{TRIAL.short}</span>
+          <FreeSignupLink source="hero_free" />
         </div>
+        {/* One line per button, in the buttons' order: what each one costs. */}
+        <p className="mt-3 text-sm text-gray-400">
+          Trial: {TRIAL.short}. Free account: email only, no card.
+        </p>
         <p className="mt-3 text-sm text-gray-400">
           Below is the live scanner, not a screenshot.
         </p>

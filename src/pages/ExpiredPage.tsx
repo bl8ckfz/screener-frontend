@@ -1,11 +1,14 @@
 /**
- * Expired Page
- * 
- * Full-page state shown when trial or subscription has expired.
+ * The plans page, served at /upgrade.
+ *
+ * Still named ExpiredPage because it began as the wall an account without a
+ * subscription hit on sign-in. That wall is now the free view (FreeApp); this
+ * is where the free view sends someone who wants the levels and the alerts.
  * Displays pricing plans and redirects to Whop checkout.
  */
 
 import { useState } from 'react'
+import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { authService } from '@/services/authService'
 import { trackFunnel } from '@/services/funnel'
@@ -60,7 +63,7 @@ const PLANS: PlanCard[] = [
 ]
 
 export function ExpiredPage() {
-  const { user, logout } = useAuth()
+  const { user, logout, isExpired } = useAuth()
   const [checkoutState, setCheckoutState] = useState<CheckoutState>('idle')
   const [errorMsg, setErrorMsg] = useState('')
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
@@ -74,7 +77,7 @@ export function ExpiredPage() {
     setCheckoutState('loading')
     setLoadingPlan(planSlug)
     setErrorMsg('')
-    trackFunnel('checkout_start', { plan: planSlug, source: 'expired' })
+    trackFunnel('checkout_start', { plan: planSlug, source: 'upgrade' })
 
     try {
       const { checkout_url } = await authService.createCheckout(planSlug)
@@ -87,18 +90,31 @@ export function ExpiredPage() {
     }
   }
 
+  // Someone who already has a plan has nothing to buy here; their plan is
+  // managed on the billing page.
+  if (user && !isExpired) {
+    return <Navigate to="/billing" replace />
+  }
+
   return (
     <div className="min-h-screen bg-black flex flex-col">
       {/* Header */}
       <header className="px-4 sm:px-6 py-4 border-b border-gray-800">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <span className="text-xl font-bold text-white"><Logo size={26} /></span>
-          <button
-            onClick={logout}
-            className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
-          >
-            Sign Out
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Not a dead end any more: an account without a plan has
+                somewhere to be. */}
+            <Link to="/app" className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">
+              Back to the free view
+            </Link>
+            <button
+              onClick={logout}
+              className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
+            >
+              Sign Out
+            </button>
+          </div>
         </div>
       </header>
 
@@ -111,15 +127,15 @@ export function ExpiredPage() {
             {isNewUser
               ? 'Start your free trial'
               : wasTrial
-                ? 'Your trial has expired'
-                : 'Your subscription has expired'}
+                ? 'Your trial has ended'
+                : 'Restart your subscription'}
           </h1>
           <p className="text-gray-400 mb-10 max-w-lg mx-auto leading-relaxed">
             {isNewUser
               ? TRIAL.terms
               : wasTrial
-                ? 'Your 7-day free trial has ended. Choose a plan to continue using Coin Sniffer.'
-                : 'Renew your subscription to continue accessing real-time alerts and market analysis.'}
+                ? 'Your 7-day free trial has ended. Choose a plan to get every zone’s levels and the momentum alerts back; the free view stays yours either way.'
+                : 'Choose a plan to get every zone’s levels and the momentum alerts back. The free view stays yours either way.'}
           </p>
 
           {/* Pricing Grid */}

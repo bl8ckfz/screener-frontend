@@ -10,6 +10,7 @@
 import { authService } from './authService'
 import type { Alert } from '@/types/alert'
 import type { DojoSetup, DojoSummary, DojoStatusFilter } from '@/types/dojo'
+import type { FreeZonesResponse, FreeRecordResponse, RecordOutcome } from '@/types/free'
 
 interface UserSettings {
   userId: string
@@ -326,6 +327,38 @@ export const backendApi = {
     const response = await fetchWithTimeout(
       `${BACKEND_CONFIG.baseUrl}/api/dojo/summary?${q}`
     )
+    return response.json()
+  },
+
+  /**
+   * What an account without a subscription may see: the live zones locked, and
+   * the week's sample with its plan. Needs a sign-in, not a subscription.
+   */
+  async getFreeZones(): Promise<FreeZonesResponse> {
+    const response = await fetchWithTimeout(`${BACKEND_CONFIG.baseUrl}/api/free/zones`)
+    return response.json()
+  },
+
+  /** One page of the zones that are over, newest first. */
+  async getFreeRecord(params: { outcome?: RecordOutcome; cursor?: string } = {}): Promise<FreeRecordResponse> {
+    const q = new URLSearchParams()
+    if (params.outcome) q.set('outcome', params.outcome)
+    if (params.cursor) q.set('cursor', params.cursor)
+    const response = await fetchWithTimeout(`${BACKEND_CONFIG.baseUrl}/api/free/record?${q}`)
+    return response.json()
+  },
+
+  /** Whether this account gets the daily email. For free and paying accounts alike. */
+  async getDigestPreference(): Promise<{ digest: boolean }> {
+    const response = await fetchWithTimeout(`${BACKEND_CONFIG.baseUrl}/api/free/preferences`)
+    return response.json()
+  },
+
+  async setDigestPreference(digest: boolean): Promise<{ digest: boolean }> {
+    const response = await fetchWithTimeout(`${BACKEND_CONFIG.baseUrl}/api/free/preferences`, {
+      method: 'PUT',
+      body: JSON.stringify({ digest }),
+    })
     return response.json()
   },
 

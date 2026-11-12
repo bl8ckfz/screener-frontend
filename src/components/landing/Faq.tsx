@@ -1,4 +1,4 @@
-import { PRO, TRIAL } from '@/config/access'
+import { FREE, PRO, TRIAL } from '@/config/access'
 
 /**
  * The questions a sceptical trader actually asks, answered without hedging.
@@ -27,6 +27,10 @@ const QA: Array<{ q: string; a: string }> = [
   {
     q: 'Why are some levels hidden on this page?',
     a: 'Because the levels are the product. Zones that have resolved are shown in full — the trade is over, and the record is what you are here to check. Zones still waiting for price show everything except the prices.',
+  },
+  {
+    q: 'What does a free account include?',
+    a: `An email address gets you every new zone the day it publishes, without its prices; one live zone a week with its full plan; the whole record of finished zones; and the daily scan by email if you ask for it. ${FREE.without}`,
   },
   {
     q: 'How does the free trial work?',

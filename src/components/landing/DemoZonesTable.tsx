@@ -10,7 +10,7 @@
  * useDojoSetups, which is gated on being signed in, and carries a filter bar,
  * view tabs and sortable headers that a landing page has no use for.
  */
-import { Fragment, useState } from 'react'
+import { Fragment, useState, type ReactNode } from 'react'
 import { ChevronRight, Lock } from 'lucide-react'
 import {
   ConfluenceBadge,
@@ -26,6 +26,14 @@ interface DemoZonesTableProps {
   featuredId?: string
   onZoneSelect?: (zone: PublicZone) => void
   selectedId?: string | null
+  /**
+   * What an opened locked row offers, in place of the anonymous checkout link.
+   *
+   * The free view passes its own: a signed-in account should go to the plans
+   * page, where checkout is tied to that account, rather than to the link for
+   * visitors who have none.
+   */
+  lockedAction?: ReactNode
 }
 
 /** The row's headline number: an entry price, or the lock that replaces it. */
@@ -52,7 +60,7 @@ function EntryCell({ zone }: { zone: PublicZone }) {
  * it. R:R and confluence stay in the clear — they are what make the row worth
  * wanting, and neither reveals a price.
  */
-function LockedPlan({ zone }: { zone: PublicZone }) {
+function LockedPlan({ zone, action }: { zone: PublicZone; action?: ReactNode }) {
   const rows = ['Zone', 'Entry', 'Stop loss', 'Target 1', 'Target 2', 'Target 3']
 
   return (
@@ -78,12 +86,14 @@ function LockedPlan({ zone }: { zone: PublicZone }) {
         three targets the day it published — in time to place the order.
       </p>
 
-      <a
-        {...checkoutLink('screener_monthly', 'locked_zone')}
-        className="inline-block rounded bg-[#f5a623] px-3 py-1.5 text-sm font-medium text-black transition-colors hover:bg-[#ffb83d] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5a623]"
-      >
-        Unlock the levels
-      </a>
+      {action ?? (
+        <a
+          {...checkoutLink('screener_monthly', 'locked_zone')}
+          className="inline-block rounded bg-[#f5a623] px-3 py-1.5 text-sm font-medium text-black transition-colors hover:bg-[#ffb83d] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f5a623]"
+        >
+          Unlock the levels
+        </a>
+      )}
     </div>
   )
 }
@@ -93,6 +103,7 @@ export function DemoZonesTable({
   featuredId,
   onZoneSelect,
   selectedId,
+  lockedAction,
 }: DemoZonesTableProps) {
   const [expanded, setExpanded] = useState<string | null>(null)
 
@@ -199,7 +210,7 @@ export function DemoZonesTable({
                       {isUnlocked(zone) ? (
                         <TradePlan setup={toDojoSetup(zone)} hasPlanDetails={false} />
                       ) : (
-                        <LockedPlan zone={zone} />
+                        <LockedPlan zone={zone} action={lockedAction} />
                       )}
                     </td>
                   </tr>

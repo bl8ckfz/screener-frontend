@@ -30,7 +30,7 @@ export function PrivacyPage() {
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-12 space-y-8">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Privacy Policy</h1>
-          <p className="text-sm text-gray-500">Last updated: November 8, 2026</p>
+          <p className="text-sm text-gray-500">Last updated: November 12, 2026</p>
         </div>
 
         <section className="space-y-4">
@@ -79,6 +79,7 @@ export function PrivacyPage() {
             <li>Send alert notifications through your configured webhooks</li>
             <li>Grant access to TradingView indicators (using your TV username)</li>
             <li>Communicate important account or service updates via email</li>
+            <li>Send you the daily scan by email, only if you asked for it — by ticking the box when you signed up or switching it on in your account. Every such email has an unsubscribe link, and you can switch it off in your account at any time</li>
             <li>Improve the Service based on usage patterns</li>
             <li>Detect and prevent fraud or abuse</li>
           </ul>
@@ -99,6 +100,10 @@ export function PrivacyPage() {
             <div>
               <strong className="text-white">Whop</strong> — Payment processing
               <p className="text-sm text-gray-500">Handles billing and subscriptions. Subject to <a href="https://whop.com/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">Whop Privacy Policy</a>.</p>
+            </div>
+            <div>
+              <strong className="text-white">Resend</strong> — Email delivery
+              <p className="text-sm text-gray-500">Sends our emails: address confirmation, password reset and, if you asked for it, the daily scan. It receives your email address and the content of the message. Subject to <a href="https://resend.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">Resend Privacy Policy</a>.</p>
             </div>
             <div>
               <strong className="text-white">Discord / Telegram</strong> — Webhook delivery

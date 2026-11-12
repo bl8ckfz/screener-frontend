@@ -22,6 +22,7 @@ import { ResetPasswordPage } from '@/pages/ResetPasswordPage'
 import { VerifyEmailPage } from '@/pages/VerifyEmailPage'
 import { TermsPage } from '@/pages/TermsPage'
 import { PrivacyPage } from '@/pages/PrivacyPage'
+import { UnsubscribePage } from '@/pages/UnsubscribePage'
 
 /**
  * The signed-in app is loaded on demand.
@@ -39,6 +40,10 @@ const ScreenerApp = lazy(() =>
 )
 const BillingPage = lazy(() =>
   import('@/pages/BillingPage').then((m) => ({ default: m.BillingPage })),
+)
+// The plans, for a signed-in account without a subscription.
+const UpgradePage = lazy(() =>
+  import('@/pages/ExpiredPage').then((m) => ({ default: m.ExpiredPage })),
 )
 
 /** Shown only while an authenticated route's chunk is in flight. */
@@ -72,6 +77,8 @@ function App() {
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
+        {/* Reached from an email, so it must work signed out. */}
+        <Route path="/unsubscribe" element={<UnsubscribePage />} />
 
         {/* Protected routes */}
         <Route
@@ -94,6 +101,18 @@ function App() {
             <ProtectedRoute>
               <Suspense fallback={<RouteFallback />}>
                 <BillingPage />
+              </Suspense>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* The plans — where the free view sends an account that wants more. */}
+        <Route
+          path="/upgrade"
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<RouteFallback />}>
+                <UpgradePage />
               </Suspense>
             </ProtectedRoute>
           }

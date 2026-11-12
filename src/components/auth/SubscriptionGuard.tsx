@@ -2,7 +2,8 @@
  * SubscriptionGuard Component
  * 
  * Wraps routes that require an active subscription or valid trial.
- * Shows ExpiredPage if the user's trial/subscription has expired.
+ * An account without one gets the free view (FreeApp) in its place; the plans
+ * themselves are at /upgrade.
  * Admins always pass through.
  * Canceled users with remaining time see a notice banner but keep access.
  * 
@@ -11,10 +12,13 @@
  * if the webhook failed (e.g. email mismatch between Whop and Pulsaryx).
  */
 
-import { useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
-import { ExpiredPage } from '@/pages/ExpiredPage'
 import { authService } from '@/services/authService'
+
+// On demand: a subscriber never needs it, and it is the only thing here that
+// would pull the zone table into the guard's chunk.
+const FreeApp = lazy(() => import('@/pages/FreeApp').then((m) => ({ default: m.FreeApp })))
 
 interface SubscriptionGuardProps {
   children: React.ReactNode
@@ -113,8 +117,15 @@ export function SubscriptionGuard({ children }: SubscriptionGuardProps) {
     return <>{children}</>
   }
 
+  // No subscription: the free view, not a paywall. This covers an account that
+  // never paid and one whose plan lapsed alike — `isExpired` is the old name
+  // for "not entitled", kept because the rest of the app reads it.
   if (isExpired) {
-    return <ExpiredPage />
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-black" />}>
+        <FreeApp />
+      </Suspense>
+    )
   }
 
   // Canceled but still has access — show a small notice
